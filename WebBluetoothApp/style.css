@@ -1,0 +1,79 @@
+/* CSS files add styling rules to your content */
+
+body {
+  font-family: "Lato", sans-serif;
+  text-align: center;  
+}
+
+#appW {
+  display: grid;
+  grid-template-rows: 2em 1fr;
+  grid-template-columns: 1fr;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;    
+}
+  #appMenuW {
+    display: grid;
+    grid-row: 1;
+    grid-template-rows: 1fr;    
+    grid-template-columns: repeat(4, 1fr);    
+  }
+
+  #appNavW {
+    display: grid;
+    grid-row: 2;      
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    padding-top: 10%;        
+  }
+    #appNavConW {
+      display: grid;
+      grid-row: 1;
+      grid-template-rows: repeat(2, 1fr);
+      grid-template-columns: 1fr;      
+    }
+      #appNavConDirW {
+        display: grid;
+        grid-row: 1;      
+        grid-template-rows: repeat(3, 1fr);
+        grid-template-columns: repeat(3, 1fr);
+      }
+      #appNavConSetW {
+        display: grid;
+        grid-row: 2;
+        grid-template-rows: 1fr;
+        grid-template-columns: 3fr 2fr;
+      }
+    
+    #appNavCalW {
+      display: grid;
+      grid-row: 2;
+    }
+
+  #appCommW {
+    display: grid;
+    grid-row: 2;
+    padding-top: 10%;      
+  }
+
+.menuBtn {
+  display: flex;
+  justify-content: center;
+  align-items: center;    
+  background-color: lightblue;
+  cursor: pointer;  
+  padding: 5%;
+  margin: 10%;  
+}
+
+.direcBtn {
+  display: flex;
+  justify-content: center;
+  align-items: center;    
+  background-color: #f3d0d6;
+  cursor: pointer;  
+  padding: 5%;
+  margin: 5%;  
+} 

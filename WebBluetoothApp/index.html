@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Star Projector</title>
+
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/libs/three.min.js" defer></script>
+    <script src="/script.js" defer></script>
+  </head>
+
+  <body>
+  
+    <div id="appW">
+
+      <div id="appMenuW">
+        <div class="menuBtn" id="tourM" onclick="setWindow('appTourW')">Tour</div>
+        <div class="menuBtn" id="navM" onclick="setWindow('appNavW')">Nav</div>
+        <div class="menuBtn" id="comM" onclick="setWindow('appCommW')">Comm</div>
+        <div class="menuBtn" id="helpM" onclick="setWindow('appHelpW')">Help</div>
+      </div>
+
+      <div class="window" id="appNavW">
+        
+        <div id="appNavConW">
+
+          <div id="appNavConDirW">
+            <div class="direcBtn" id="d20" onclick="sendStepSize(this.id)">F+M-</div>
+            <div class="direcBtn" id="d21" onclick="sendStepSize(this.id)">F+</div>
+            <div class="direcBtn" id="d22" onclick="sendStepSize(this.id)">F+M+</div>
+
+            <div class="direcBtn" id="d10" onclick="sendStepSize(this.id)">M-</div>
+            <div class="direcBtn" id="laserStateB" onclick="switchLaser()"></div>
+            <div class="direcBtn" id="d12" onclick="sendStepSize(this.id)">M+</div>
+
+            <div class="direcBtn" id="d00" onclick="sendStepSize(this.id)">F-M-</div>
+            <div class="direcBtn" id="d01" onclick="sendStepSize(this.id)">F-</div>
+            <div class="direcBtn" id="d02" onclick="sendStepSize(this.id)">F-M+</div>
+          </div>
+
+          <div id="appNavConSetW">
+
+            <div>
+              Step size:
+              <input id="stepSizeR" type="range" onchange="updateStepSize()">
+              <span id="stepSizeT"></span>
+            </div>
+            <div>
+              <div> Phi: <input id="phiT" type="text" size="6"> º</div><br/>
+              <div> Theta: <input id="thetaT" type="text" size="6"> º</div>
+            </div>  
+
+          </div>
+
+        </div>
+
+        <div id="appNavCalW">
+          <div class="direcBtn" id="setZenithB" onclick="setZenith()"> go Zenith</div>
+        </div>
+
+      </div>
+
+      <div class="window" id="appCommW">
+
+        <button onclick="startComm()">
+          Start comm
+        </button>
+        <br/>      
+        <button onclick="sendCircle()">
+          Send circle
+        </button>
+        <br/>
+        <div id="commStatus">not connected</div>
+
+      </div>
+      
+    </div>
+    
+  </body>
+</html>
