@@ -5,10 +5,7 @@ body {
   text-align: center;  
 }
 
-#appW {
-  display: grid;
-  grid-template-rows: 2em 1fr;
-  grid-template-columns: 1fr;
+#appW {  
   height: 100%;
   width: 100%;
   margin: 0;
@@ -16,40 +13,23 @@ body {
 }
   #appMenuW {
     display: grid;
-    grid-row: 1;
-    grid-template-rows: 1fr;    
-    grid-template-columns: repeat(4, 1fr);    
   }
 
   #appNavW {
-    display: grid;
-    grid-row: 2;      
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: 1fr;
+    display: grid;    
     padding-top: 10%;        
   }
-    #appNavConW {
-      display: grid;
-      grid-row: 1;
-      grid-template-rows: repeat(2, 1fr);
-      grid-template-columns: 1fr;      
+    #appNavControlW {
+      display: grid;      
     }
-      #appNavConDirW {
-        display: grid;
-        grid-row: 1;      
-        grid-template-rows: repeat(3, 1fr);
-        grid-template-columns: repeat(3, 1fr);
-      }
-      #appNavConSetW {
-        display: grid;
-        grid-row: 2;
-        grid-template-rows: 1fr;
-        grid-template-columns: 3fr 2fr;
-      }
-    
-    #appNavCalW {
+    #appNavCoordW {
       display: grid;
-      grid-row: 2;
+    }
+    #appNavStarsW {
+      display: grid;      
+    }    
+    #appNavCalibW {
+      display: grid;      
     }
 
   #appCommW {
@@ -59,7 +39,6 @@ body {
   }
 
 .menuBtn {
-  display: flex;
   justify-content: center;
   align-items: center;    
   background-color: lightblue;

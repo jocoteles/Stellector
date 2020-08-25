@@ -2,8 +2,14 @@ WebBlueTooth: https://www.smashingmagazine.com/2019/02/introduction-to-webblueto
 
 Linear Algebra: https://github.com/hiddentao/linear-algebra
 
+Linear Algebra and Machine Learning: 
+https://mlweb.loria.fr/lalolab/lalolib.html
+https://mlweb.loria.fr/index.html#mllib
+
 Function minimization: https://github.com/benfred/fmin
 
-Astronomy: https://github.com/ofrohn/d3-celestial
+Astronomy:
+https://github.com/ofrohn/d3-celestial   (contém bancos de dados uteis no formato json)
+https://github.com/lizard-isana/orb.js   (pacote completo e essencial de astronomia)
 
 Para investigações futuras (comunicação serial pelo browser via bluetooth): https://github.com/WICG/serial/blob/gh-pages/EXPLAINER.md
