@@ -31,7 +31,7 @@ let laserP = [];
 let delayP = [];
 let path = [];
 
-let actStep = [stps360/2, stps360/2];   //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
+let actStep = new VecSP.Step([stps360/2, stps360/2]); //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
 
 let deviceOptions = {
  filters: [{ name: "StarProjector" }],
@@ -65,7 +65,7 @@ const starnames = JSON.parse(starnamesJSON);
 const stars6 = JSON.parse(stars6JSON);
 const starnamesLabels = ["name", "bayer", "flam", "c", "hd", "hip"]           
 
-const calibStarsInit = {text: [], value: [], date: [], spherical: [], equatorial: []};
+const calibStarsInit = {text: [], value: [], date: [], step: [], eq180: []};
 let calibStars = calibStarsInit;
 
 $stepSizeR.min = 0;
@@ -82,7 +82,10 @@ let stepSize;
 /* --------------------
   Math constants */
 
-let DEG = 180/Math.PI;
+const radToDeg = 180 / Math.PI;
+const degToRad = Math.PI / 180;
+const hourToRad = Math.PI / 12;
+
 /*----------------------- */
 
 
@@ -214,7 +217,7 @@ async function sendStepSize(ssId) {
 }
 
 async function goToActStep() {
-    await pathC.writeValue(new Uint8Array(actStep));
+    await pathC.writeValue(new Uint8Array(actStep.value));
 }
 
 async function setZenith() {
@@ -284,14 +287,15 @@ function updateCoordSys() {
     switch (val) {
         case "steps":
             i = 0;
-            ph = actStep[0];
-            th = actStep[1];
+            ph = actStep.fix;
+            th = actStep.mob;
             break;
         case "spherical":
-            i = 1;
-            let c = stepsToSpherical(actStep);
-            ph = c[0]*DEG;
-            th = c[1]*DEG;
+            i = 1;            
+            let st = new VecSP.Representation(actStep);
+            let sp = st.toSpherical();
+            ph = sp.phi*radToDeg;
+            th = sp.theta*radToDeg;
             break;
         case "equatorial":
             i = 2;
@@ -310,44 +314,57 @@ function setWindow(windowId) {
     document.getElementById(windowId).style.display = "grid";  
 }
 
-function equatorialToSpherical () {}
-
-function stepsToSpherical (steps) {
-    let ph = (steps[0]-stps360/2)*2*Math.PI/stps360;
-    let th = (steps[1]-stps360/2)*2*Math.PI/stps360;
-    return [ph, th];
-}
-
 class Calibration {
     constructor(stars = null) {
         this._stars = stars;
-        this.C = lalolib.zeros(3);  //unknown transformation matrix
+        this.C = lalolib.eye(3);    //unknown transformation matrix
         this.A = null;              //local rectangular coordinates matrix
         this.B = null;              //equatorial rectangular coordinates matrix
     }
     set stars(x) {
         this._stars = x;
     }
-    static equatorialArDecToSph (coords) {
-        let ph = coords[0]   //PAREI AQUI
-    }
     systemMount () {        
-        let sp = this.stars.spherical;
-        let eq = this.stars.equatorial;
-        if (sp.len == 2) {
-            let A = [];            
-            for (let i = 0; i < sp.len; i++) {
-                let ca = new THREE.Vector3();
-                let Ai = ca.setFromSphericalCoords(1.0, sp[i][0], sp[i][1]).toArray();
-                A.push(Ai);
-                let cb = new THREE.Vector3();
-                let ph = eq[i][0]-360
-
+        let sa = this.stars.eq180;
+        let sb = this.stars.step;        
+        if (sa.len > 1) {
+            let A = [], B = [];            
+            let Ai = new VecSP.Representation();
+            let Bi = new VecSP.Representation();
+            for (let i = 0; i < sa.len; i++) {                
+                Ai.set(new VecSP.Eq180(sa[i]));
+                A.push(Ai.rectangular);
+                Bi.set(new VecSP.Step(sb[i]));
+                B.push(Bi.rectangular);
             }
-        }
+            if (sp.len == 2) {
+                let A0 = new VecSP.Representation(A[0]);
+                let A1 = new VecSP.Representation(A[1]);                
+                let ca3 = THREE.cross(A0.toTHREEVector(), A1.toTHREEVector());
+                let B0 = new VecSP.Representation(B[0]);
+                let B1 = new VecSP.Representation(B[1]);                
+                let cb3 = THREE.cross(B0.toTHREEVector(), B1.toTHREEVector());
+                A.push(ca3.toArray());
+                B.push(cb3.toArray());
+            }
+            this.A = A;
+            this.B = B;
+            return true;
+        } else return false;
     }
-    show () {
-        $commStatus.innerHTML = "Identity matrix: " + lalolib.laloprint(this.M, true);
+    systemSolve () {
+        if (this.A != null) {
+            let A = lalolib.array2mat(A.this);            
+            let b, x, i;
+            for (let j = 0; j < 3; j++) {
+                b = [];
+                for (i = 0; i < this.A.length; i++) b.push(this.B[i][j]);
+                b = lalolib.array2vec(b);
+                x = lalolib.solve(A,b);
+                for (let i = 0; i < 3; i++) this.C.val[i*this.C.n + j] = x[i];
+            }
+            return true;
+        } else return false;
     }
 }
 
@@ -397,18 +414,14 @@ function updateCalib(action){
                 calibStars.text.push(opt.text);
                 calibStars.value.push(opt.value);
                 calibStars.date.push(t0);
-                calibStars.spherical.push(stepsToSpherical(actStep));
-                calibStars.theta.push(eq);
+                calibStars.step.push(actStep.value);
+                calibStars.eq180.push(eq);
             }
         }
         if (action == "remThis") {
             if (calibStars.text != []) {
                 let index = $csc.selectedIndex;
-                calibStars.text.splice(index, 1);
-                calibStars.value.splice(index, 1);
-                calibStars.date.splice(index, 1);
-                calibStars.spherical.splice(index, 1);
-                calibStars.equatorial.splice(index, 1);
+                for (let v of calibStars) v.splice(index, 1);
             }
         }
         if (action == "remAll") calibStars = calibStarsInit;
@@ -440,9 +453,6 @@ $laserStateB.style.backgroundColor = laserStateBOFF_color;
 
 document.getElementsByName("coordSysN")[0].checked = "true";
 updateCoordSys();
-
-let c = new Calibration();
-c.show();
 
 
 $commStatus.innerHTML = starnames["122"].hip;
