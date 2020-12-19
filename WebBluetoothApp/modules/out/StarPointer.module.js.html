@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: StarPointer.module.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: StarPointer.module.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * JS Module for the StarPointer app.
+ * @module libs/StarPointer.module
+ * @see module:libs/StarPointer.module.js
+ */
+
+import * as THREE from '../libs/three.module';
+
+/**
+ * A namespace for the vector operations in the StarPointer app'.
+ * @namespace
+ */
+let VecSP = {};
+
+/** Class representing a unity vector in equatorial coordinates with RA ranging from 0 to 24hs. */
+VecSP.Equatorial24 = class {
+    /**
+     * Create a RA 24hs equatorial representation of a unity vector.
+     * @param {number} ra - the Right Ascension (0 to 24hs) coordinate.
+	 * @param {number} dec - the Declination (-90º to 90º) coordinate.
+     */
+    constructor (ra, dec) {
+		this._ra = ra;
+		this._dec = dec;
+		this.spherical();
+	}
+	/**Set ra Equatorial24 coordinate. */
+	set ra (ra) {
+		this._ra = ra;
+		this.spherical();
+	}
+	/**Set dec Equatorial24 coordinate. */
+	set dec (dec) {
+		this._dec = dec;
+		this.spherical();
+	}
+	/**Get phi Spherical coordinate. */
+	get phi () {
+		return this._phi;
+	}
+	/**Get theta Spherical coordinate. */
+	get theta () {
+		return this._theta;
+	}
+    /** Set the phi and theta Spherical coordinates of this vector. */
+	spherical () {
+		this._phi = this._ra*Math.PI/12;
+		this._theta = (90-this._dec)*Math.PI/180;
+	}
+}
+
+/** Class representing a unity vector in equatorial coordinates with RA ranging from -180º to 180º. */
+VecSP.Equatorial180 = class {
+    /**
+     * Create a RA 180° equatorial representation of a unity vector.
+     * @param {number} ra - the Right Ascension (-180° to 180°) coordinate.
+	 * @param {number} dec - the Declination (-90º to 90º) coordinate.
+     */
+    constructor (ra, dec) {
+		this._ra = ra;
+		this._dec = dec;
+		this.spherical();
+	}
+	/**Set ra Equatorial24 coordinate. */
+	set ra (ra) {
+		this._ra = ra;
+		this.spherical();
+	}
+	/**Set dec Equatorial24 coordinate. */
+	set dec (dec) {
+		this._dec = dec;
+		this.spherical();
+	}
+	/**Get phi Spherical coordinate. */
+	get phi () {
+		return this._phi;
+	}
+	/**Get theta Spherical coordinate. */
+	get theta () {
+		return this._theta;
+	}
+    /** Set the phi and theta Spherical coordinates of this vector. */
+	spherical () {
+		this._phi = this._ra*Math.PI/180;
+		this._theta = (90-this._dec)*Math.PI/180;
+	}
+}
+
+/** Class representing a unity vector in step motor steps. */
+VecSP.Step = class {
+    /**
+     * Create a step motor steps representation of a unity vector.
+     * @param {array} c = [int fix, int mob] - the c steps array format in the fixed motor (0 to this.maxStep) and mobile motor (0 to this.maxStep) coordinates.
+     */
+	    /**
+     * Create a step motor steps representation of a unity vector.
+     * @param {number} fix - the fixed motor step (0 to maxSteps) coordinate.
+	 * @param {number} mob - the mobile motor step (0 to maxSteps) coordinate.
+     */
+    constructor (fix, mob) {
+		this._fix = fix;
+		this._mob = mob;
+		this._maxSteps = 2048;
+		this.spherical();
+	}
+	/**Set fixed motor step coordinate. */
+	set fix (fix) {
+		this._fix = fix;
+		this.spherical();
+	}
+	/**Set mobile motor step coordinate. */
+	set mob (mob) {
+		this._mob = mob;
+		this.spherical();
+	}
+	/**Set stepper full revolution number of steps. */
+	set maxSteps (msteps) {
+		this._maxSteps = msteps;
+		this.spherical();
+	}
+	/**Get fixed motor step coordinate. */
+	get fix () {
+		return this._fix;
+	}
+	/**Get mobile motor step coordinate. */
+	get mob () {
+		return this._mob;
+	}
+	/**Get stepper full revolution number of steps. */
+	get maxSteps () {
+		return this._maxSteps;
+	}
+    /** Set the phi and theta Spherical coordinates of this vector. */
+	spherical () {		
+		this._phi = this._fix*2*Math.PI/this._maxSteps;
+		this._theta = this._mob*2*Math.PI/this._maxSteps;
+	}
+}
+
+
+/** Convertion to VecSP.Spherical object.
+ * @param {(THREE.Vector3|THREE.Spherical|VecSP.Equatorial24|VecSP.Equatorial180|VecSP.Step)} Vec - object to be converted
+ * @returns {THREE.Spherical} new THREE.Spherical object
+ */
+VecSP.toTHREESpherical = function (Vec) {
+	let s = new THREE.Spherical();
+	if (Vec instanceof THREE.Vector3) {		
+		s.setFromVector3(Vec);
+		return s;
+	}
+	else {
+		return new THREE.Spherical(1.0, Vec.phi, Vec.theta);
+	}
+}
+
+/** Convertion to VecSP.Step object.
+ * @param {(THREE.Vector3|THREE.Spherical|VecSP.Equatorial24|VecSP.Equatorial180|VecSP.Step)} Vec - object to be converted
+ * @returns {VecSP.Step} new VecSP.Step object
+ */
+VecSP.toStep = function (Vec) {
+	let s = new THREE.Spherical();
+	let phi, theta;
+	if (Vec instanceof THREE.Vector3) {		
+		s.setFromVector3(Vec);
+		phi = s.phi;
+		theta = s.theta;
+	}
+	else {
+		phi = Vec.phi;
+		theta = Vec.theta;
+	}
+	let fix = Math.round(phi*m.maxSteps*0.5/Math.PI);
+	let mob = Math.round(theta*m.maxSteps*0.5/Math.PI);
+	return new VecSP.Step(fix, mob);
+}
+
+/**
+ * A namespace for the Communication operations between the StarPointer WebApp client and the ESP32 server.
+ * @namespace
+ */
+let CommSP = {};
+
+/**Class for the parsed path construction */
+CommSP.CommPath = class {
+	/**Create a parsed path to send to the ESP32 server.
+	 * @param {PathSP.Path} Path - Path to be parsed.
+	*/
+	constructor (Path) {
+		/**@member {number[]} - Number of bits of the base used to represent the path segments, respectively for: laser state, step delay, fix step, mob step. */
+		this._encBase = [1, 9, 11, 11];
+		/**@member {number[]} - Number of bits of the base used to communicate the path segments. */
+		this._decBase = [8, 8, 8, 8];
+		/**@member {PathSP.Path} */
+		this._path = Path;
+		/**@member {number[]} - Parsed path obtained from this._path. */
+		this._parsedPath = [];
+		this.composePath();
+	}
+	/**Parse a segment to be added to a parsed path.
+	 * @param {PathSP.Segment} Segment - Segment to be parsed.
+	 * @returns {number[]} Array with decBase size representing the parsed segment.
+	 */
+	parseSegment (Segment) {
+		//Encoding to this._encBase:
+		let data = [Segment.laser, Segment.delay, Segment.coord.fix, Segment.coord.mob];
+		let x = 0;
+		let b = 0;
+		for (let i = 0; i &lt; this._encBase; i++) {
+			x += data[i]*2**b;
+			b += this._encBase[i];
+		}
+		//Decoding to this._decBase:
+		let r0 = x;
+		let r = [];
+		for (let i = 0; i &lt; this._decBase.length; i++) {
+			r.push( Math.trunc(r0 / 2**b0) % 2**this._decBase[i] );
+			b0 += this._decBase[i];
+			r0 -= r[i];
+		}
+		return r;
+	}
+	/**Method for parsing this._path. */
+	composePath () {		
+		this._parsedPath = [];
+		for (let i = 0; i &lt; this._path.size; i++) {
+			let s = this.parseSegment(this._path[i]);
+			this._parsedPath = this._parsedPath.concat(s);
+		}
+	}
+	/**Set path. */
+	set path (Path) {
+		this._path = Path;
+		this.composePath();
+	}
+	/**Set encBase. */
+	set encBase (encBase) {
+		this._encBase = encBase;
+		this.composePath();
+	}
+	/**Set decBase. */
+	set decBase (decBase) {
+		this._decBase = decBase;
+		this.composePath();
+	}
+	/**Get path. */
+	get path () {
+		return this._path;
+	}
+	/**Get encBase. */
+	get encBase () {
+		return this._encBase;
+	}
+	/**Get decBase. */
+	get decBase () {
+		return this._decBase;
+	}
+	/**Get parsedPath. */
+	get parsedPath () {
+		return this._parsedPath;
+	}
+}
+
+/**Class to communicate via Low Energy Bluetooth with the Star Pointer ESP32 server.
+ * @param {Object} - DOM element whose innerHTML attribute receives the communication logs.
+*/
+CommSP.Bluetooth = class {
+	constructor (logDOM) {
+		/**@member {string} - Server device name.*/
+		this.deviceName = "StarPointer";
+		/**@member {string} - The single service for all device's characteristics.*/
+		this.mainS_UUID =          "e80fd323-0ae1-454f-bbd5-31b571083af5";
+		/**@member {string} - Characteristic UUID for the CommSP.parsedPath transmission.*/
+		this.pathC_UUID =          "20e75b2b-6be1-4b18-b1d0-a06018dbdab5";
+		/**@member {string} - Characteristic UUID for measuring the steppers position.*/
+		this.posMeasureC_UUID =    "e16843eb-fe97-42b4-acc7-83069473c1b5";
+		/**@member {Object} - Characteristic for the CommSP.parsedPath transmission.*/
+		this.pathC = NaN;
+		/**@member {Object} - Characteristic for measuring the steppers position.*/
+		this.posMeasureC = NaN;
+		/**@member {Object} - DOM element whose innerHTML attribute receives the communication logs.*/
+		this.logDOM = logDOM;
+		/**@member {number} - 1 byte array maximum size to be sent to the server. */
+		this.maxChunk = 512;
+		/**@member {Object} - Execution options to ESP32 server. */
+		this.Opt = {	resetPath: 1,       //start a new path reading
+						execPath: 2,        //execute the path
+						cyclicPath: 3,      //execute the path cyclicaly
+						laserOn: 4,         //turn on the laser in the navigation mode
+						laserOff: 5,        //turn off the laser in the navigation mode
+						setZenith: 6        //point the laser toward zenith
+		}			
+	}
+	/**Return actual time in the format: hours minutes seconds. */
+	time () {
+		let d = new Date();
+		return d.getHours + 'h' + d.getMinutes + 'm' + d.getSeconds + 's: ';
+	}
+	/**Start bluetooth communication with ESP32 server.*/
+	async startComm () {
+		let deviceOptions = {
+			filters: [{ name: this.deviceName }],
+			optionalServices: [
+			  this.mainS_UUID, 
+			  this.pathC_UUID,    
+			  this.posMeasureC_UUID]};
+		try {
+			this.logDOM.innerHTML = this.time() + 'Requesting StarPointer Device...&lt;br>';
+			const device = await navigator.bluetooth.requestDevice(deviceOptions);
+			
+			this.logDOM.innerHTML += this.time() + 'Connecting to GATT Server...&lt;br>';
+			const server = await device.gatt.connect();
+			
+			this.logDOM.innerHTML += this.time() + 'Getting GAP Services...&lt;br>';
+			mainS = await server.getPrimaryService(this.mainS_UUID);
+			
+			this.logDOM.innerHTML += this.time() + 'Getting GAP Characteristics...&lt;br>';
+			this.pathC = await mainS.getCharacteristic(pathC_UUID);
+			this.posMeasureC = await mainS.getCharacteristic(posMeasureC_UUID);
+			this.logDOM.innerHTML += this.time() + 'Connected to StarPointer on ESP32 Server.&lt;br>';    
+		}
+		catch(error) {
+			this.logDOM.innerHTML += error;
+		}
+	}		
+	/** Send a this.Opt item to ESP32 Server.
+	 * @param {string} option - A valid this.Opt item.
+	*/
+	async sendOption (option) {
+		if (Object.keys(this.Opt).includes(option)) {
+			await this.pathC.writeValue(new Uint8Array([this.Opt[option]]));
+			this.logDOM.innerHTML += this.time() + 'Option ' + option + ' sent to Server.&lt;br>';
+		}
+		else this.logDOM.innerHTML += this.time() + 'Option ' + option + ' not recognized. Nothing sent to Server.&lt;br>';
+	}
+	/** Execute a step size on steppers in the ESP32 server.
+	 * @param {number} stepSize - Step size between 1 and 128.
+	 * @param {string} dirs - String in the format 'xab', where x is any alphabetic character, a and b control the fixed and mobile steppers, respectively, and each one can assume the characters: '0' = move backward, '1' = stay still, and '2' = move forward.
+	 */
+	async goStepSize (stepSize, dirs) {
+		let m = stepSize;
+		let fix = Math.max((parseInt(dirs[1])-1)*m + 127, 0);
+		let mob = Math.max((parseInt(dirs[2])-1)*m + 127, 0);
+		await this.pathC.writeValue(new Uint8Array([fix, mob]));
+		this.logDOM.innerHTML += this.time() + 'Step size of (' + fix + ',' + mob + ') sent to (fixed,mobile) steppers on Server.&lt;br>';
+	}
+	/**Execute a parsedPath on steppers in the ESP32 server.
+	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
+	 * @param {boolean} cyclicOpt - Optional. Default = false. If false Path is executed once, else it is excuted cyclicaly until stop signal.
+	 */
+	async goPath (Path, cyclicOpt = false) {  
+		await this.sendOption('resetPath');
+		let j = 0;
+		let pathChunk;
+		let path = Path.parsedPath;
+		for (let i = 0; i &lt; path.length; i++) {
+				j = i % this.maxChunk;
+			if (j == 0) {      
+				if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
+				else pathChunk = new Uint8Array(path.length - i);
+			}
+			pathChunk[j] = path[i];
+			if ((j == this.maxChunk - 1) || (i == path.length -1)) {
+				await this.pathC.writeValue(pathChunk);
+			}
+		}
+		this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.&lt;br>';
+		if (cyclicOpt) await this.sendOption('cyclicPath');
+		else await this.sendOption('execPath');
+		this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.&lt;br>';
+	}
+}
+
+
+/**
+ * A namespace for the Path operations in the StarPointer app'.
+ * @namespace
+ */
+let PathSP = {};
+
+/** Class for the Star Pointer Segment construction. */
+PathSP.Segment = class {
+    /**
+     * Create a segment for the path followed by the Star Pointer composed by fix and mob step coords, laser status and time delay between steps.
+	 * @param {(THREE.Vector3|THREE.Spherical|VecSP.Equatorial24|VecSP.Equatorial180|VecSP.Step)} coord - Vector object for the path segment.
+	 * @param {number} laser - Laser state: 0 = off, 1 = on.
+	 * @param {number} delay - Time delay between steppers sucessive steps in multiples of 100 us.
+     */
+	constructor (coord, laser, delay) {
+		this.coord = VecSP.toStep(coord);
+		this.laser = laser;
+		this.delay = delay;
+	}
+}
+
+/**Class for the Star Pointer General Path construction. */
+PathSP.Path = class {
+    /**Create the path followed by the Star Pointer composed by fix and mob step coords, laser status and time delay between steps. */
+	constructor () {
+		this.reset();
+	}
+	/**Reset PathSP.Path variables */
+    reset () {		
+		/**@member {PathSP.Segment[]} - array of Segment objects. */
+		this.path = [];
+		/**@member {number} - Path.path number of segments. */
+		this.size = 0;
+		/**@member {number} - Sum of all Path.path segments delay in 100 us unit. */
+		this.duration = 0;
+	}
+	/**Add segment object to the path.
+	 * @param {PathSP.Segment} Segment
+	 */
+	addSegment (Segment) {
+		this.path.push(Segment);
+		this.size = this.path.length;
+		this.duration += segment.delay;
+	}
+	/** Concatenate path.
+	 *  @param {PathSP.Path} Path
+	 */
+	addPath (Path) {
+		this.path.push(Path.path);
+		this.size += Path.size;
+		this.duration += Path.duration;
+	}
+}
+
+/** Class for the Star Pointer Circular Path construction. */
+PathSP.Circle = class {	
+	/** @param {(THREE.Vector3|VecSP.Rectangular|VecSP.Spherical|VecSP.Equatorial24|VecSP.Equatorial180|VecSP.Step)} Center - coordinate of circle center.
+	*	@param {number|VecSP.Spherical} border - circle angle aperture or VecSP.Spherical coordinate of a point at the circle border.
+	*	@param {number} angleIncrement - angle step for the circle discretization in rad.
+	*	@param {Array} lpattern - [laser on number of steps, laser off number of steps].
+	*	@param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
+	*/
+	constructor (Center, border, angleIncrement, lpattern, delay) {
+		this._center = VecSP.toSpherical(Center);
+		this._border = border;
+		this._angleIncrement = angleIncrement;
+		this._lpattern = lpattern;
+		this._delay = delay;		
+		this.make();
+	}
+	set center (Center) {
+		this._center = VecSP.toSpherical(Center);
+		this.make();
+	}
+	set border (border) {
+		this._border = border;
+		this.make();
+	}
+	set angleIncrement (angleIncrement) {
+		this._angleIncrement = angleIncrement;
+		this.make();
+	}
+	set lpattern (lpattern) {
+		this._lpattern = lpattern;
+		this.make();
+	}
+	set delay (delay) {
+		this._delay = delay;
+		this.make();
+	}
+	get center () {
+		return this._center;
+	}
+	get border () {
+		return this._border;
+	}
+	get angleIncrement () {
+		return this._angleIncrement;
+	}
+	get lpattern () {
+		return this._lpattern;
+	}
+	get delay () {
+		return this._delay;
+	}
+	make () {
+		this.path = new PathSP.Path();
+		let v0 = new THREE.Vector3();  
+		let c = new THREE.Vector3();  
+		c.setFromSphericalCoords(1.0, this._center.phi, this._center.theta);
+		if (this._border instanceof VecSP.Spherical) {
+			v0.setFromSphericalCoords(1.0, this._border.phi, this._border.theta);
+		}
+		else {
+			v0.setFromSphericalCoords(1.0, this._center.phi, this._center.theta + this._border);
+		}
+		let N = Math.round(2*Math.PI/this._angleIncrement);		
+		let r = this._lpattern[0] + this._lpattern[1];	
+		let laser;	
+		for (let i = 0; i &lt; N; i++) {
+			let v = v0.clone();
+			v.applyAxisAngle(c, i*this._angleIncrement);						
+			laser = 0;
+			if ((i%r) &lt; lpattern[0]) laser = 1;
+			segment = new PathSP.Segment(v, laser, delay);
+			this.path.addSegment(segment);
+		}
+   }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="libs_StarPointer.module_module.html">module</a></li></ul><h3>Namespaces</h3><ul><li><a href="libs_StarPointer.module_module-CommSP.html">CommSP</a></li><li><a href="libs_StarPointer.module_module-PathSP.html">PathSP</a></li><li><a href="libs_StarPointer.module_module-VecSP.html">VecSP</a></li></ul><h3>Classes</h3><ul><li><a href="libs_StarPointer.module_module-CommSP.Bluetooth.html">Bluetooth</a></li><li><a href="libs_StarPointer.module_module-CommSP.CommPath.html">CommPath</a></li><li><a href="libs_StarPointer.module_module-PathSP.Circle.html">Circle</a></li><li><a href="libs_StarPointer.module_module-PathSP.Path.html">Path</a></li><li><a href="libs_StarPointer.module_module-PathSP.Segment.html">Segment</a></li><li><a href="libs_StarPointer.module_module-VecSP.Equatorial24.html">Equatorial24</a></li><li><a href="libs_StarPointer.module_module-VecSP.Equatorial180.html">Equatorial180</a></li><li><a href="libs_StarPointer.module_module-VecSP.Step.html">Step</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Sat Oct 10 2020 15:32:42 GMT-0300 (Brasilia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   width="130pt"
+   height="130pt"
+   viewBox="0 0 130 130"
+   version="1.1"
+   id="svg1956">
+  <metadata
+     id="metadata1962">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1960" />
+  <path
+     style="fill:#ffbfca;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
+     d="M 1,33 H 33 L 65,65 33,97 H 1 Z m 0,0"
+     id="path1947" />
+  <path
+     style="fill:#ffbfca;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
+     d="M 129,97 H 97 L 65,65 97,33 h 32 z m 0,0"
+     id="path1949" />
+  <path
+     style="fill:#8fee8f;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
+     d="M 97,1 V 33 L 65,65 33,33 V 1 Z m 0,0"
+     id="path1951" />
+  <path
+     style="fill:#8fee8f;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
+     d="M 33,129 V 97 L 65,65 97,97 v 32 z m 0,0"
+     id="path1953" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75"
+     x="45.476562"
+     y="32.748035"
+     id="text2531"><tspan
+       id="tspan2529"
+       x="45.476562"
+       y="32.748035"
+       style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75">MR</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75"
+     x="46.847656"
+     y="114.74806"
+     id="text2531-3"><tspan
+       id="tspan2529-6"
+       x="46.847656"
+       y="114.74806"
+       style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75">ML</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75"
+     x="89.92775"
+     y="73.748047"
+     id="text2531-7"><tspan
+       id="tspan2529-5"
+       x="89.92775"
+       y="73.748047"
+       style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75">FR</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75"
+     x="9.2988148"
+     y="73.748047"
+     id="text2531-7-3"><tspan
+       id="tspan2529-5-5"
+       x="9.2988148"
+       y="73.748047"
+       style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75">FL</tspan></text>
+</svg>

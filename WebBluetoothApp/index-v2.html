@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<!-- file paths start without / when running with python http.server  -->
+<!-- file paths start with / when running on glitch.com  -->
+
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<title>Star Projector</title>
+
+    <link rel="stylesheet" href="style.css" />
+    <script src="libs/three.min.js"></script>  
+    <script src="libs/optimization.js"></script>
+    <script src="modules/StarPointer.module.js" type="module" defer></script>
+    <script type="text/javascript" src="data/stars.6.js"></script>    
+    <script type="text/javascript" src="data/starnames.js"></script>    
+    <script src="script-v2.js" type="module" defer></script>
+  </head>
+
+  <body>
+  
+    <div id="appW" style="grid-template-rows:2em 1fr;">
+      <div id="appMenuW" style="grid-row:1;
+                                grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="menuBtn" id="tourM" onclick="App.setWindow('appTourW')">Tour</div>
+        <div class="menuBtn" id="navM" onclick="App.setWindow('appNavW')">Nav</div>
+        <div class="menuBtn" id="comM" onclick="App.setWindow('appCommW')">Comm</div>
+        <div class="menuBtn" id="helpM" onclick="App.setWindow('appHelpW')">Help</div>
+      </div>
+
+      <div class="window" id="appNavW" style="grid-row:2;
+                                              grid-template-rows:auto;
+                                              grid-template-columns:1fr;">        
+        <div id="appNavControlW" style="grid-row:1;
+                                        grid-template-rows:repeat(5,1fr);
+                                        grid-template-columns:repeat(3,1fr);">
+            <div class="direcBtn" id="d20" onclick="NavW.sendStepSize(this.id)">F+M-</div>
+            <div class="direcBtn" id="d21" onclick="NavW.sendStepSize(this.id)">F+</div>
+            <div class="direcBtn" id="d22" onclick="NavW.sendStepSize(this.id)">F+M+</div>
+
+            <div class="direcBtn" id="d10" onclick="NavW.sendStepSize(this.id)">M-</div>
+            <div class="direcBtn" id="laserStateB" onclick="NavW.switchLaser()"></div>
+            <div class="direcBtn" id="d12" onclick="NavW.sendStepSize(this.id)">M+</div>
+
+            <div class="direcBtn" id="d00" onclick="NavW.sendStepSize(this.id)">F-M-</div>
+            <div class="direcBtn" id="d01" onclick="NavW.sendStepSize(this.id)">F-</div>
+            <div class="direcBtn" id="d02" onclick="NavW.sendStepSize(this.id)">F-M+</div>
+
+            <div style="grid-column:1/4;">
+              Step size:
+              <input id="stepSizeR" type="range" size="8" onchange="NavW.updateStepSize()">
+              <span id="stepSizeT"></span>
+            </div>
+
+            <div style="grid-column:2;"><button onclick="NavW.updateCalib('add')">ADD STAR</button></div>            
+        </div>
+
+        <div id="appNavCoordW" style="grid-row:2;
+                                      grid-template-rows:repeat(3, 1fr);
+                                      grid-template-columns:2fr 3fr 1fr 4fr;">
+          <div style="grid-row:1; grid-column:1;" id="phiLabel"> Phi: </div>
+          <div style="grid-row:1; grid-column:2;">            
+            <input id="phiI" onkeyup="NavW.updateCoordSys('insert')" onkeydown="this.setSelectionRange(-1, -1);" type="text" size="8">
+          </div>
+          <div style="grid-row:1; grid-column:3;" id="phiUnit"></div>
+
+          <div style="grid-row:1/3; grid-column:4;">
+            <input type="radio" name="coordSysN" value="steps" onchange="NavW.updateCoordSys('check')">
+            <span> steps </span><br>
+            <input type="radio" name="coordSysN" value="eqFloat" onchange="NavW.updateCoordSys('check')">
+            <span> equatorial dec </span><br>
+            <input type="radio" name="coordSysN" value="eqArc" onchange="NavW.updateCoordSys('check')">
+            <span> equatorial arc </span>
+          </div>
+          
+          <div style="grid-row:2; grid-column:1" id="thetaLabel"> Theta: </div>
+          <div style="grid-row:2; grid-column:2">
+            <input id="thetaS" onclick="NavW.changeCoordSign()" type="button" value="+">
+            <input id="thetaI" onkeyup="NavW.updateCoordSys('insert')" onkeydown="this.setSelectionRange(-1, -1);" type="text" size="6">
+          </div>
+          <div style="grid-row:2; grid-column:3" id="thetaUnit"></div>
+
+          <div style="grid-row:3; grid-column:1/5;
+                      display:grid;
+                      grid-template-columns:1fr 1fr 1fr;">
+            <div><button onclick="NavW.goToActStep()">go Coords</button></div>
+            <div><button onclick="NavW.readActStep()">read Coords</button></div>
+            <div><button onclick="NavW.setZenith()">go Zenith</button></div>
+          </div>
+        </div>
+
+        <div id="appNavStarsW" style="grid-row: 3;
+                                      grid-template-rows: 1fr;
+                                      grid-template-columns: repeat(2, 1fr);">                                      
+          <div>
+            <div>Select star:</div>
+            <div><select id="navStarsCombo" style="width:80%;"></select></div>            
+            <div><button onclick="NavW.loadCoords()">load Coords</button></div>
+          </div>
+
+          <div style="display:grid;
+                      grid-template-columns:1fr 3fr;
+                      grid-template-rows:auto;">
+            <div style="grid-column:1/3">Stars filter</div>
+            <div>Name:</div>
+            <div><input id="namefilter" type="text" size="9"></div>
+            <div>Cons:</div>
+            <div><input id="consfilter" type="text" size="9"></div>
+            <div>HIP:</div>
+            <div><input id="hipfilter" type="text" size="9"></div>
+            <div>HD:</div>
+            <div><input id="hdfilter" type="text" size="9"></div>
+          </div>
+        </div>
+        
+        <div id="appNavCalibW" style="grid-row:4;
+                                      grid-template-rows: auto;
+                                      grid-template-columns: repeat(2, 1fr);">
+          <div><select id="calibStarsCombo" style="width:80%;"></select></div>
+
+          <div>
+            <button onclick="NavW.updateCalib('remThis')">remove this</button>
+            <button onclick="NavW.updateCalib('remAll')">remove all</button>
+          </div>
+          <div style="grid-column:1/3">
+            <br>
+            <button onclick="NavW.calcCalib()">CALC</button>
+            <button onclick="NavW.acceptCalib()">ACCEPT</button>
+          </div>          
+        </div>
+        
+        <div style="grid-row:5;">
+          <br>
+          <textarea id="calibStatus" style="width:90%" rows="10" readonly></textarea>            
+        </div>
+
+      </div>
+
+      <div class="window" id="appCommW">
+
+        <button onclick="CommW.startComm()">
+          Start comm
+        </button>        
+		    <br>		
+        <textarea id="commStatus" rows="10" readonly></textarea>        
+      </div>
+
+      <div class="window" id="appTourW">
+        <button onclick="TourW.goCircle()">go Circle</button>
+      </div>
+      
+    </div>
+    
+  </body>
+</html>
