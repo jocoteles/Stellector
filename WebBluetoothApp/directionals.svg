@@ -5,11 +5,15 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   width="130pt"
-   height="130pt"
-   viewBox="0 0 130 130"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="120.03753pt"
+   height="120.03753pt"
+   viewBox="0 0 120.03753 120.03753"
    version="1.1"
-   id="svg1956">
+   id="svg1956"
+   sodipodi:docname="directionals.svg"
+   inkscape:version="1.0.1 (3bc2e81, 2020-09-07)">
   <metadata
      id="metadata1962">
     <rdf:RDF>
@@ -24,60 +28,112 @@
   </metadata>
   <defs
      id="defs1960" />
-  <path
-     style="fill:#ffbfca;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 1,33 H 33 L 65,65 33,97 H 1 Z m 0,0"
-     id="path1947" />
-  <path
-     style="fill:#ffbfca;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 129,97 H 97 L 65,65 97,33 h 32 z m 0,0"
-     id="path1949" />
-  <path
-     style="fill:#8fee8f;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 97,1 V 33 L 65,65 33,33 V 1 Z m 0,0"
-     id="path1951" />
-  <path
-     style="fill:#8fee8f;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.2;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-opacity:1"
-     d="M 33,129 V 97 L 65,65 97,97 v 32 z m 0,0"
-     id="path1953" />
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="45.476562"
-     y="32.748035"
-     id="text2531"><tspan
-       id="tspan2529"
-       x="45.476562"
-       y="32.748035"
-       style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75">MR</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="46.847656"
-     y="114.74806"
-     id="text2531-3"><tspan
-       id="tspan2529-6"
-       x="46.847656"
-       y="114.74806"
-       style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75">ML</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="89.92775"
-     y="73.748047"
-     id="text2531-7"><tspan
-       id="tspan2529-5"
-       x="89.92775"
-       y="73.748047"
-       style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75">FR</tspan></text>
-  <text
-     xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="9.2988148"
-     y="73.748047"
-     id="text2531-7-3"><tspan
-       id="tspan2529-5-5"
-       x="9.2988148"
-       y="73.748047"
-       style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75">FL</tspan></text>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1440"
+     inkscape:window-height="875"
+     id="namedview1958"
+     showgrid="false"
+     inkscape:zoom="1.5359175"
+     inkscape:cx="129.30146"
+     inkscape:cy="106.19381"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1956"
+     inkscape:snap-bbox="true"
+     inkscape:object-paths="true"
+     inkscape:snap-smooth-nodes="true"
+     inkscape:snap-object-midpoints="true"
+     inkscape:bbox-nodes="true"
+     inkscape:bbox-paths="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-bbox-midpoints="true"
+     inkscape:snap-intersection-paths="true"
+     inkscape:snap-midpoints="true"
+     inkscape:snap-center="true"
+     inkscape:snap-global="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <g
+     id="g2696">
+    <path
+       style="fill:#008000;stroke:none;stroke-width:1.05000004;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:0.6917454"
+       d="M 0.5625,0.5625 H 119.47503 L 60.01876,60.01877 0.5625,0.5625"
+       id="path2677" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75;"
+       x="40.495289"
+       y="31.53867"
+       id="text2531"><tspan
+         sodipodi:role="line"
+         id="tspan2529"
+         x="40.495289"
+         y="31.53867"
+         style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75;stroke:none;">MR</tspan></text>
+  </g>
+  <g
+     id="g2706">
+    <path
+       style="fill:#008000;stroke:none;stroke-width:1.125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:0.6917454"
+       d="M 0.56251,119.47503 H 119.47504 L 60.01877,60.01876 0.56251,119.47503"
+       id="path2673" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#006500;fill-opacity:1;stroke:none;stroke-width:0.75;"
+       x="41.86639"
+       y="105.99496"
+       id="text2531-3"><tspan
+         sodipodi:role="line"
+         id="tspan2529-6"
+         x="41.86639"
+         y="105.99496"
+         style="font-size:24px;fill:#006500;fill-opacity:1;stroke-width:0.75;stroke:none;">ML</tspan></text>
+  </g>
+  <g
+     id="g2701">
+    <path
+       style="fill:#800000;stroke:none;stroke-width:1.125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:0.63087082"
+       d="M 119.47503,119.47503 V 0.5625 l -59.456269,59.45627 59.456269,59.45626"
+       id="path2679" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75;"
+       x="81.174644"
+       y="68.766853"
+       id="text2531-7"><tspan
+         sodipodi:role="line"
+         id="tspan2529-5"
+         x="81.174644"
+         y="68.766853"
+         style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75;stroke:none;">FR</tspan></text>
+  </g>
+  <g
+     id="g2711">
+    <path
+       style="fill:#800000;stroke:none;stroke-width:1.125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;fill-opacity:0.63087082"
+       d="M 0.5625,0.5625 V 119.47503 L 60.01877,60.01876 0.5625,0.5625"
+       id="path2675" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:30px;line-height:1.25;font-family:sans-serif;fill:#800000;fill-opacity:1;stroke:none;stroke-width:0.75;"
+       x="8.0894518"
+       y="68.766769"
+       id="text2531-7-3"><tspan
+         sodipodi:role="line"
+         id="tspan2529-5-5"
+         x="8.0894518"
+         y="68.766769"
+         style="font-size:24px;fill:#800000;fill-opacity:1;stroke-width:0.75;stroke:none;">FL</tspan></text>
+  </g>
 </svg>

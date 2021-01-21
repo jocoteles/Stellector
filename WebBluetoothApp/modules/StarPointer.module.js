@@ -11,10 +11,10 @@ import '../libs/optimization.js'
  * @param {Object} ESP32 - constants used in the ESP32 server
  */
 let ESP32 = {
-	STPS360: 2048,				//steppers number of steps for a 360º rotation
+	STPS360: 2038,				//steppers number of steps for a 360º rotation
 	ZENITH_STEP: 512,			//steppers step values corresponding to the Zenith direction
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
-	COMMBASE: [8, 8, 8, 8],	//number of bits of the base used to communicate the path segments
+	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
 	EXEC_PATH_OPT: 2,        	//option to execute the path
 	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly

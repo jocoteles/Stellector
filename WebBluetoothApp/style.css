@@ -15,6 +15,26 @@ body {
     display: grid;
   }
 
+  #appController {
+    display: grid;
+  }
+
+  #appCalibW {
+    display: grid;                
+  }
+    #appCalibStarsW {
+      display: grid;
+    }
+    #appCalibListW {
+      display: grid;
+    }
+    #appCalibInfoW {
+      display: none;
+    }
+    #appCalibLogW {
+      display: none;
+    }
+
   #appNavW {
     display: grid;    
     padding-top: 10%;        
@@ -37,6 +57,12 @@ body {
     grid-row: 2;
     padding-top: 10%;      
   }
+
+.transitionButton {
+  display: block;
+  width: 100%;
+}
+
 
 .menuBtn {
   justify-content: center;

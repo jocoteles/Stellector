@@ -29,7 +29,7 @@
 #define DELAY_MIN 50            //minimum delay between stepper sucessive steps in DELAY_FACTOR microseconds unit
 
 #define FSCYCLE 4               //steppers full step cycle
-#define STPS360 2048            //steppers number of steps for a 360º rotation
+#define STPS360 2038            //steppers number of steps for a 360º rotation
 #define ZENITH_STEP 512         //steppers step values corresponding to the Zenith direction
 
 #define STPR1_GPIOS {14, 27, 26, 25}  //stepper 1 (fixed) GPIO pins
@@ -172,7 +172,8 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           setZenith();
           break;
     		case READ_ACT_STEPS_OPT:
-    		  stepRead(1e-3, 100.0, 10);
+    		  stepRead(1.0, 5000, 100);
+          //stepReadSimple(1000);
     		  sendActSteps();
       }
     }
@@ -188,11 +189,12 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
         phiP[pathSize+i] = r0[2];
         thetaP[pathSize+i] = r0[3];
       }
-      pathSize += i;
+      pathSize += i;      
     }
     if (vals.length() == 2) { //Read step sizes for free navigation      
       laserP[0] = laserF;
       delayP[0] = DELAY_MIN;
+      //Serial.println(vals[0] - 127);
       phiP[0] = (actStep[0] + vals[0] - 127) % STPS360;
       thetaP[0] = (actStep[1] + vals[1] - 127) % STPS360;
       pathSize = 1;
@@ -205,11 +207,11 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
       float gx = actRect[0];
       float gy = -actRect[1];
       float gz = actRect[2];
-      Serial.print("gxa: ");Serial.println(gx);      
-      Serial.print("gya: ");Serial.println(gy);
-      Serial.print("gza: ");Serial.println(gz);
-      Serial.print("fixa: ");Serial.println(actStep[0]);      
-      Serial.print("moba: ");Serial.println(actStep[1]);      
+      //Serial.print("gxa: ");Serial.println(gx);      
+      //Serial.print("gya: ");Serial.println(gy);
+      //Serial.print("gza: ");Serial.println(gz);
+      //Serial.print("fixa: ");Serial.println(actStep[0]);      
+      //Serial.print("moba: ");Serial.println(actStep[1]);      
       float az = atan(gx/gz);
       float al = atan(gy/pow(gx*gx + gz*gz, 0.5));
       if (gz < 0) az += PI;
@@ -231,11 +233,11 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
       delayP[0] = DELAY_MIN;
       pathSize = 1;
       //navigationF = true;
-      Serial.print("gxd: ");Serial.println(gx);      
-      Serial.print("gyd: ");Serial.println(gy);
-      Serial.print("gzd: ");Serial.println(gz);
-      Serial.print("fixd: ");Serial.println(phiP[0]);      
-      Serial.print("mobd: ");Serial.println(thetaP[0]);      
+      //Serial.print("gxd: ");Serial.println(gx);      
+      //Serial.print("gyd: ");Serial.println(gy);
+      //Serial.print("gzd: ");Serial.println(gz);
+      //Serial.print("fixd: ");Serial.println(phiP[0]);      
+      //Serial.print("mobd: ");Serial.println(thetaP[0]);      
     }
   }
 };
@@ -246,12 +248,22 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
 }*/
 
 void stepperFix (uint16_t s) {
-  for (short int j = 0; j < 4; j++) digitalWrite(stpr1[j], fullStep[s % FSCYCLE][j]);
+  //Serial.print("Fix: ");
+  for (short int j = 0; j < 4; j++){
+    //Serial.print(fullStep[s % FSCYCLE][j]);
+    digitalWrite(stpr1[j], fullStep[s % FSCYCLE][j]);
+  }
+  //Serial.println();
   actStep[0] = s;  
 }
 
 void stepperMob (uint16_t s) {
-  for (short int j = 0; j < 4; j++) digitalWrite(stpr2[j], fullStep[s % FSCYCLE][j]);
+  //Serial.print("Mob: ");
+  for (short int j = 0; j < 4; j++) {
+    //Serial.print(fullStep[s % FSCYCLE][j]);
+    digitalWrite(stpr2[j], fullStep[s % FSCYCLE][j]);
+  }
+  //Serial.println();
   actStep[1] = s;  
 }
 
@@ -284,11 +296,11 @@ void setZenith() {
   phiP[0] = a0;
   thetaP[0] = a0;
   pathSize = 1;
-  stepRead(1e-2, 100.0, 10);
+  stepRead(1.0, 1000, 100);
   do {
     execPath();
-    stepRead(1e-3, 100.0, 10);        
-  } while ((abs(actStep[0] - a0) + abs(actStep[1] - a0))/2 > STEP_PREC);  
+    stepRead(1.0, 1000, 100);        
+  } while ((abs(actStep[0] - a0) > STEP_PREC) || (abs(actStep[1] - a0) > STEP_PREC));  
   steppersOff();
 }
 
@@ -328,6 +340,8 @@ void execPath() {
     phA = ph;
     thA = th;
   }
+  actStep[0] = ph;
+  actStep[1] = th;
 }
 
 void execLastSegmentFromPath() {
@@ -354,26 +368,28 @@ void execLastSegmentFromPath() {
     stepperMob(th);      
     delayMicroseconds(delayP[j]*DELAY_FACTOR);
   }
+  actStep[0] = ph;
+  actStep[1] = th;
   laser(laserP[j]);      
 }
 
 
-void stepRead(float treshold, float maxIter, int avgNumber) {
+void stepRead(float treshold, int maxIter, int avgNumber) {
   /* Read MPU6050 averaged accelerometer values
-   * treshold: relative average deviation stopping criterion
+   * treshold: average deviation stopping criterion
    * maxIter: max number of averages
    * avgNumber: number of partial averages
    */
   float x = 0.0, y = 0.0, z = 0.0;  
   float aXa = 32e3, aYa = 32e3, aZa = 32e3;
-  float std = 1.0;
+  float dev = 1.0e3;
   float N = 0;
   float ph, th;
   int16_t acX, acY, acZ;
   float amX, amY, amZ; // accelerometer average values
   float adX, adY, adZ; // accelerometer standard deviation values  
     
-  while ((std > treshold) && (N < maxIter)) {
+  while ((dev > treshold) && (N < maxIter)) {
     Wire.beginTransmission(MPU_addr);
     Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
     Wire.endTransmission(false);
@@ -382,9 +398,9 @@ void stepRead(float treshold, float maxIter, int avgNumber) {
     acY =  Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
     acZ = -Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
     //tmp = Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
-    x += acZ;
-    y += acY;
-    z += acX;
+    x += (float) acZ;
+    y += (float) acY;
+    z += (float) acX;
     /*x2 += acX*acX;
     y2 += acY*acY;
     z2 += acZ*acZ;*/
@@ -396,21 +412,56 @@ void stepRead(float treshold, float maxIter, int avgNumber) {
       adX = fabs(amX - aXa);
       adY = fabs(amY - aYa);
       adZ = fabs(amZ - aZa);
-      aXa = amX; aYa = amY; aZa = amZ;
-      std = (fabs(adX/amX) + fabs(adY/amY) + fabs(adZ/amZ))/3.0;
+      dev = (fabs(amX - aXa) + fabs(amY - aYa) + fabs(amZ - aZa))/3;
+      aXa = amX; aYa = amY; aZa = amZ;      
     }    
-    delay(5);
-  }  
+    //delay(5);
+  }
+  //Serial.println(N);  
   ph = atan(-amX/pow(amY*amY + amZ*amZ, 0.5));
   th = atan(-amZ/amY);
   actRect[0] = amX;
   actRect[1] = amY;
   actRect[2] = amZ;
   actStep[0] = angToStep(ph);
-  actStep[1] = angToStep(th);    
+  actStep[1] = angToStep(th);      
   /*Serial.print("amX, adX: "); Serial.print(amX); Serial.print(", "); Serial.println(adX);
   Serial.print("amY, adY: "); Serial.print(amY); Serial.print(", "); Serial.println(adY);
   Serial.print("amZ, adZ: "); Serial.print(amZ); Serial.print(", "); Serial.println(adZ);*/
+}
+
+void stepReadSimple(int avgNumber) {
+  /* Read MPU6050 averaged accelerometer values
+   * avgNumber: number of averages
+   */
+  int32_t x = 0, y = 0, z = 0;    
+  float ph, th;
+  int16_t acX, acY, acZ;
+  float amX, amY, amZ;
+    
+  for (int i = 0; i < avgNumber; i++) {
+    Wire.beginTransmission(MPU_addr);
+    Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+    Wire.endTransmission(false);
+    Wire.requestFrom(MPU_addr, 6, true);  // request a total of 6 registers
+    acX = -Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
+    acY =  Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+    acZ = -Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+    x += acZ;
+    y += acY;
+    z += acX;
+    //delay(5);
+  }
+  amX = float(x)/avgNumber;
+  amY = float(y)/avgNumber;
+  amZ = float(z)/avgNumber;  
+  ph = atan(-amX/pow(amY*amY + amZ*amZ, 0.5));
+  th = atan(-amZ/amY);
+  actRect[0] = amX;
+  actRect[1] = amY;
+  actRect[2] = amZ;
+  actStep[0] = angToStep(ph);
+  actStep[1] = angToStep(th);      
 }
 
 void sendActSteps() {
@@ -477,9 +528,9 @@ void loop() {
   
   if (navigationF) { //Steppers free navigation movement    
     if (checkPathBoundaries()) {
-      //stepRead(1e-2, 100.0, 10);
+      //stepRead(10.0, 100, 10);
       execPath();
-      //stepRead(1e-2, 100.0, 10);
+      //stepRead(10.0, 100, 10);
       //sendActSteps();
       steppersOff();
     }    
@@ -487,13 +538,21 @@ void loop() {
   }
 
   if (execPathF) { //Path execution
-    stepRead(1e-3, 100.0, 10);
+    stepRead(1.0, 1000, 100);
+    //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
       execPath();      
       if (!cyclicPathF) do {
-        execLastSegmentFromPath(); 
-        stepRead(1e-3, 100.0, 10);        
-      } while ((abs(actStep[0] - phiP[pathSize-1]) + abs(actStep[1] - thetaP[pathSize-1]))/2 > STEP_PREC);        
+        execLastSegmentFromPath();
+        //delay(500);         
+        stepRead(1.0, 5000, 100);        
+        //stepReadSimple(1000);
+        Serial.println("-------------------------------------");
+        Serial.print("actStep0: ");Serial.println(actStep[0]);
+        Serial.print("actStep1: ");Serial.println(actStep[1]);
+        Serial.print("phiP: ");Serial.println(phiP[pathSize-1]);
+        Serial.print("theP: ");Serial.println(thetaP[pathSize-1]);        
+      } while ((abs(actStep[0] - phiP[pathSize-1]) > STEP_PREC) || (abs(actStep[1] - thetaP[pathSize-1]) > STEP_PREC));        
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;

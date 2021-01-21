@@ -13,3 +13,5 @@ https://github.com/ofrohn/d3-celestial   (contém bancos de dados uteis no forma
 https://github.com/lizard-isana/orb.js   (pacote completo e essencial de astronomia)
 
 Para investigações futuras (comunicação serial pelo browser via bluetooth): https://github.com/WICG/serial/blob/gh-pages/EXPLAINER.md
+
+"uranus":{"name":"Uranus planet"},"neptune":{"name":"Neptune planet"}
