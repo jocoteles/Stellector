@@ -57,6 +57,10 @@ $stepSizeR.value = $stepSizeR.min;
 
 let stepSize;
 
+let pointerStyles = { 'point': {'name': 'point'},
+                      'bpoint': {'name': 'blinking point', 'interval': 2500},
+                      'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60}};
+
 /*----------------------- */
 
 
@@ -146,6 +150,14 @@ App.filterStarCombo = function (filter, comboId, data, label) {
         }
       }
     }
+  }
+}
+
+App.createPointerStyleOptions = function (pointerStyleCombo) {
+  for (let opt in pointerStyles) {
+    let option = document.createElement("option");
+    option.text = pointerStyles[opt].name;
+    pointerStyleCombo.add(option);
   }
 }
 
@@ -450,6 +462,7 @@ NavW.updateCoordSys = function (type) {
   document.getElementById("thetaUnit").innerHTML = thetaRepr.units[i];
 }
 
+
 /**
  * A namespace for the Communication Window functions in the client app.
  * @namespace
@@ -505,6 +518,9 @@ $laserStateB.style.backgroundColor = laserStateBOFF_color;
 //Set initial coordinate system:
 document.getElementsByName("coordSysN")[0].checked = "true";
 NavW.updateCoordSys('check');
+
+//Set pointer style options for the star and solars ytem tab in the navigation menu:
+App.createPointerStyleOptions(document.getElementById("ssPointerStyle"));
 
 //Initialize calib stars list:
 calibStars = [];
