@@ -15,6 +15,16 @@ const $laserStateB = document.getElementById("laserStateB");
 const $commStatus = document.getElementById("commStatus");
 const $calibLog = document.getElementById("calibLog");
 const $calibInfo = document.getElementById("calibInfo");
+const $raH = document.getElementById("raInputH");
+const $raM = document.getElementById("raInputM");
+const $raS = document.getElementById("raInputS");
+const $raF = document.getElementById("raInputF");
+const $decD = document.getElementById("decInputD");
+const $decM = document.getElementById("decInputM");
+const $decS = document.getElementById("decInputS");
+const $decF = document.getElementById("decInputF");  
+const $fixI = document.getElementById("fixInput");
+const $mobI = document.getElementById("mobInput");
 
 const laserStateBOFF = "laser is OFF";
 const laserStateBON = "laser is ON";
@@ -101,9 +111,9 @@ App.time = function () {
   return d.getHours() + 'h' + d.getMinutes() + 'm' + d.getSeconds() + 's: ';
 }
 
-App.equatorialFromStars6 = function (starSelected) {
+App.equatorialFromStars6 = function (starSelected, starsObject) {
   try {
-    let stars = stars6.features;
+    let stars = starsObject.features;
     let obj = starSelected.text.split(" ");
     let objType = obj[obj.length-1];    
     if (objType == "Moon" || objType == "planet") {
@@ -153,10 +163,10 @@ App.filterStarCombo = function (filter, comboId, data, label) {
   }
 }
 
-App.createPointerStyleOptions = function (pointerStyleCombo) {
-  for (let opt in pointerStyles) {
+App.createPointerStyleOptions = function (pointerStyleCombo, styles) {
+  for (let opt in styles) {
     let option = document.createElement("option");
-    option.text = pointerStyles[opt].name;
+    option.text = styles[opt].name;
     pointerStyleCombo.add(option);
   }
 }
@@ -206,7 +216,7 @@ CalibW.updateCalib = async function (action) {
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
             let opt = $nsc.options[$nsc.selectedIndex];            
-            let eq = App.equatorialFromStars6(opt);            
+            let eq = App.equatorialFromStars6(opt, stars6);            
             if (eq) {
               let t = new Date();
               let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
@@ -281,13 +291,15 @@ CalibW.acceptCalib = function () {
  */
 window.NavW = {};
 
-NavW.setZenith = async function () {
+NavW.goZenith = async function () {
 	await BleInstance.goZenith();
 }
 
-NavW.goToActStep = async function () {
+NavW.goEquatorial = async function () {
 	let laser = 0;	
 	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
+  CoordNavW.ra = Number($raF.value);
+  CoordNavW.dec = Number($decF.value);
 	let seg = new PathSP.Segment(CoordNavW, laser, 0);
 	let path = new PathSP.Path();
 	path.addSegment(seg);
@@ -295,11 +307,27 @@ NavW.goToActStep = async function () {
 	await BleInstance.goPath(commPath);	
 }
 
-NavW.readActStep = async function () {
+NavW.goSteps = async function () {
+	let laser = 0;	
+	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
+  let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
+  CoordNavW = CalibInstance.celestialFromLocal(Step);  
+	let seg = new PathSP.Segment(CoordNavW, laser, 0);
+	let path = new PathSP.Path();
+	path.addSegment(seg);
+	let commPath = new CommSP.CommPath(path, CalibInstance);	
+	await BleInstance.goPath(commPath);	  
+}
+
+NavW.readCoords = async function () {
   if (await BleInstance.readActSteps()) {				
 	  setTimeout(function() {	  	
 	  	CoordNavW = CalibInstance.celestialFromLocal(BleInstance.actStep);
-	  	NavW.updateCoordSys('check');
+      $decF.value = CoordNavW.dec.toFixed(4);
+      $raF.value = CoordNavW.ra.toFixed(4);
+      $fixI.value = BleInstance.actStep.fix;
+      $mobI.value = BleInstance.actStep.mob;
+	  	//NavW.updateCoordSys('check');
 	  }, 500);
   }
 }
@@ -307,159 +335,64 @@ NavW.readActStep = async function () {
 NavW.loadCoords = function () {
   let $nsc = document.getElementById("navStarsCombo");
   let opt = $nsc.options[$nsc.selectedIndex];              
-  CoordNavW = App.equatorialFromStars6(opt);
+  CoordNavW = App.equatorialFromStars6(opt, stars6);
   NavW.updateCoordSys('check');
 }
 
-NavW.floatToArc = function (c, unit) {  
-  let symb = {ra: ['h ', 'm ', 's'], dec: ['° ', '\' ', '\"']};
-  if (c != 0) {
-    let c_p = Math.trunc(c);
-    let min = (c - c_p)*60;
-    let c_m = Math.trunc(min);
-    let c_s = Math.round((min - c_m)*60);    
-    let r = "";
-    let pad;
-    if (c_p != 0) {
-      r += String(c_p) + symb[unit][0];
-      pad = 2;
-    } else pad = 0;    
-    if (c_m != 0) {
-      r += String(c_m).padStart(pad,'0') + symb[unit][1];
-      pad = 2;
-    } else pad = 0;
-    if (c_s != 0) r += String(c_s).padStart(pad,'0') + symb[unit][2];
-    return r;
-  }  
-  else return symb[unit][2];  
-}
-
-NavW.arcToFloat = function (a, unit) {
-  if (a != "s") {
-    let symb = {ra: ['h', 'm', 's'], dec: ['°', '\'', '\"']};
-    let aa = a.split(' ');
-    let r = 0;
-    for (let x of aa) {
-      if (x.search(symb[unit][0]) > 0) r += Number(x.replace(symb[unit][0], ''));
-      if (x.search(symb[unit][1]) > 0) r += Number(x.replace(symb[unit][1], ''))/60;
-      if (x.search(symb[unit][2]) > 0) r += Number(x.replace(symb[unit][2], ''))/3600;
+NavW.updateCoordSys = function ($elem) {     
+  if ($elem.value != '') {   
+    let value = Number($elem.value);   
+    if ($elem.id == 'raInputH') {    
+      if (value > 23) value = 23;
+      if (value < 0) value = 0;
+      $elem.value = Math.round(value);
     }
-    return r;
+    if ($elem.id == 'decInputD') {    
+      if (value > 89) value = 89;
+      if (value < -89) value = -89;
+      $elem.value = Math.round(value);    
+    }
+    if ($elem.id.includes('M') || $elem.id.includes('S')) {
+      if (value > 59) value = 59;
+      if (value < 0) value = 0;
+      $elem.value = Math.round(value);    
+    }
+    if ($elem.id == 'raInputF') {
+      if (value > 23.997) value = 23.997;
+      if (value < 0) value = 0;
+      let h = Math.trunc(value);
+      let m = Math.trunc(60*(value - h));
+      let s = Math.trunc(60*(60*(value - h) - m));
+      $raH.value = h;
+      $raM.value = m;
+      $raS.value = s;
+    }
+    if ($elem.id == 'decInputF') {
+      if (value > 89.997) value = 89.997;
+      if (value < -89.997) value = -89.997;
+      let d = Math.trunc(value);
+      let x = Math.abs(value) - Math.abs(d);
+      let m = Math.trunc(60*x);
+      let s = Math.trunc(60*(60*x - m));
+      $decD.value = d;
+      $decM.value = m;
+      $decS.value = s;
+    }
+    if ($elem.id == 'fixInput' || $elem.id == 'mobInput') {
+      if (value > 1023) value = 1023;
+      if (value < 0) value = 0;
+      $elem.value = Math.trunc(value);
+    }
   }
-  else return 0;
-}
-
-NavW.changeCoordSign = function () {  
-  let $elem = document.getElementById('thetaS');
-  let s = -1*Number($elem.value + '1');
-  if (s >= 0) $elem.value = '+';
-  else $elem.value = '-';
-  CoordNavW.dec *= -1;    
-}
-
-NavW.updateCoordSys = function (type) {
-  let val = document.querySelector('input[name="coordSysN"]:checked').value;
-  let $ph = document.getElementById("phiI").value;  
-  let $th = document.getElementById("thetaI").value;      
-  let i;
-  let ph, th, ths;  
-  switch (val) {
-    case "steps":            
-      i = 0;
-      if (type == 'check') {
-        document.getElementById("thetaS").disabled = true;
-        let s = CalibInstance.localFromCelestial(CoordNavW);
-        ph = s.fix;
-        th = s.mob;        
-      }
-      else if (type == 'insert') {         
-        ph = $ph;
-        th = $th;
-        if (isNaN(Number(ph[ph.length-1]))) ph = ph.slice(0,-1);
-        if (isNaN(Number(th[th.length-1]))) th = th.slice(0,-1);        
-        let step = new VecSP.Step(Number(ph), Number(th));        
-        CoordNavW = CalibInstance.celestialFromLocal(step);
-      }
-      break;
-    case "eqFloat":
-      i = 1;                        
-      if (type == 'check') {        
-        document.getElementById("thetaS").disabled = false;
-        ph = CoordNavW.ra.toFixed(5);
-        th = Math.abs(CoordNavW.dec).toFixed(5);
-        ths = Math.sign(CoordNavW.dec);
-        if (ths >= 0) document.getElementById("thetaS").value = '+';
-        else document.getElementById("thetaS").value = '-';
-      }
-      else if (type == 'insert') {
-        if (document.getElementById("thetaS").value == '+') ths = 1;
-        else ths = -1;    
-        ph = $ph;
-        th = $th; 
-        if (isNaN(Number(ph))) ph = ph.slice(0,-1);
-        if (isNaN(Number(th))) th = th.slice(0,-1);          
-        CoordNavW.ra = Number(ph);
-        CoordNavW.dec = ths*Number(th);
-      }
-      break;
-    case "eqArc":          
-      i = 2;
-      if (type == 'check') {
-        document.getElementById("thetaS").disabled = false;
-        ph = NavW.floatToArc(CoordNavW.ra, 'ra');
-        th = NavW.floatToArc(Math.abs(CoordNavW.dec), 'dec');        
-        ths = Math.sign(CoordNavW.dec);
-        if (ths >= 0) document.getElementById("thetaS").value = '+';
-        else document.getElementById("thetaS").value = '-';        
-      }
-      else if (type == 'insert') {
-        if (document.getElementById("thetaS").value == '+') ths = 1;
-        else ths = -1;
-        ph = $ph;
-        th = $th;
-        let rs = ['h ', 'm ', 's'];
-        let ds = ['° ', '\' ', '\"'];
-        if (ph.search(rs[2]) == -1) ph = ph.slice(0, ph.length-1);        
-        let phr = ph.replace(rs[0],'').replace(rs[1],'').replace(rs[2],'');        
-        let pl = phr.length;
-        if (pl > 6) {
-          phr = phr.slice(0, 6);
-          pl = 6;
-        }
-        let n = Math.trunc(pl/2);
-        let r = pl%2;
-        ph = '';
-        let i;
-        for (i = 0; i < n; i++) {
-          ph = phr.slice(r+2*(n-(i+1)), r+2*(n-i)) + rs[2-i] + ph;
-        }
-        if (r != 0) ph = phr.slice(0, 1) + rs[2-i] + ph;
-        if (ph.length == 0) ph = rs[2];
-        CoordNavW.ra = NavW.arcToFloat(ph, 'ra');
-        if (th.search(ds[2]) == -1) th = th.slice(0, th.length-1);        
-        let thr = th.replace(ds[0],'').replace(ds[1],'').replace(ds[2],'');
-        let tl = thr.length;
-        if (tl > 6) {
-          thr = thr.slice(0, 6);
-          tl = 6;
-        }
-        n = Math.trunc(tl/2);
-        r = tl%2;
-        th = '';        
-        for (i = 0; i < n; i++) {
-          th = thr.slice(r+2*(n-(i+1)), r+2*(n-i)) + ds[2-i] + th;
-        }
-        if (r != 0) th = thr.slice(0, 1) + ds[2-i] + th;
-        if (th.length == 0) th = ds[2];
-        CoordNavW.dec = NavW.arcToFloat(th, 'dec')*ths;
-      }
-  }    
-  document.getElementById("phiLabel").innerHTML = phiRepr.labels[i];
-  document.getElementById("phiI").value = ph;  
-  document.getElementById("phiUnit").innerHTML = phiRepr.units[i];
-  document.getElementById("thetaLabel").innerHTML = thetaRepr.labels[i];
-  document.getElementById("thetaI").value = th;  
-  document.getElementById("thetaUnit").innerHTML = thetaRepr.units[i];
+  if ($elem.id.includes('ra') && !$elem.id.includes('F')) {
+    let res = Number($raH.value) + Number($raM.value)/60 + Number($raS.value)/3600;
+    $raF.value = res.toFixed(4);
+  }
+  if ($elem.id.includes('dec') && !$elem.id.includes('F')) {    
+    let s = ((Number($decD.value) < 0) ? -1 : 1);
+    let res = Number($decD.value) + s*Number($decM.value)/60 + s*Number($decS.value)/3600;
+    $decF.value = res.toFixed(4);
+  }
 }
 
 
@@ -516,11 +449,11 @@ $laserStateB.innerHTML = laserStateBOFF;
 $laserStateB.style.backgroundColor = laserStateBOFF_color;
 
 //Set initial coordinate system:
-document.getElementsByName("coordSysN")[0].checked = "true";
-NavW.updateCoordSys('check');
+//document.getElementsByName("coordSysN")[0].checked = "true";
+//NavW.updateCoordSys('check');
 
-//Set pointer style options for the star and solars ytem tab in the navigation menu:
-App.createPointerStyleOptions(document.getElementById("ssPointerStyle"));
+//Set pointer style options for the star and solar sytem tab in the navigation menu:
+App.createPointerStyleOptions(document.getElementById("ssPointerStyle"), pointerStyles);
 
 //Initialize calib stars list:
 calibStars = [];
