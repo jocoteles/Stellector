@@ -258,7 +258,7 @@ VecSP.Calibration = class {
 		this.stats.max = 0;
 		let eq1, eq2, ang;
 		for (let s of this.stars) {
-			eq1 = this.celestialFromLocal(s.step).toVector3();				
+			eq1 = this.equatorialFromStep(s.step).toVector3();				
 			eq2 = s.eq.toVector3();
 			ang = eq1.angleTo(eq2)*180/Math.PI;
 			if (ang < this.stats.min) {
@@ -273,27 +273,27 @@ VecSP.Calibration = class {
 		}			
 	}
 	/**
-	 * Local to Celestial convertion on the date of this function call.
+	 * Celestial from Local coordinates convertion on the given date.
 	 * @param {VecSP.Step} s - local coordinate
+	 * @param {Date} d - given date (actual date, if ommitted)
 	 * @returns {VecSP.Equatorial} celestial coordinate
 	 */
-	celestialFromLocal (s) {		
+	equatorialFromStep (s, d = new Date()) {		
 		let eq3 = s.toVector3()
 		eq3.applyEuler(this.eulerLocalToCelestial);
 		let eq = new VecSP.Equatorial();
-		eq.fromVector3(eq3);
-		let d = new Date();
+		eq.fromVector3(eq3);		
 		eq.ra += (d - this.t0)/3.6e6;
 		return eq;
 	}
 	/**
-	 * Celestial to Local convertion on the date of this function call.
+	 * Local from Celestial coordinates convertion on the given date.
 	 * @param {VecSP.Equatorial} eq - celestial coordinate
+	 * @param {Date} d - given date (actual date, if ommitted)
 	 * @returns {VecSP.Step} local coordinate
 	 */
-	localFromCelestial (eq0) {		
-		let eq = eq0.clone();
-		let d = new Date();
+	stepFromEquatorial (eq0, d = new Date()) {		
+		let eq = eq0.clone();		
 		eq.ra -= (d - this.t0)/3.6e6;
 		let step3 = eq.toVector3().applyEuler(this.eulerCelestialToLocal);
 		let step = new VecSP.Step();
@@ -348,7 +348,7 @@ CommSP.CommPath = class {
 	 */
 	parseSegment (Segment) {
 		//Encoding to this._encBase:
-		let step = this.calib.localFromCelestial(Segment.eq);
+		let step = this.calib.stepFromEquatorial(Segment.eq);
 		let data = [Segment.laser, Segment.delay, step.fix, step.mob];
 		let x = 0;
 		let b = 0;

@@ -19,6 +19,8 @@
     <script src="modules/StarPointer.module.js" type="module" defer></script>
     <script type="text/javascript" src="data/stars.6.js"></script>    
     <script type="text/javascript" src="data/starnames.js"></script>    
+    <script type="text/javascript" src="data/dso.6.js"></script>    
+    <script type="text/javascript" src="data/dsonames.js"></script>    
     <script src="script-v2.js" type="module" defer></script>
   </head>
 
@@ -96,7 +98,7 @@
         </svg>
       </div>
       <div style="grid-column:1/3;">
-        <div>Step size: <span id="stepSizeT"></span></div>
+        <div>Step size: <label id="stepSizeT"></label></div>
         <input id="stepSizeR" type="range" onchange="Controller.updateStepSize()" list="steplist">
         <datalist id="steplist">
           <option>0</option>
@@ -117,20 +119,18 @@
         <div id="appCalibStarsW" style="grid-template-rows:1fr;grid-template-columns:repeat(2, 1fr);">                                      
           <div style="grid-column:1/3;"><button onclick="CalibW.updateCalib('add')">ADD CALIB OBJECT</button></div>
           <div>
-            <div>Select object:</div>
-            <div><select id="calibStarsCombo" style="width:80%;"></select></div>                        
+            <div>Object type:</div>
+            <div><select id="calibObjectsTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
+            <div>Object selected:</div>
+            <div><select id="calibObjectsCombo" style="width:80%;"></select></div>                        
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 3fr;grid-template-rows:auto;">
+          <div style="display:grid;grid-template-columns:1fr 3fr;">
             <div style="grid-column:1/3">Object filter</div>
-            <div>Name:</div>
-            <div><input id="nameCfilter" type="text" size="9"></div>
-            <div>Cons:</div>
-            <div><input id="consCfilter" type="text" size="9"></div>
-            <div>HIP:</div>
-            <div><input id="hipCfilter" type="text" size="9"></div>
-            <div>HD:</div>
-            <div><input id="hdCfilter" type="text" size="9"></div>
+            <div>Name:</div><div><input id="nameCfilter" type="text" size="9"></div>
+            <div>Cons:</div><div><input id="consCfilter" type="text" size="9"></div>
+            <div>HIP:</div><div><input id="hipCfilter" type="text" size="9"></div>
+            <div>HD:</div><div><input id="hdCfilter" type="text" size="9"></div>
           </div>
         </div>
         
@@ -161,34 +161,59 @@
       </div>
 
       <div class="window" id="appNavW" style="grid-template-rows:auto;grid-template-columns:1fr;">        
-
-        <button class="transitionButton" id="appNavStarsBtn" onclick="App.changeNav('appNavStarsW')">Stars and Solar System</button>
+        
+        <button class="transitionButton" id="appNavStarsBtn" onclick="App.changeNav('appNavStarsW')">Sky Objects</button>
         <div id="appNavStarsW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">                                      
           <div>
-            <div>Select object:</div>
-            <div><select id="navStarsCombo" style="width:80%;"></select></div>            
-            <div><button onclick="NavW.loadCoords()">load Coords</button></div>
+            <div>Object type:</div>
+            <div><select id="navObjectsTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
+            <div>Object selected:</div>
+            <div><select id="navObjectsCombo" style="width:80%;"></select></div>            
+            <div><button onclick="NavW.showCoords()">show Coords</button></div>
           </div>
 
-          <div style="display:grid;
-                      grid-template-columns:1fr 3fr;
-                      grid-template-rows:auto;">
+          <div style="display:grid;grid-template-columns:1fr 3fr;">
             <div style="grid-column:1/3">Object filter</div>
-            <div>Name:</div>
-            <div><input id="nameNfilter" type="text" size="9"></div>
-            <div>Cons:</div>
-            <div><input id="consNfilter" type="text" size="9"></div>
-            <div>HIP:</div>
-            <div><input id="hipNfilter" type="text" size="9"></div>
-            <div>HD:</div>
-            <div><input id="hdNfilter" type="text" size="9"></div>
+            <div>Name:</div><div><input id="nameNfilter" type="text" size="9"></div>
+            <div>Es:</div><div><input id="esNfilter" type="text" size="9"></div>
+            <div>Cons:</div><div><input id="consNfilter" type="text" size="9"></div>
+            <div>HIP:</div><div><input id="hipNfilter" type="text" size="9"></div>
+            <div>HD:</div><div><input id="hdNfilter" type="text" size="9"></div>            
+            <div>ID:</div><div><input id="idNfilter" type="text" size="9"></div>
           </div>
           
           <div style="grid-column:1/3;">
-            <span>Pointer style: </span>
+            <label>Pointer style: </label>
             <select id="ssPointerStyle"></select>
           </div>
+
+          <div style="grid-column:1/3;">
+            <label>Time step: </label>
+            <input type="number" id="timeStepY" value="0" min="0" max="10" step="1" style="width:10%;" oninput="NavW.timeStepCheck(this)">years
+            <input type="number" id="timeStepD" value="0" min="0" max="365" step="1" style="width:10%;" oninput="NavW.timeStepCheck(this)">days
+            <input type="number" id="timeStepM" value="0" min="0" max="1440" step="1" style="width:10%;" oninput="NavW.timeStepCheck(this)">minutes
+          </div>          
+          <div style="grid-column:1/3;">
+            <label>Date:</label><input type="date" id="navDate">
+            <label>Time:</label><input type="time" id="navTime">
+          </div>
+          <span style="grid-column:1;">
+            <div>
+              <button onclick="NavW.goStar('-1')">go Back</button>              
+              <button onclick="NavW.goStar('+1')">go Forward</button>              
+            </div>
+            <input type="checkbox" id="sideralOffset">sideral offset
+          </span>
+          <div style="grid-column:2;">
+            <div><button onclick="NavW.goStar('now')">go Now</button></div>
+            <div><button onclick="NavW.goStar('date')">go DateTime</button></div>
+          </div>
+          
         </div>        
+
+        <button class="transitionButton" id="appNavSPathsBtn" onclick="App.changeNav('appNavSPathsW')">Sky Paths</button>
+        <div id="appNavSPathsW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">
+        </div>
 
         <button class="transitionButton" id="appNavCoordBtn" onclick="App.changeNav('appNavCoordW')">Coordinates</button>      
         <div id="appNavCoordW" style="grid-template-columns:2fr 5fr 3fr;">
@@ -205,8 +230,8 @@
           <div style="grid-row:2; grid-column:1;">Dec.:</div>
           <div style="grid-row:2; grid-column:2;">
             <input type="number" id="decInputD" min="-89" max="89" step="1" style="width:17%;" oninput="NavW.updateCoordSys(this)">°
-            <input type="number" id="decInputM" min="0" max="59" step="1" style="width:17%;" oninput="NavW.updateCoordSys(this)">m
-            <input type="number" id="decInputS" min="0" max="59" step="1" style="width:17%;" oninput="NavW.updateCoordSys(this)">s
+            <input type="number" id="decInputM" min="0" max="59" step="1" style="width:17%;" oninput="NavW.updateCoordSys(this)">'
+            <input type="number" id="decInputS" min="0" max="59" step="1" style="width:17%;" oninput="NavW.updateCoordSys(this)">"
           </div>
           <div style="grid-row:2; grid-column:3;">
             <input type="number" id="decInputF" min="-89.9997" max="89.9997" style="width:70%;" oninput="NavW.updateCoordSys(this)">° 
@@ -222,7 +247,11 @@
           <div style="grid-row:5; grid-column:2;">
             <input type="number" id="mobInput" min="0" max="1023" step="1" style="width:25%;" oninput="NavW.updateCoordSys(this)">steps
           </div>
-          <button style="grid-row:4/6; grid-column:3;" onclick="NavW.goSteps()">go Steps</button>                    
+          <button style="grid-row:4/6; grid-column:3;" onclick="NavW.goSteps()">go Steps</button>
+          <div style="grid-column:1/4;">
+            <label>Pointer style: </label>
+            <select id="coordsPointerStyle"></select>
+          </div>                    
         </div>        
 
       </div>

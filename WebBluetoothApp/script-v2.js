@@ -7,7 +7,7 @@ import './libs/orb.v2.min.js';
 
 
 /* --------------------
-  Frontend variables */
+  Frontend constants */
 
 const $stepSizeR = document.getElementById("stepSizeR");
 const $stepSizeT = document.getElementById("stepSizeT");
@@ -25,51 +25,55 @@ const $decS = document.getElementById("decInputS");
 const $decF = document.getElementById("decInputF");  
 const $fixI = document.getElementById("fixInput");
 const $mobI = document.getElementById("mobInput");
+const $navDate = document.getElementById("navDate");
+const $navTime = document.getElementById("navTime");
+const $timeStepY = document.getElementById("timeStepY");
+const $timeStepD = document.getElementById("timeStepD");
+const $timeStepM = document.getElementById("timeStepM");
+const $sideralOffset = document.getElementById("sideralOffset");
+const $ssPointerStyle = document.getElementById("ssPointerStyle");
+const $coordsPointerStyle = document.getElementById("coordsPointerStyle");
+const $calibObjectsTypeCombo = document.getElementById("calibObjectsTypeCombo");
+const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
 
 const laserStateBOFF = "laser is OFF";
 const laserStateBON = "laser is ON";
 const laserStateBON_color = "#9bf296";
 const laserStateBOFF_color = "#f76459";
 
-const phiRepr = {labels: ["Fix", "RA", "RA"],
-                units: ["step", "h", ""]};
-const thetaRepr = {labels: ["Mob", "Dec", "Dec"],
-                units: ["step", "deg", ""]};    
+//"star": ["name", "bayer", "flam", "c", "hd", "hip"]
+const objectsLabels = { "star": ["name", "c", "hd", "hip"],
+                        "dso": ["name", "es", "id"],
+                        "ss": ["name"]}
 
-const starnames = JSON.parse(starnamesJSON);
-const stars6 = JSON.parse(stars6JSON);
-const starnamesLabels = ["name", "bayer", "flam", "c", "hd", "hip"] 
-
-starnames["moon"] = {"name":"Earth\'s Moon"};
-starnames["mercury"] = {"name":"Mercury planet"};
-starnames["venus"] = {"name":"Venus planet"};
-starnames["mars"] = {"name":"Mars planet"};
-starnames["jupiter"] = {"name":"Jupiter planet"};
-starnames["saturn"] = {"name":"Saturn planet"};
-starnames["uranus"] = {"name":"Uranus planet"};
-starnames["neptune"] = {"name":"Neptune planet"};
-
-let calibStars;
-
-let starCalibF = [["name", document.getElementById("nameCfilter")],
+const objectCalibF = [["name", document.getElementById("nameCfilter")],
                   ["c", document.getElementById("consCfilter")],
                   ["hip", document.getElementById("hipCfilter")],
                   ["hd", document.getElementById("hdCfilter")]];
-let starNavF = [["name", document.getElementById("nameNfilter")],
+const objectNavF = [["name", document.getElementById("nameNfilter")],
+                ["es", document.getElementById("esNfilter")],
                 ["c", document.getElementById("consNfilter")],
                 ["hip", document.getElementById("hipNfilter")],
-                ["hd", document.getElementById("hdNfilter")]];
+                ["hd", document.getElementById("hdNfilter")],
+                ["id", document.getElementById("idNfilter")]];
+
+const pointerStyles = { 'point': {'name': 'point'},
+                        'bpoint': {'name': 'blinking point', 'interval': 2500},
+                        'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60, 'increment': Math.PI/20}};
+
+const objectsTypeOptions = {'ss': {'name': 'solar system'},
+                            'star': {'name': 'star'},
+                            'dso': {'name': 'deep sky and cluster'}};
+const calibTypeOptions = {'ss': {'name': 'solar system'},
+                          'star': {'name': 'star'}};
+
+
+const filterComboMinLength = 0;
 
 $stepSizeR.min = 0;
 $stepSizeR.max = 7;
 $stepSizeR.step = 1;
-$stepSizeR.value = $stepSizeR.min;
-
-let stepSize;
-
-let pointerStyles = { 'point': {'name': 'point'},
-                      'bpoint': {'name': 'blinking point', 'interval': 2500},
-                      'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60}};
+$stepSizeR.value = $stepSizeR.min;                          
 
 /*----------------------- */
 
@@ -83,7 +87,21 @@ let CalibInstance = new VecSP.Calibration();
 let CalibTemp = new VecSP.Calibration();
 let CoordNavW = new VecSP.Equatorial(0, 0);
 
+let calibStars;
+let stepSize;
+
+let objectsNames = {};
+let objectsData = {};
+
 /*----------------------- */
+
+
+/* --------------------
+  Astronomy constants */
+
+const sideralDay = 86164090.5; //[ms]
+
+/*--------------------- */
 
 /**
  * A namespace for the general App functions in the client app.
@@ -111,50 +129,81 @@ App.time = function () {
   return d.getHours() + 'h' + d.getMinutes() + 'm' + d.getSeconds() + 's: ';
 }
 
-App.equatorialFromStars6 = function (starSelected, starsObject) {
-  try {
-    let stars = starsObject.features;
-    let obj = starSelected.text.split(" ");
-    let objType = obj[obj.length-1];    
-    if (objType == "Moon" || objType == "planet") {
+App.localDateString = function (date) {
+  let year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  if (month < 10) month = '0' + month;
+  if (day < 10) day = '0' + day;
+  return String(year) + '-' + String(month) + '-' + String(day);
+}
+
+App.localTimeString = function (date) {
+  let hour = date.getHours();
+  let minute = date.getMinutes();  
+  if (hour < 10) hour = '0' + hour;
+  if (minute < 10) minute = '0' + minute;
+  return String(hour) + ':' + String(minute);
+}
+
+App.equatorialFromObjectsData = function (objectSelected, date = new Date()) {
+  try {        
+    let stars = objectsData.features;
+    let obj = objectSelected.value.split("|");
+    if (obj[0] == "ss") {
       let objSS;
-      if (objType == "Moon") objSS = new Orb.Luna();
-      else objSS = new Orb.VSOP(obj[0]);
-      let date = new Date();
+      if (obj[1] == "Moon") objSS = new Orb.Luna();
+      else if (obj[1] == "Sun") objSS = new Orb.Sun();
+      else objSS = new Orb.VSOP(obj[1]);            
       let radec = objSS.radec(date);
-      console.log(radec.ra + ", " + radec.dec)
+      if ($sideralOffset.checked) radec.ra -= (date - new Date())*24/sideralDay;      
       return new VecSP.Equatorial(radec.ra, radec.dec);
     }
     else {
-      let hip = parseInt(starSelected.value.match(/\d+/)); //extracts the number part
-      for (let i = 0; i < stars.length; i++) {
-        if (stars[i].id == hip) {
+      let idObj = parseInt(obj[1].match(/\d+/)); //extracts the number part                  
+      for (let i = 0; i < stars.length; i++) {                
+        let id = parseInt(String(stars[i].id).match(/\d+/));        
+        if (id == idObj) {                    
           let eq = stars[i].geometry.coordinates;
+          console.log(eq);
           let ra = (24 + eq[0]*12/180)%24; //convertion from (-180° to 180° units) to (0 to 24hs units)        
+          ra += (date - new Date())*24/sideralDay;
           return new VecSP.Equatorial(ra, eq[1]);
         }
       }
     }
   }
   catch (err) {
-    alert("Star equatorial coordinates not found. " + err);
+    alert("Object equatorial coordinates not found. " + err);
     return false;
   }
+  alert("Object equatorial coordinates not found.");
+  return false;
 }
 
-App.filterStarCombo = function (filter, comboId, data, label) {    
-  if (filter.length > 2) {        
+App.filterObjectCombo = function (filter, comboId, data, label) {    
+  if (filter.length >= filterComboMinLength) {        
     let x = document.getElementById(comboId);        
     x.innerText = null;
-    let star, l, text;        
-    for (star in data) {
-      if (data[star][label] !== undefined) {
-        if (data[star][label].match(RegExp(filter, 'gi'))) {
+    let type = "";
+    switch (comboId) {
+      case "navObjectsCombo":
+        type = $navObjectsTypeCombo.value;
+        break;
+      case "calibObjectsCombo":
+        type = $calibObjectsTypeCombo.value;
+        break;
+    }    
+    let obj, l, text;        
+    let id = objectsLabels[type][objectsLabels[type].length-1];
+    for (obj in data) {
+      if ((data[obj][label] !== undefined) && (type == data[obj]["type"])) {
+        if (data[obj][label].match(RegExp(filter, 'gi'))) {
           let option = document.createElement("option");
           text = "";
-          for (l of starnamesLabels) if (data[star][l] !== undefined) text += data[star][l] + " ";
+          for (l of objectsLabels[type]) if (data[obj][l] !== undefined) text += data[obj][l] + "|";
           option.text = text;
-          if (data[star]["hip"] !== undefined) option.value = data[star]["hip"];
+          if (data[obj][id] !== undefined) option.value = type + "|" + data[obj][id];
           else option.value = "0";
           x.add(option);
         }
@@ -163,13 +212,77 @@ App.filterStarCombo = function (filter, comboId, data, label) {
   }
 }
 
-App.createPointerStyleOptions = function (pointerStyleCombo, styles) {
-  for (let opt in styles) {
-    let option = document.createElement("option");
-    option.text = styles[opt].name;
-    pointerStyleCombo.add(option);
+App.changeObjectsType = function (elem) {
+  let objF;
+  switch (elem.id) {
+    case $navObjectsTypeCombo.id:
+      objF = objectNavF;
+      break;
+    case $calibObjectsTypeCombo.id:
+      objF = objectCalibF;
+      break;
+  }
+  let opt = elem.options[elem.selectedIndex].value;  
+  let style;
+  for (let x of objF) {
+    //if (objectsLabels[opt].includes(x[0])) x[1].disabled = false;
+    //else x[1].disabled = true;  
+    if (objectsLabels[opt].includes(x[0])) style = "block";
+    else style = "none";        
+    x[1].parentNode.style.display = style;
+    //console.log(x[0]);
+    //console.log(x[1].parentNode.previousSibling.style);
+    x[1].parentNode.previousSibling.style.display = style;    
   }
 }
+
+App.loadObjectsDataNames = function () {
+  let starnames = JSON.parse(starnamesJSON);
+  let starsData = JSON.parse(stars6JSON);
+  let dsonames = JSON.parse(dsonamesJSON);
+  let dsoData = JSON.parse(dso6JSON);
+  
+  let ssnames = {};
+  ssnames["sun"] = {"name":"Sun"}
+  ssnames["moon"] = {"name":"Moon"};
+  ssnames["mercury"] = {"name":"Mercury"};
+  ssnames["venus"] = {"name":"Venus"};
+  ssnames["mars"] = {"name":"Mars"};
+  ssnames["jupiter"] = {"name":"Jupiter"};
+  ssnames["saturn"] = {"name":"Saturn"};
+  ssnames["uranus"] = {"name":"Uranus"};
+  ssnames["neptune"] = {"name":"Neptune"};
+
+  for (let obj in starnames) starnames[obj]["type"] = "star";
+  for (let obj in dsonames) {
+    dsonames[obj]["id"] = obj;
+    dsonames[obj]["type"] = "dso";    
+  }
+  for (let obj in ssnames) ssnames[obj]["type"] = "ss";
+
+  objectsNames = Object.assign({}, starnames, dsonames, ssnames);
+  objectsData = Object.assign({}, starsData);  
+  objectsData["features"] = objectsData["features"].concat(dsoData["features"]);
+  
+  //Set stars navigation filter events binder:
+  for (let l of objectNavF)
+    for (let evt of ["keyup", "click"])      
+      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "navObjectsCombo", objectsNames, l[0])});
+  //Set stars calibration filter events binder:
+  for (let l of objectCalibF)
+    for (let evt of ["keyup", "click"])      
+      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "calibObjectsCombo", objectsNames, l[0])});
+}
+
+App.createComboOptions = function (comboElement, options) {
+  for (let opt in options) {
+    let option = document.createElement("option");
+    option.value = opt;
+    option.text = options[opt].name;    
+    comboElement.add(option);
+  }
+}
+
 
 /**
  * A namespace for the Controller functions in the client app.
@@ -216,7 +329,7 @@ CalibW.updateCalib = async function (action) {
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
             let opt = $nsc.options[$nsc.selectedIndex];            
-            let eq = App.equatorialFromStars6(opt, stars6);            
+            let eq = App.equatorialFromObjectsData(opt);            
             if (eq) {
               let t = new Date();
               let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
@@ -295,106 +408,150 @@ NavW.goZenith = async function () {
 	await BleInstance.goZenith();
 }
 
+NavW.goStyle = async function (style) {
+  let path = new PathSP.Path();
+  let cyclicOpt;
+  switch (style) {
+    case "point":
+      let seg = new PathSP.Segment(CoordNavW, laser, 0);	  
+	    path.addSegment(seg);
+      cyclicOpt = false;
+      break;
+    case "bpoint":
+      let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
+      let seg1 = new PathSP.Segment(CoordNavW, 1, pointerStyles.bpoint.interval);
+      path.addSegment(seg0);
+      path.addSegment(seg1);
+      cyclicOpt = true;
+      break;
+    case "circle":
+      let circle = new PathSP.makeCircle(CoordNavW, pointerStyles.circle.angle, pointerStyles.circle.increment, [1,0], pointerStyles.circle.interval);
+	    path.addPath(circle);
+      cyclicOpt = true;
+      break;
+  }	
+	let commPath = new CommSP.CommPath(path, CalibInstance);	
+	await BleInstance.goPath(commPath, cyclicOpt);
+}
+
 NavW.goEquatorial = async function () {
 	let laser = 0;	
-	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
+	if ($laserStateB.innerHTML == laserStateBON) laser = 1;
   CoordNavW.ra = Number($raF.value);
   CoordNavW.dec = Number($decF.value);
-	let seg = new PathSP.Segment(CoordNavW, laser, 0);
-	let path = new PathSP.Path();
-	path.addSegment(seg);
-	let commPath = new CommSP.CommPath(path, CalibInstance);	
-	await BleInstance.goPath(commPath);	
+  let style = $coordsPointerStyle.value;
+  await NavW.goStyle(style);
 }
 
 NavW.goSteps = async function () {
 	let laser = 0;	
 	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
   let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
-  CoordNavW = CalibInstance.celestialFromLocal(Step);  
-	let seg = new PathSP.Segment(CoordNavW, laser, 0);
-	let path = new PathSP.Path();
-	path.addSegment(seg);
-	let commPath = new CommSP.CommPath(path, CalibInstance);	
-	await BleInstance.goPath(commPath);	  
+  CoordNavW = CalibInstance.equatorialFromStep(Step);  
+	let style = $coordsPointerStyle.value;
+  await NavW.goStyle(style);
 }
 
 NavW.readCoords = async function () {
   if (await BleInstance.readActSteps()) {				
 	  setTimeout(function() {	  	
-	  	CoordNavW = CalibInstance.celestialFromLocal(BleInstance.actStep);
-      $decF.value = CoordNavW.dec.toFixed(4);
-      $raF.value = CoordNavW.ra.toFixed(4);
+	  	CoordNavW = CalibInstance.equatorialFromStep(BleInstance.actStep);
       $fixI.value = BleInstance.actStep.fix;
       $mobI.value = BleInstance.actStep.mob;
-	  	//NavW.updateCoordSys('check');
+      $raF.value = CoordNavW.ra.toFixed(4); 
+      $decF.value = CoordNavW.dec.toFixed(4);           
+	  	NavW.updateCoordSys($raF);
+      NavW.updateCoordSys($decF);
 	  }, 500);
   }
 }
 
-NavW.loadCoords = function () {
-  let $nsc = document.getElementById("navStarsCombo");
-  let opt = $nsc.options[$nsc.selectedIndex];              
-  CoordNavW = App.equatorialFromStars6(opt, stars6);
-  NavW.updateCoordSys('check');
+NavW.showCoords = function () {
+  let $nsc = document.getElementById("navObjectsCombo");
+  let opt = $nsc.options[$nsc.selectedIndex];  
+  CoordNavW = App.equatorialFromObjectsData(opt);
+  $raF.value = CoordNavW.ra.toFixed(4);
+  $decF.value = CoordNavW.dec.toFixed(4);  
+  NavW.updateCoordSys($raF);
+  NavW.updateCoordSys($decF);
+  let step = CalibInstance.stepFromEquatorial(CoordNavW);
+  $fixI.value = step.fix;
+  $mobI.value = step.mob;
 }
 
-NavW.updateCoordSys = function ($elem) {     
-  if ($elem.value != '') {   
-    let value = Number($elem.value);   
-    if ($elem.id == 'raInputH') {    
-      if (value > 23) value = 23;
-      if (value < 0) value = 0;
-      $elem.value = Math.round(value);
-    }
-    if ($elem.id == 'decInputD') {    
-      if (value > 89) value = 89;
-      if (value < -89) value = -89;
-      $elem.value = Math.round(value);    
-    }
-    if ($elem.id.includes('M') || $elem.id.includes('S')) {
-      if (value > 59) value = 59;
-      if (value < 0) value = 0;
-      $elem.value = Math.round(value);    
-    }
-    if ($elem.id == 'raInputF') {
-      if (value > 23.997) value = 23.997;
-      if (value < 0) value = 0;
-      let h = Math.trunc(value);
-      let m = Math.trunc(60*(value - h));
-      let s = Math.trunc(60*(60*(value - h) - m));
-      $raH.value = h;
-      $raM.value = m;
-      $raS.value = s;
-    }
-    if ($elem.id == 'decInputF') {
-      if (value > 89.997) value = 89.997;
-      if (value < -89.997) value = -89.997;
-      let d = Math.trunc(value);
-      let x = Math.abs(value) - Math.abs(d);
-      let m = Math.trunc(60*x);
-      let s = Math.trunc(60*(60*x - m));
-      $decD.value = d;
-      $decM.value = m;
-      $decS.value = s;
-    }
-    if ($elem.id == 'fixInput' || $elem.id == 'mobInput') {
-      if (value > 1023) value = 1023;
-      if (value < 0) value = 0;
-      $elem.value = Math.trunc(value);
-    }
+NavW.updateCoordSys = function ($elem) {       
+  let value = Number($elem.value);
+  let min = Number($elem.min);
+  let max = Number($elem.max);    
+  if (value < min) value = min;
+  if (value > max) value = max;    
+  if ($elem.id == 'raInputF') {      
+    let h = Math.trunc(value);
+    let m = Math.trunc(60*(value - h));
+    let s = Math.trunc(60*(60*(value - h) - m));
+    $raH.value = h;
+    $raM.value = m;
+    $raS.value = s;      
   }
-  if ($elem.id.includes('ra') && !$elem.id.includes('F')) {
-    let res = Number($raH.value) + Number($raM.value)/60 + Number($raS.value)/3600;
-    $raF.value = res.toFixed(4);
+  else if ($elem.id == 'decInputF') {      
+    let d = Math.trunc(value);
+    let x = Math.abs(value) - Math.abs(d);
+    let m = Math.trunc(60*x);
+    let s = Math.trunc(60*(60*x - m));
+    $decD.value = d;
+    $decM.value = m;
+    $decS.value = s;      
   }
-  if ($elem.id.includes('dec') && !$elem.id.includes('F')) {    
+  else {
+    $elem.value = Math.round(value);
+    let raF = Number($raH.value) + Number($raM.value)/60 + Number($raS.value)/3600;
+    $raF.value = raF.toFixed(4);
     let s = ((Number($decD.value) < 0) ? -1 : 1);
-    let res = Number($decD.value) + s*Number($decM.value)/60 + s*Number($decS.value)/3600;
-    $decF.value = res.toFixed(4);
-  }
+    let decF = Number($decD.value) + s*Number($decM.value)/60 + s*Number($decS.value)/3600;
+    $decF.value = decF.toFixed(4);
+  }    
 }
 
+NavW.timeStepCheck = function ($elem) {
+  let value = Number($elem.value);
+  let min = Number($elem.min);
+  let max = Number($elem.max);    
+  if (value < min) value = min;
+  if (value > max) value = max;
+  $elem.value = Math.round(value);    
+}
+
+NavW.timeTest = function ($elem) {
+  let date = new Date($navDate.value+'T'+$navTime.value);
+  let now = new Date();  
+  console.log(now);
+  console.log(date);
+  console.log(date-now);
+}
+
+NavW.goStar = async function (timeOpt) {
+  let $nsc = document.getElementById("navObjectsCombo");
+  let opt = $nsc.options[$nsc.selectedIndex];                
+  let style = $ssPointerStyle.value;
+  let date 
+  if (timeOpt == 'now') date = new Date();  
+  else if (timeOpt == 'date') date = new Date($navDate.value+'T'+$navTime.value);
+  else {
+    let s = Number(timeOpt);
+    let d = new Date($navDate.value+'T'+$navTime.value);    
+    let year = d.getFullYear() + s*Number($timeStepY.value);
+    let month = d.getMonth();
+    let day = d.getDate() + s*Number($timeStepD.value);
+    let hour = d.getHours();
+    let minute = d.getMinutes() + s*Number($timeStepM.value);
+    let second = d.getSeconds();
+    date = new Date(year, month, day, hour, minute);        
+  }
+  $navDate.value = App.localDateString(date);
+  $navTime.value = App.localTimeString(date);
+  CoordNavW = App.equatorialFromObjectsData(opt, date);
+  await NavW.goStyle(style);
+}
 
 /**
  * A namespace for the Communication Window functions in the client app.
@@ -425,21 +582,18 @@ TourW.goCircle = async function () {
   await BleInstance.goPath(commPath, true);
 }
 
-
-
-//Set stars navigation filter events binder:
-for (let l of starNavF)
-    for (let evt of ["keyup", "click"])      
-      l[1].addEventListener(evt, function(){App.filterStarCombo(l[1].value, "navStarsCombo", starnames, l[0])});
-//Set stars calibration filter events binder:
-for (let l of starCalibF)
-    for (let evt of ["keyup", "click"])      
-      l[1].addEventListener(evt, function(){App.filterStarCombo(l[1].value, "calibStarsCombo", starnames, l[0])});
-
-
-
 //Set initial window:
-App.setWindow("appCommW");
+App.setWindow("appNavW");
+
+//Load sky objects data and names:
+App.loadObjectsDataNames();
+
+//Set pointer style options:
+App.createComboOptions($ssPointerStyle, pointerStyles);
+App.createComboOptions($coordsPointerStyle, pointerStyles);
+//Set objects type options:
+App.createComboOptions($navObjectsTypeCombo, objectsTypeOptions);
+App.createComboOptions($calibObjectsTypeCombo, calibTypeOptions);
 
 //Set initial step size:
 Controller.updateStepSize();
@@ -448,12 +602,16 @@ Controller.updateStepSize();
 $laserStateB.innerHTML = laserStateBOFF;
 $laserStateB.style.backgroundColor = laserStateBOFF_color;
 
-//Set initial coordinate system:
-//document.getElementsByName("coordSysN")[0].checked = "true";
-//NavW.updateCoordSys('check');
+//Set navigation stars actual time:
+$navDate.value = App.localDateString(new Date());
+$navTime.value = App.localTimeString(new Date());
 
-//Set pointer style options for the star and solar sytem tab in the navigation menu:
-App.createPointerStyleOptions(document.getElementById("ssPointerStyle"), pointerStyles);
+//Set initial navigation type option:
+$navObjectsTypeCombo.selectedIndex = 0;
+App.changeObjectsType($navObjectsTypeCombo);
+//Set initial calibration type option:
+$calibObjectsTypeCombo.selectedIndex = 0;
+App.changeObjectsType($calibObjectsTypeCombo);
 
 //Initialize calib stars list:
 calibStars = [];
