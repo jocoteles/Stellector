@@ -1,458 +1,620 @@
-/* globals THREE */ //Necessary to glitch recognize the library
-/* globals lalolib */
+/* globals starnamesJSON, stars6JSON */ //Necessary to glitch recognize the library
 
-/* --------------------
-Backend variables */
+//stars6JSON equatorial coordinates are: ra - the Right Ascension (-180° to 180°) coordinate and dec - the Declination (-90º to 90º) coordinate.
 
-const stps360 = 2048;    //steppers number of steps for a 360º rotation
-const maxChunk = 512;    //1 byte array maximum size to be sent to the bluetooth server
-const chunkTimeout = 2000  //Timeout delay between path chunk delivers in ms
-const pathBase = [1, 9, 11, 11]; //number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
-const commBase = [8, 8, 8, 8];   //number of bits of the base used to communicate the path segments
-const resetPathOpt = 1;       //option to start a new path reading
-const execPathOpt = 2;        //option to execute the path
-const cyclicPathOpt = 3;      //option to execute the path cyclicaly
-const laserOnOpt = 4;         //option to turn the laser on in the navigation mode
-const laserOffOpt = 5;        //option to turn the laser off in the navigation mode
-const setZenithOpt = 6;        //option to point the laser toward zenith
-
-const mainS_UUID =          "e80fd323-0ae1-454f-bbd5-31b571083af5";  //The single service for all device's characteristics
-const pathC_UUID =          "20e75b2b-6be1-4b18-b1d0-a06018dbdab5";  //characteristic for the path array
-const posMeasureC_UUID =    "e16843eb-fe97-42b4-acc7-83069473c1b5";  //characteristic for measuring the steppers position
-// UUIDs generated at: https://www.uuidgenerator.net/
-
-let mainS;
-let pathC, posMeasureC;
-let pathSize = 0;
-
-let phiP = [];
-let thetaP = [];
-let laserP = [];
-let delayP = [];
-let path = [];
-
-let actStep = new VecSP.Step([stps360/2, stps360/2]); //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
-
-let deviceOptions = {
- filters: [{ name: "StarProjector" }],
- optionalServices: [
-   mainS_UUID, 
-   pathC_UUID,    
-   posMeasureC_UUID]};
-
-/*----------------------- */
+import {VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
+import './libs/orb.v2.min.js';
 
 
 /* --------------------
-  Frontend variables */
+  Frontend constants */
 
 const $stepSizeR = document.getElementById("stepSizeR");
 const $stepSizeT = document.getElementById("stepSizeT");
-const $commStatus = document.getElementById("commStatus");
 const $laserStateB = document.getElementById("laserStateB");
+const $commStatus = document.getElementById("commStatus");
+const $calibLog = document.getElementById("calibLog");
+const $calibInfo = document.getElementById("calibInfo");
+const $raH = document.getElementById("raInputH");
+const $raM = document.getElementById("raInputM");
+const $raS = document.getElementById("raInputS");
+const $raF = document.getElementById("raInputF");
+const $decD = document.getElementById("decInputD");
+const $decM = document.getElementById("decInputM");
+const $decS = document.getElementById("decInputS");
+const $decF = document.getElementById("decInputF");  
+const $fixI = document.getElementById("fixInput");
+const $mobI = document.getElementById("mobInput");
+const $navDate = document.getElementById("navDate");
+const $navTime = document.getElementById("navTime");
+const $timeStepY = document.getElementById("timeStepY");
+const $timeStepD = document.getElementById("timeStepD");
+const $timeStepM = document.getElementById("timeStepM");
+const $sideralOffset = document.getElementById("sideralOffset");
+const $ssPointerStyle = document.getElementById("ssPointerStyle");
+const $coordsPointerStyle = document.getElementById("coordsPointerStyle");
+const $calibObjectsTypeCombo = document.getElementById("calibObjectsTypeCombo");
+const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
 
-const laserStateBOFF = "turn laser ON";
-const laserStateBON = "turn laser OFF";
-const laserStateBON_color = "#f76459";
-const laserStateBOFF_color = "#9bf296";
+const laserStateBOFF = "laser is OFF";
+const laserStateBON = "laser is ON";
+const laserStateBON_color = "#9bf296";
+const laserStateBOFF_color = "#f76459";
 
-const phiRepr = {labels: ["Fix", "Phi", "RA"],
-                units: ["step", "deg", "h:m:s"]};
-const thetaRepr = {labels: ["Mob", "Theta", "Dec"],
-                units: ["step", "deg", "º:':\""]};    
+//"star": ["name", "bayer", "flam", "c", "hd", "hip"]
+const objectsLabels = { "star": ["name", "c", "hd", "hip"],
+                        "dso": ["name", "es", "id"],
+                        "ss": ["name"]}
 
-const starnames = JSON.parse(starnamesJSON);
-const stars6 = JSON.parse(stars6JSON);
-const starnamesLabels = ["name", "bayer", "flam", "c", "hd", "hip"]           
+const objectCalibF = [["name", document.getElementById("nameCfilter")],
+                  ["c", document.getElementById("consCfilter")],
+                  ["hip", document.getElementById("hipCfilter")],
+                  ["hd", document.getElementById("hdCfilter")]];
+const objectNavF = [["name", document.getElementById("nameNfilter")],
+                ["es", document.getElementById("esNfilter")],
+                ["c", document.getElementById("consNfilter")],
+                ["hip", document.getElementById("hipNfilter")],
+                ["hd", document.getElementById("hdNfilter")],
+                ["id", document.getElementById("idNfilter")]];
 
-const calibStarsInit = {text: [], value: [], date: [], step: [], eq180: []};
-let calibStars = calibStarsInit;
+const pointerStyles = { 'point': {'name': 'point'},
+                        'bpoint': {'name': 'blinking point', 'interval': 2500},
+                        'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60, 'increment': Math.PI/20}};
+
+const objectsTypeOptions = {'ss': {'name': 'solar system'},
+                            'star': {'name': 'star'},
+                            'dso': {'name': 'deep sky and cluster'}};
+const calibTypeOptions = {'ss': {'name': 'solar system'},
+                          'star': {'name': 'star'}};
+
+
+const filterComboMinLength = 0;
 
 $stepSizeR.min = 0;
 $stepSizeR.max = 7;
 $stepSizeR.step = 1;
-$stepSizeR.value = $stepSizeR.min;
-
-let stepSize;
+$stepSizeR.value = $stepSizeR.min;                          
 
 /*----------------------- */
 
 
 
 /* --------------------
-  Math constants */
+  Global variables */
 
-const radToDeg = 180 / Math.PI;
-const degToRad = Math.PI / 180;
-const hourToRad = Math.PI / 12;
+let BleInstance = new CommSP.Bluetooth($commStatus);
+let CalibInstance = new VecSP.Calibration();
+let CalibTemp = new VecSP.Calibration();
+let CoordNavW = new VecSP.Equatorial(0, 0);
+
+let calibStars;
+let stepSize;
+
+let objectsNames = {};
+let objectsData = {};
 
 /*----------------------- */
 
 
-function angleStep(angle) {
- return Math.round(angle*stps360*0.5/Math.PI + stps360*0.5);
+/* --------------------
+  Astronomy constants */
+
+const sideralDay = 86164090.5; //[ms]
+
+/*--------------------- */
+
+/**
+ * A namespace for the general App functions in the client app.
+ * @namespace
+ */
+window.App = {};
+
+/** Set the actual window choosen by the app menu. */
+App.setWindow = function (windowId) {
+	let windows = document.getElementsByClassName("window");
+	for (let w of windows) w.style.display = "none";  
+	document.getElementById(windowId).style.display = "grid";  
+  if (windowId == "appCommW") $commStatus.scrollTop = $commStatus.scrollHeight;
 }
 
-function circlePath (center, border, angleIncrement, lpattern, delay) {
- /*  center = [phi, theta] coordinates array of circle center
-     border = opt 1: [ang], circle angle aperture; opt 2: [phi, theta] coordinates array of a point at the circle border
-     angleIncrement = angle step for the circle discretization in rad
-     lpattern = [laser on # steps, laser off # steps]
-     delay = time delay between steppers sucessive steps in multiples of 100 us
- */  
- let v0 = new THREE.Vector3();  
- let c = new THREE.Vector3();  
- c.setFromSphericalCoords(1.0, center[0], center[1])
- if (border.length == 2)
-   v0.setFromSphericalCoords(1.0, border[0], border[1]);
- else
-   v0.setFromSphericalCoords(1.0, center[0], center[1] + border[0]);
- let N = Math.round(2*Math.PI/angleIncrement);
- let s = new THREE.Spherical();
- let r = lpattern[0] + lpattern[1];
- for (let i = 0; i < N; i++) {
-   let v = v0.clone();
-   v.applyAxisAngle(c, i*angleIncrement);
-   s.setFromVector3(v);
-   phiP.push(angleStep(s.phi));
-   thetaP.push(angleStep(s.theta));
-   if ((i%r) < lpattern[0])
-     laserP.push(1);
-   else
-     laserP.push(0);
-   delayP.push(delay);
- }
+App.changeNav = function (id) {
+  let elem = document.getElementById(id);
+  if (window.getComputedStyle(elem).getPropertyValue('display') == "grid") elem.style.display = "none";
+  else elem.style.display = "grid";
 }
 
-function encode(data, encBase) {
- //data = [laser, delay, theta, phi]
- let x = 0;
- let b = 0;
- for (let i = 0; i < encBase.length; i++) {
-   x += data[i]*2**b;
-   b += encBase[i];
- }
- return x;
+/**Return actual time in the format: hours minutes seconds. */
+App.time = function () {
+  let d = new Date();
+  return d.getHours() + 'h' + d.getMinutes() + 'm' + d.getSeconds() + 's: ';
 }
 
-function decode(x, decBase) {
- //x decodification in the "decBase" array
- let b0 = 0;
- let r0 = x;
- let r = [];
- for (let i = 0; i < decBase.length; i++) {
-   r.push( Math.trunc(r0 / 2**b0) % 2**decBase[i] );
-   b0 += decBase[i];
-   r0 -= r[i];
- }
- return r;
+App.localDateString = function (date) {
+  let year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  if (month < 10) month = '0' + month;
+  if (day < 10) day = '0' + day;
+  return String(year) + '-' + String(month) + '-' + String(day);
 }
 
-function composePath() {
- for (let i = 0; i < laserP.length; i++) {
-   let x = encode([laserP[i], delayP[i], phiP[i], thetaP[i]], pathBase);
-   path = path.concat(decode(x, commBase));
- }
+App.localTimeString = function (date) {
+  let hour = date.getHours();
+  let minute = date.getMinutes();  
+  if (hour < 10) hour = '0' + hour;
+  if (minute < 10) minute = '0' + minute;
+  return String(hour) + ':' + String(minute);
 }
 
-async function startComm() {
- try {
-   //log('Requesting StarPointer Device...');
-   const device = await navigator.bluetooth.requestDevice(deviceOptions);
-
-   //log('Connecting to GATT Server...');
-   const server = await device.gatt.connect();
-
-   //log('Getting GAP Services...');
-   mainS = await server.getPrimaryService(mainS_UUID);
-
-   //log('Getting GAP Characteristics...');
-   pathC = await mainS.getCharacteristic(pathC_UUID);
-   posMeasureC = await mainS.getCharacteristic(posMeasureC_UUID);
-   //posMeasureC.addEventListener('characteristicvaluechanged', handlePosMeasureC);
-   //posMeasureC.startNotifications();    
-   $commStatus.innerHTML = "connected to StarProjector on ESP32";    
- } catch(error) {
-   $commStatus.innerHTML = error;
- }
-}    
-
-async function sendPath() {  
- let j = 0;
- let pathChunk;
- for (let i = 0; i < path.length; i++) {
-   j = i % maxChunk;
-   if (j == 0) {      
-     if (path.length - i >= maxChunk) pathChunk = new Uint8Array(maxChunk);
-     else pathChunk = new Uint8Array(path.length - i);
-   }
-   pathChunk[j] = path[i];
-   if ((j == maxChunk - 1) || (i == path.length -1)) {
-     await pathC.writeValue(pathChunk);
-     //setTimeout(function(){ pathC.writeValue(pathChunk); }, chunkTimeout);      
-     /*for (let k = 0; k < pathChunk.length/commBase.length; k++) {
-       let w = commBase.length*k;
-       let s = pathChunk.slice(w, w+commBase.length);
-       console.log(decode(encode(s, commBase), pathBase));
-     }*/
-   }
- }  
-}
-
-async function sendStepSize(ssId) {
-    let m = parseInt($stepSizeT.innerHTML);
-    let ph = Math.max((parseInt(ssId[1])-1)*m + 127, 0);
-    let th = Math.max((parseInt(ssId[2])-1)*m + 127, 0);
-    await pathC.writeValue(new Uint8Array([ph, th]));
-    try {
-        let value = await posMeasureC.readValue();
-        let phv = value.getUint8(0)*256 + value.getUint8(1);
-        let thv = value.getUint8(2)*256 + value.getUint8(3);
-        $phiT.value = phv;
-        $thetaT.value = thv;
+App.equatorialFromObjectsData = function (objectSelected, date = new Date()) {
+  try {        
+    let stars = objectsData.features;
+    let obj = objectSelected.value.split("|");
+    if (obj[0] == "ss") {
+      let objSS;
+      if (obj[1] == "Moon") objSS = new Orb.Luna();
+      else if (obj[1] == "Sun") objSS = new Orb.Sun();
+      else objSS = new Orb.VSOP(obj[1]);            
+      let radec = objSS.radec(date);
+      if ($sideralOffset.checked) radec.ra -= (date - new Date())*24/sideralDay;      
+      return new VecSP.Equatorial(radec.ra, radec.dec);
     }
-    catch(err) {
-        $phiT.innerHTML = err;
-    }
-}
-
-async function goToActStep() {
-    await pathC.writeValue(new Uint8Array(actStep.value));
-}
-
-async function setZenith() {
- await pathC.writeValue(new Uint8Array([setZenithOpt]));
-}
-
-async function switchLaser() {
-
- if ($laserStateB.innerHTML == laserStateBOFF) {
-   await pathC.writeValue(new Uint8Array([laserOnOpt]));
-   $laserStateB.innerHTML = laserStateBON;
-   $laserStateB.style.backgroundColor = laserStateBON_color;
- } else {
-   await pathC.writeValue(new Uint8Array([laserOffOpt]));
-   $laserStateB.innerHTML = laserStateBOFF;
-   $laserStateB.style.backgroundColor = laserStateBOFF_color;
- }
-}
-
-function resetPath() {
- phiP = [];
- thetaP = [];
- laserP = [];
- delayP = [];
- path = [];
-}
-
-async function sendCircle() {  
- //let c = [Math.PI/6, Math.PI/6];
- let c = [Math.PI/10, Math.PI/10];
- let b = [Math.PI/18];
- let ainc = Math.PI/10;
- let lp = [5, 2];
- let delay = 50;
-
- resetPath();
- circlePath(c, b, ainc, lp, delay);
- composePath();
-
- await pathC.writeValue(new Uint8Array([resetPathOpt]));
- await sendPath();
- await pathC.writeValue(new Uint8Array([cyclicPathOpt]));
-}  
-
-function handlePosMeasureC(event) {
- try {    
-   let ph = event.target.value.getUint8(0)*256 + event.target.value.getUint8(1);
-   let th = event.target.value.getUint8(2)*256 + event.target.value.getUint8(3);
-   $phiT.value = 40;
-   $thetaT.value = th;
- }
- catch(err) {
-   $commStatus.innerHTML = err;
- }
-}
-
-
-function updateStepSize() {
- stepSize = 2**$stepSizeR.value;
- $stepSizeT.innerHTML = stepSize;
-}
-
-function updateCoordSys() {
-    let val = document.querySelector('input[name="coordSysN"]:checked').value;
-    let i;
-    let ph, th;
-    switch (val) {
-        case "steps":
-            i = 0;
-            ph = actStep.fix;
-            th = actStep.mob;
-            break;
-        case "spherical":
-            i = 1;            
-            let st = new VecSP.Representation(actStep);
-            let sp = st.toSpherical();
-            ph = sp.phi*radToDeg;
-            th = sp.theta*radToDeg;
-            break;
-        case "equatorial":
-            i = 2;
-    }
-    document.getElementById("phiLabel").innerHTML = phiRepr.labels[i];
-    document.getElementById("phiI").value = ph;
-    document.getElementById("phiUnit").innerHTML = phiRepr.units[i];
-    document.getElementById("thetaLabel").innerHTML = thetaRepr.labels[i];
-    document.getElementById("thetaI").value = th;
-    document.getElementById("thetaUnit").innerHTML = thetaRepr.units[i];
-}
-
-function setWindow(windowId) {
-    let windows = document.getElementsByClassName("window");
-    for (let w of windows) w.style.display = "none";  
-    document.getElementById(windowId).style.display = "grid";  
-}
-
-class Calibration {
-    constructor(stars = null) {
-        this._stars = stars;
-        this.C = lalolib.eye(3);    //unknown transformation matrix
-        this.A = null;              //local rectangular coordinates matrix
-        this.B = null;              //equatorial rectangular coordinates matrix
-    }
-    set stars(x) {
-        this._stars = x;
-    }
-    systemMount () {        
-        let sa = this.stars.eq180;
-        let sb = this.stars.step;        
-        if (sa.len > 1) {
-            let A = [], B = [];            
-            let Ai = new VecSP.Representation();
-            let Bi = new VecSP.Representation();
-            for (let i = 0; i < sa.len; i++) {                
-                Ai.set(new VecSP.Eq180(sa[i]));
-                A.push(Ai.rectangular);
-                Bi.set(new VecSP.Step(sb[i]));
-                B.push(Bi.rectangular);
-            }
-            if (sp.len == 2) {
-                let A0 = new VecSP.Representation(A[0]);
-                let A1 = new VecSP.Representation(A[1]);                
-                let ca3 = THREE.cross(A0.toTHREEVector(), A1.toTHREEVector());
-                let B0 = new VecSP.Representation(B[0]);
-                let B1 = new VecSP.Representation(B[1]);                
-                let cb3 = THREE.cross(B0.toTHREEVector(), B1.toTHREEVector());
-                A.push(ca3.toArray());
-                B.push(cb3.toArray());
-            }
-            this.A = A;
-            this.B = B;
-            return true;
-        } else return false;
-    }
-    systemSolve () {
-        if (this.A != null) {
-            let A = lalolib.array2mat(A.this);            
-            let b, x, i;
-            for (let j = 0; j < 3; j++) {
-                b = [];
-                for (i = 0; i < this.A.length; i++) b.push(this.B[i][j]);
-                b = lalolib.array2vec(b);
-                x = lalolib.solve(A,b);
-                for (let i = 0; i < 3; i++) this.C.val[i*this.C.n + j] = x[i];
-            }
-            return true;
-        } else return false;
-    }
-}
-
-function filterCombo (filter, comboId, data, label) {    
-    if (filter.length > 2) {        
-        let x = document.getElementById(comboId);        
-        x.innerText = null;
-        let star, l, text;        
-        for (star in data) {
-            if (data[star][label] !== undefined) {
-                if (data[star][label].match(RegExp(filter, 'gi'))) {
-                    let option = document.createElement("option");
-                    text = "";
-                    for (l of starnamesLabels) if (data[star][l] !== undefined) text += data[star][l] + " ";
-                    option.text = text;
-                    option.value = data[star]["hip"];
-                    x.add(option);
-                }
-            }
+    else {
+      let idObj = parseInt(obj[1].match(/\d+/)); //extracts the number part                  
+      for (let i = 0; i < stars.length; i++) {                
+        let id = parseInt(String(stars[i].id).match(/\d+/));        
+        if (id == idObj) {                    
+          let eq = stars[i].geometry.coordinates;
+          console.log(eq);
+          let ra = (24 + eq[0]*12/180)%24; //convertion from (-180° to 180° units) to (0 to 24hs units)        
+          ra += (date - new Date())*24/sideralDay;
+          return new VecSP.Equatorial(ra, eq[1]);
         }
+      }
     }
+  }
+  catch (err) {
+    alert("Object equatorial coordinates not found. " + err);
+    return false;
+  }
+  alert("Object equatorial coordinates not found.");
+  return false;
 }
 
-function findEquatorial (starSelected, data) {
-    try {
-        let stars = data.features;
-        let hip = parseInt(starSelected.value.match(/\d+/)); //extracts the number part
-        for (let i = 0; i < stars.length; i++) {
-            if (stars[i].id == hip) return stars[i].geometry.coordinates;
+App.filterObjectCombo = function (filter, comboId, data, label) {    
+  if (filter.length >= filterComboMinLength) {        
+    let x = document.getElementById(comboId);        
+    x.innerText = null;
+    let type = "";
+    switch (comboId) {
+      case "navObjectsCombo":
+        type = $navObjectsTypeCombo.value;
+        break;
+      case "calibObjectsCombo":
+        type = $calibObjectsTypeCombo.value;
+        break;
+    }    
+    let obj, l, text;        
+    let id = objectsLabels[type][objectsLabels[type].length-1];
+    for (obj in data) {
+      if ((data[obj][label] !== undefined) && (type == data[obj]["type"])) {
+        if (data[obj][label].match(RegExp(filter, 'gi'))) {
+          let option = document.createElement("option");
+          text = "";
+          for (l of objectsLabels[type]) if (data[obj][l] !== undefined) text += data[obj][l] + "|";
+          option.text = text;
+          if (data[obj][id] !== undefined) option.value = type + "|" + data[obj][id];
+          else option.value = "0";
+          x.add(option);
         }
+      }
     }
-    catch (err) {
-        alert("Star equatorial coordinates not found. " + err);
-        return false;
-    }
+  }
 }
 
-function updateCalib(action){
-    let $nsc = document.getElementById("navStarsCombo");
-    let $csc = document.getElementById("calibStarsCombo");
-    if ($nsc.innerText != null) {        
-        if (action == "add") {
+App.changeObjectsType = function (elem) {
+  let objF;
+  switch (elem.id) {
+    case $navObjectsTypeCombo.id:
+      objF = objectNavF;
+      break;
+    case $calibObjectsTypeCombo.id:
+      objF = objectCalibF;
+      break;
+  }
+  let opt = elem.options[elem.selectedIndex].value;  
+  let style;
+  for (let x of objF) {
+    //if (objectsLabels[opt].includes(x[0])) x[1].disabled = false;
+    //else x[1].disabled = true;  
+    if (objectsLabels[opt].includes(x[0])) style = "block";
+    else style = "none";        
+    x[1].parentNode.style.display = style;
+    //console.log(x[0]);
+    //console.log(x[1].parentNode.previousSibling.style);
+    x[1].parentNode.previousSibling.style.display = style;    
+  }
+}
+
+App.loadObjectsDataNames = function () {
+  let starnames = JSON.parse(starnamesJSON);
+  let starsData = JSON.parse(stars6JSON);
+  let dsonames = JSON.parse(dsonamesJSON);
+  let dsoData = JSON.parse(dso6JSON);
+  
+  let ssnames = {};
+  ssnames["sun"] = {"name":"Sun"}
+  ssnames["moon"] = {"name":"Moon"};
+  ssnames["mercury"] = {"name":"Mercury"};
+  ssnames["venus"] = {"name":"Venus"};
+  ssnames["mars"] = {"name":"Mars"};
+  ssnames["jupiter"] = {"name":"Jupiter"};
+  ssnames["saturn"] = {"name":"Saturn"};
+  ssnames["uranus"] = {"name":"Uranus"};
+  ssnames["neptune"] = {"name":"Neptune"};
+
+  for (let obj in starnames) starnames[obj]["type"] = "star";
+  for (let obj in dsonames) {
+    dsonames[obj]["id"] = obj;
+    dsonames[obj]["type"] = "dso";    
+  }
+  for (let obj in ssnames) ssnames[obj]["type"] = "ss";
+
+  objectsNames = Object.assign({}, starnames, dsonames, ssnames);
+  objectsData = Object.assign({}, starsData);  
+  objectsData["features"] = objectsData["features"].concat(dsoData["features"]);
+  
+  //Set stars navigation filter events binder:
+  for (let l of objectNavF)
+    for (let evt of ["keyup", "click"])      
+      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "navObjectsCombo", objectsNames, l[0])});
+  //Set stars calibration filter events binder:
+  for (let l of objectCalibF)
+    for (let evt of ["keyup", "click"])      
+      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "calibObjectsCombo", objectsNames, l[0])});
+}
+
+App.createComboOptions = function (comboElement, options) {
+  for (let opt in options) {
+    let option = document.createElement("option");
+    option.value = opt;
+    option.text = options[opt].name;    
+    comboElement.add(option);
+  }
+}
+
+
+/**
+ * A namespace for the Controller functions in the client app.
+ * @namespace
+ */
+window.Controller = {};
+
+Controller.sendStepSize = async function (ssId) {
+	let m = parseInt($stepSizeT.innerHTML);	    
+	await BleInstance.goStepSize(m, ssId);  	
+}
+
+Controller.switchLaser = async function () {
+	if ($laserStateB.innerHTML == laserStateBOFF) {
+	  	if (await BleInstance.goLaser(true)) {
+			$laserStateB.innerHTML = laserStateBON;
+			$laserStateB.style.backgroundColor = laserStateBON_color;
+	  	}
+	}
+	else {
+		if (await BleInstance.goLaser(false)) {
+			$laserStateB.innerHTML = laserStateBOFF;
+			$laserStateB.style.backgroundColor = laserStateBOFF_color;
+		}
+	}
+}
+
+Controller.updateStepSize = function () {
+  stepSize = 2**$stepSizeR.value;
+  $stepSizeT.innerHTML = stepSize;
+}
+
+
+/**
+ * A namespace for the Calibration Window functions in the client app.
+ * @namespace
+ */
+window.CalibW = {};
+
+CalibW.updateCalib = async function (action) {    	
+	let $nsc = document.getElementById("calibStarsCombo");
+	let $csc = document.getElementById("calibListCombo");
+    if ($nsc.innerText != null) {              
+        if (action == "add") {           
+          if (await BleInstance.readActSteps()) {
             let opt = $nsc.options[$nsc.selectedIndex];            
-            let eq = findEquatorial(opt, stars6);
+            let eq = App.equatorialFromObjectsData(opt);            
             if (eq) {
-                let t0 = Date.now();                
-                calibStars.text.push(opt.text);
-                calibStars.value.push(opt.value);
-                calibStars.date.push(t0);
-                calibStars.step.push(actStep.value);
-                calibStars.eq180.push(eq);
+              let t = new Date();
+              let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
+              calibStars.push(s);
             }
+          }
         }
         if (action == "remThis") {
-            if (calibStars.text != []) {
+            if (calibStars.length > 0) {
                 let index = $csc.selectedIndex;
-                for (let v of calibStars) v.splice(index, 1);
+                calibStars.splice(index, 1);
             }
         }
-        if (action == "remAll") calibStars = calibStarsInit;
+        if (action == "remAll") calibStars = [];
 
-        $csc.innerText = null;        
-        for (let i = 0; i < calibStars.text.length; i++) {
+        $csc.innerText = null;   
+        for (let i = 0; i < calibStars.length; i++) {
             let option = document.createElement("option");
-            option.text = calibStars.text[i];
+            option.text = calibStars[i].text;
             $csc.add(option);
         }
-        $csc.selectedIndex = Math.max(0, calibStars.text.length-1);
+        $csc.selectedIndex = Math.max(0, calibStars.length-1);      
     }
 }
 
-//Stars filter events binder:
-let starF = [["name", document.getElementById("namefilter")],
-             ["c", document.getElementById("consfilter")],
-             ["hip", document.getElementById("hipfilter")],
-             ["hd", document.getElementById("hdfilter")]];
-for (let l of starF)
-    for (let evt of ["keyup", "click"])
-        l[1].addEventListener(evt, function(){filterCombo(l[1].value, "navStarsCombo", starnames, l[0])});
+CalibW.calcCalib = function () {
+	if (calibStars.length < 2) alert("You must add at least two calibration stars.");
+	else {    
+    CalibTemp.calcCalib(calibStars)
+    $calibLog.innerHTML += '-------------------------------------\n';
+    $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
+    for (let s of CalibTemp.stars) $calibLog.innerHTML += s.text + '\n';
+    let dev = CalibTemp.stats.dev.toFixed(1);
+    let devStep = (CalibTemp.stats.dev*calibStars[0].step.maxSteps/360).toFixed(1);
+    let min = CalibTemp.stats.min.toFixed(1);
+    let minStep = (CalibTemp.stats.min*calibStars[0].step.maxSteps/360).toFixed(1);
+    let max = CalibTemp.stats.max.toFixed(1);
+    let maxStep = (CalibTemp.stats.max*calibStars[0].step.maxSteps/360).toFixed(1);
+    $calibLog.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
+    $calibLog.innerHTML += 'Minimum angle deviation of ' + min + '° (' + minStep + ' steps).\n';
+    $calibLog.innerHTML += 'Maximum angle deviation of ' + max + '° (' + maxStep + ' steps).\n';    
+    alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
+	}
+}
+
+CalibW.acceptCalib = function () {
+  if (CalibTemp.stars.length > 0) {
+    CalibInstance = CalibTemp.clone();
+    $calibLog.innerHTML += window.App.time() + 'New calibration accepted.\n';
+    $calibInfo.innerHTML = window.App.time() + 'Actual calibration stars:\n';
+    $calibInfo.innerHTML += '----------------------------------\n';
+    for (let s of CalibInstance.stars) $calibInfo.innerHTML += '-> ' + s.text + '\n';
+    let dev = CalibInstance.stats.dev.toFixed(1);
+    let devStep = (CalibInstance.stats.dev*calibStars[0].step.maxSteps/360).toFixed(1);
+    let min = CalibInstance.stats.min.toFixed(1);
+    let minStep = (CalibInstance.stats.min*calibStars[0].step.maxSteps/360).toFixed(1);
+    let max = CalibInstance.stats.max.toFixed(1);
+    let maxStep = (CalibInstance.stats.max*calibStars[0].step.maxSteps/360).toFixed(1);
+    $calibInfo.innerHTML += 'Calibration parameters:\n';
+    $calibInfo.innerHTML += '-----------------------\n';
+    $calibInfo.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
+    $calibInfo.innerHTML += 'Minimum angle deviation of ' + min + '° (' + minStep + ' steps).\n';
+    $calibInfo.innerHTML += 'Maximum angle deviation of ' + max + '° (' + maxStep + ' steps).\n';
+    $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n';    
+  }
+}
 
 
-setWindow("appCommW");
-updateStepSize();
+/**
+ * A namespace for the Navigation Window functions in the client app.
+ * @namespace
+ */
+window.NavW = {};
+
+NavW.goZenith = async function () {
+	await BleInstance.goZenith();
+}
+
+NavW.goStyle = async function (style) {
+  let path = new PathSP.Path();
+  let cyclicOpt;
+  switch (style) {
+    case "point":
+      let seg = new PathSP.Segment(CoordNavW, laser, 0);	  
+	    path.addSegment(seg);
+      cyclicOpt = false;
+      break;
+    case "bpoint":
+      let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
+      let seg1 = new PathSP.Segment(CoordNavW, 1, pointerStyles.bpoint.interval);
+      path.addSegment(seg0);
+      path.addSegment(seg1);
+      cyclicOpt = true;
+      break;
+    case "circle":
+      let circle = new PathSP.makeCircle(CoordNavW, pointerStyles.circle.angle, pointerStyles.circle.increment, [1,0], pointerStyles.circle.interval);
+	    path.addPath(circle);
+      cyclicOpt = true;
+      break;
+  }	
+	let commPath = new CommSP.CommPath(path, CalibInstance);	
+	await BleInstance.goPath(commPath, cyclicOpt);
+}
+
+NavW.goEquatorial = async function () {
+	let laser = 0;	
+	if ($laserStateB.innerHTML == laserStateBON) laser = 1;
+  CoordNavW.ra = Number($raF.value);
+  CoordNavW.dec = Number($decF.value);
+  let style = $coordsPointerStyle.value;
+  await NavW.goStyle(style);
+}
+
+NavW.goSteps = async function () {
+	let laser = 0;	
+	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
+  let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
+  CoordNavW = CalibInstance.equatorialFromStep(Step);  
+	let style = $coordsPointerStyle.value;
+  await NavW.goStyle(style);
+}
+
+NavW.readCoords = async function () {
+  if (await BleInstance.readActSteps()) {				
+	  setTimeout(function() {	  	
+	  	CoordNavW = CalibInstance.equatorialFromStep(BleInstance.actStep);
+      $fixI.value = BleInstance.actStep.fix;
+      $mobI.value = BleInstance.actStep.mob;
+      $raF.value = CoordNavW.ra.toFixed(4); 
+      $decF.value = CoordNavW.dec.toFixed(4);           
+	  	NavW.updateCoordSys($raF);
+      NavW.updateCoordSys($decF);
+	  }, 500);
+  }
+}
+
+NavW.showCoords = function () {
+  let $nsc = document.getElementById("navObjectsCombo");
+  let opt = $nsc.options[$nsc.selectedIndex];  
+  CoordNavW = App.equatorialFromObjectsData(opt);
+  $raF.value = CoordNavW.ra.toFixed(4);
+  $decF.value = CoordNavW.dec.toFixed(4);  
+  NavW.updateCoordSys($raF);
+  NavW.updateCoordSys($decF);
+  let step = CalibInstance.stepFromEquatorial(CoordNavW);
+  $fixI.value = step.fix;
+  $mobI.value = step.mob;
+}
+
+NavW.updateCoordSys = function ($elem) {       
+  let value = Number($elem.value);
+  let min = Number($elem.min);
+  let max = Number($elem.max);    
+  if (value < min) value = min;
+  if (value > max) value = max;    
+  if ($elem.id == 'raInputF') {      
+    let h = Math.trunc(value);
+    let m = Math.trunc(60*(value - h));
+    let s = Math.trunc(60*(60*(value - h) - m));
+    $raH.value = h;
+    $raM.value = m;
+    $raS.value = s;      
+  }
+  else if ($elem.id == 'decInputF') {      
+    let d = Math.trunc(value);
+    let x = Math.abs(value) - Math.abs(d);
+    let m = Math.trunc(60*x);
+    let s = Math.trunc(60*(60*x - m));
+    $decD.value = d;
+    $decM.value = m;
+    $decS.value = s;      
+  }
+  else {
+    $elem.value = Math.round(value);
+    let raF = Number($raH.value) + Number($raM.value)/60 + Number($raS.value)/3600;
+    $raF.value = raF.toFixed(4);
+    let s = ((Number($decD.value) < 0) ? -1 : 1);
+    let decF = Number($decD.value) + s*Number($decM.value)/60 + s*Number($decS.value)/3600;
+    $decF.value = decF.toFixed(4);
+  }    
+}
+
+NavW.timeStepCheck = function ($elem) {
+  let value = Number($elem.value);
+  let min = Number($elem.min);
+  let max = Number($elem.max);    
+  if (value < min) value = min;
+  if (value > max) value = max;
+  $elem.value = Math.round(value);    
+}
+
+NavW.timeTest = function ($elem) {
+  let date = new Date($navDate.value+'T'+$navTime.value);
+  let now = new Date();  
+  console.log(now);
+  console.log(date);
+  console.log(date-now);
+}
+
+NavW.goStar = async function (timeOpt) {
+  let $nsc = document.getElementById("navObjectsCombo");
+  let opt = $nsc.options[$nsc.selectedIndex];                
+  let style = $ssPointerStyle.value;
+  let date 
+  if (timeOpt == 'now') date = new Date();  
+  else if (timeOpt == 'date') date = new Date($navDate.value+'T'+$navTime.value);
+  else {
+    let s = Number(timeOpt);
+    let d = new Date($navDate.value+'T'+$navTime.value);    
+    let year = d.getFullYear() + s*Number($timeStepY.value);
+    let month = d.getMonth();
+    let day = d.getDate() + s*Number($timeStepD.value);
+    let hour = d.getHours();
+    let minute = d.getMinutes() + s*Number($timeStepM.value);
+    let second = d.getSeconds();
+    date = new Date(year, month, day, hour, minute);        
+  }
+  $navDate.value = App.localDateString(date);
+  $navTime.value = App.localTimeString(date);
+  CoordNavW = App.equatorialFromObjectsData(opt, date);
+  await NavW.goStyle(style);
+}
+
+/**
+ * A namespace for the Communication Window functions in the client app.
+ * @namespace
+ */
+window.CommW = {};
+
+CommW.startComm = function () {
+	let c = BleInstance.startComm();
+  /*if (c) {
+    setTimeout(function(){
+      BleInstance.readActSteps();			
+      NavW.updateCoordSys();	  
+    }, 200);
+  }*/
+}
+
+
+/**
+ * A namespace for the Tour Window functions in the client app.
+ * @namespace
+ */
+window.TourW = {};
+
+TourW.goCircle = async function () {
+  let path = PathSP.makeCircle(CoordNavW, Math.PI/40, Math.PI/10, [1,0], 50);
+  let commPath = new CommSP.CommPath(path, CalibInstance);
+  await BleInstance.goPath(commPath, true);
+}
+
+//Set initial window:
+App.setWindow("appNavW");
+
+//Load sky objects data and names:
+App.loadObjectsDataNames();
+
+//Set pointer style options:
+App.createComboOptions($ssPointerStyle, pointerStyles);
+App.createComboOptions($coordsPointerStyle, pointerStyles);
+//Set objects type options:
+App.createComboOptions($navObjectsTypeCombo, objectsTypeOptions);
+App.createComboOptions($calibObjectsTypeCombo, calibTypeOptions);
+
+//Set initial step size:
+Controller.updateStepSize();
+
+//Set initial laser status
 $laserStateB.innerHTML = laserStateBOFF;
 $laserStateB.style.backgroundColor = laserStateBOFF_color;
 
-document.getElementsByName("coordSysN")[0].checked = "true";
-updateCoordSys();
+//Set navigation stars actual time:
+$navDate.value = App.localDateString(new Date());
+$navTime.value = App.localTimeString(new Date());
 
+//Set initial navigation type option:
+$navObjectsTypeCombo.selectedIndex = 0;
+App.changeObjectsType($navObjectsTypeCombo);
+//Set initial calibration type option:
+$calibObjectsTypeCombo.selectedIndex = 0;
+App.changeObjectsType($calibObjectsTypeCombo);
 
-$commStatus.innerHTML = starnames["122"].hip;
+//Initialize calib stars list:
+calibStars = [];
+
+//let x = new VecSP.Step(20,30);
+//$commStatus.innerHTML = x.fix;
