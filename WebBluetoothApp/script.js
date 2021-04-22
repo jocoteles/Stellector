@@ -35,38 +35,61 @@ const $ssPointerStyle = document.getElementById("ssPointerStyle");
 const $coordsPointerStyle = document.getElementById("coordsPointerStyle");
 const $calibObjectsTypeCombo = document.getElementById("calibObjectsTypeCombo");
 const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
+const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
+const $navObjectsCombo = document.getElementById("navObjectsCombo");
 
 const laserStateBOFF = "laser is OFF";
 const laserStateBON = "laser is ON";
 const laserStateBON_color = "#9bf296";
 const laserStateBOFF_color = "#f76459";
 
-//"star": ["name", "bayer", "flam", "c", "hd", "hip"]
-const objectsLabels = { "star": ["name", "c", "hd", "hip"],
+const objectsLabels = {
+                        "star": ["name", "c", "hd", "hip"],
                         "dso": ["name", "es", "id"],
-                        "ss": ["name"]}
+                        "ss": ["name"]
+                      }
 
-const objectCalibF = [["name", document.getElementById("nameCfilter")],
-                  ["c", document.getElementById("consCfilter")],
-                  ["hip", document.getElementById("hipCfilter")],
-                  ["hd", document.getElementById("hdCfilter")]];
-const objectNavF = [["name", document.getElementById("nameNfilter")],
-                ["es", document.getElementById("esNfilter")],
-                ["c", document.getElementById("consNfilter")],
-                ["hip", document.getElementById("hipNfilter")],
-                ["hd", document.getElementById("hdNfilter")],
-                ["id", document.getElementById("idNfilter")]];
+const objectsIds =  {
+                      "star": "hip",
+                      "dso": "id",
+                      "ss": "name"
+                    }
 
-const pointerStyles = { 'point': {'name': 'point'},
+const objectCalibF =  [
+                        ["name", document.getElementById("nameCfilter")],
+                        ["c", document.getElementById("consCfilter")],
+                        ["hip", document.getElementById("hipCfilter")],
+                        ["hd", document.getElementById("hdCfilter")]
+                      ];
+const objectNavF =  [
+                      ["name", document.getElementById("nameNfilter")],
+                      ["es", document.getElementById("esNfilter")],
+                      ["c", document.getElementById("consNfilter")],
+                      ["hip", document.getElementById("hipNfilter")],
+                      ["hd", document.getElementById("hdNfilter")],
+                      ["id", document.getElementById("idNfilter")]
+                    ];
+
+const objectsTypeOptions =  {
+                              'ss': {'name': 'solar system'},
+                              'star': {'name': 'star'},
+                              'dso': {'name': 'deep sky and cluster'}
+                            };
+const calibTypeOptions =  {
+                            'ss': {'name': 'solar system'},
+                            'star': {'name': 'star'}
+                          };
+
+const itemsElements = {
+                        "navObjects": {"typeCombo": $navObjectsTypeCombo, "itemCombo": $navObjectsCombo, "options": objectsTypeOptions, "filters": objectNavF, "labels": objectsLabels, "ids": objectsIds},
+                        "calibObjects": {"typeCombo": $calibObjectsTypeCombo, "itemCombo": $calibObjectsCombo, "options": calibTypeOptions, "filters": objectCalibF, "labels": objectsLabels, "ids": objectsIds}
+                      };
+
+const pointerStyles = {
+                        'point': {'name': 'point'},
                         'bpoint': {'name': 'blinking point', 'interval': 2500},
-                        'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60, 'increment': Math.PI/20}};
-
-const objectsTypeOptions = {'ss': {'name': 'solar system'},
-                            'star': {'name': 'star'},
-                            'dso': {'name': 'deep sky and cluster'}};
-const calibTypeOptions = {'ss': {'name': 'solar system'},
-                          'star': {'name': 'star'}};
-
+                        'circle': {'name': 'circle', 'interval': 100, 'angle': Math.PI/60, 'increment': Math.PI/20}
+                      };
 
 const filterComboMinLength = 0;
 
@@ -90,8 +113,8 @@ let CoordNavW = new VecSP.Equatorial(0, 0);
 let calibStars;
 let stepSize;
 
-let objectsNames = {};
-let objectsData = {};
+let itemsNames = {};
+let itemsData = {};
 
 /*----------------------- */
 
@@ -146,26 +169,27 @@ App.localTimeString = function (date) {
   return String(hour) + ':' + String(minute);
 }
 
-App.equatorialFromObjectsData = function (objectSelected, date = new Date()) {
-  try {        
-    let stars = objectsData.features;
-    let obj = objectSelected.value.split("|");
-    if (obj[0] == "ss") {
+App.equatorialFromItemsData = function (itemSelected, date = new Date()) {
+  try {            
+    let obj = itemSelected.value.split("|");
+    let type = obj[0];
+    let name = obj[1];    
+    if (type == "ss") {
       let objSS;
-      if (obj[1] == "Moon") objSS = new Orb.Luna();
-      else if (obj[1] == "Sun") objSS = new Orb.Sun();
-      else objSS = new Orb.VSOP(obj[1]);            
+      if (name == "Moon") objSS = new Orb.Luna();
+      else if (name == "Sun") objSS = new Orb.Sun();
+      else objSS = new Orb.VSOP(name);      
       let radec = objSS.radec(date);
       if ($sideralOffset.checked) radec.ra -= (date - new Date())*24/sideralDay;      
       return new VecSP.Equatorial(radec.ra, radec.dec);
     }
     else {
-      let idObj = parseInt(obj[1].match(/\d+/)); //extracts the number part                  
-      for (let i = 0; i < stars.length; i++) {                
-        let id = parseInt(String(stars[i].id).match(/\d+/));        
+      let items = itemsData[type].features;
+      let idObj = parseInt(name.match(/\d+/)); //extracts the number part
+      for (let i = 0; i < items.length; i++) {                
+        let id = parseInt(String(items[i].id).match(/\d+/)); //extracts the number part
         if (id == idObj) {                    
-          let eq = stars[i].geometry.coordinates;
-          console.log(eq);
+          let eq = items[i].geometry.coordinates;          
           let ra = (24 + eq[0]*12/180)%24; //convertion from (-180° to 180° units) to (0 to 24hs units)        
           ra += (date - new Date())*24/sideralDay;
           return new VecSP.Equatorial(ra, eq[1]);
@@ -174,36 +198,118 @@ App.equatorialFromObjectsData = function (objectSelected, date = new Date()) {
     }
   }
   catch (err) {
-    alert("Object equatorial coordinates not found. " + err);
+    alert("Equatorial coordinates not found. " + err);
     return false;
   }
-  alert("Object equatorial coordinates not found.");
+  alert("Equatorial coordinates not found.");
   return false;
 }
 
-App.filterObjectCombo = function (filter, comboId, data, label) {    
-  if (filter.length >= filterComboMinLength) {        
-    let x = document.getElementById(comboId);        
-    x.innerText = null;
-    let type = "";
-    switch (comboId) {
-      case "navObjectsCombo":
-        type = $navObjectsTypeCombo.value;
-        break;
-      case "calibObjectsCombo":
-        type = $calibObjectsTypeCombo.value;
-        break;
-    }    
+App.changeObjectsType_old = function (elem) {
+  let objF, oCId;
+  switch (elem.id) {
+    case $navObjectsTypeCombo.id:
+      objF = objectNavF;
+      oCId = "navObjectsCombo";      
+      break;
+    case $calibObjectsTypeCombo.id:
+      objF = objectCalibF;
+      oCId = "calibObjectsCombo";
+      break;
+  }
+  let opt = elem.options[elem.selectedIndex].value;
+  App.setFiltersEvents()
+  App.setFiltersEvents2(objF, oCId, itemsNames[opt], minLength);  
+  App.filterCombo(objF[0][1].value, oCId, objectsNames, objF[0][0], 0);  
+  let style;
+  for (let x of objF) {
+    if (objectsLabels[opt].includes(x[0])) style = "block";
+    else style = "none";        
+    x[1].parentNode.style.display = style;
+    x[1].parentNode.previousSibling.style.display = style;    
+  }  
+}
+
+App.changeObjectsType = function (itemElement) {  
+  let opt = itemElement.options[itemElement.selectedIndex].value;  
+  let item;
+  for (let i in itemsElements) {
+  	if (itemsElements[i]["typeCombo"].id == itemElement.id) item = itemsElements[i];    
+  }  
+  App.setFiltersEvents(item, filterComboMinLength);    
+  App.filterCombo(item["filters"][0], item, filterComboMinLength);  
+  let filter = item["filters"];
+  let style;
+  for (let x of filter) {
+    if (item["labels"][opt].includes(x[0])) style = "block";
+    else style = "none";        
+    x[1].parentNode.style.display = style;
+    x[1].parentNode.previousSibling.style.display = style;    
+  }  
+}
+
+App.loadItemsDataNames = function () {
+  let starsNames = JSON.parse(starnamesJSON);
+  let starsData = JSON.parse(stars6JSON);
+  let dsoNames = JSON.parse(dsonamesJSON);
+  let dsoData = JSON.parse(dso6JSON);
+  
+  let ssNames = {
+                  "sun": {"name":"Sun"},
+                  "moon": {"name":"Moon"},
+                  "mercury": {"name":"Mercury"},
+                  "venus": {"name":"Venus"},
+                  "mars": {"name":"Mars"},
+                  "jupiter": {"name":"Jupiter"},
+                  "saturn": {"name":"Saturn"},
+                  "uranus": {"name":"Uranus"},
+                  "neptune": {"name":"Neptune"}
+                };
+
+  for (let obj in starsNames) starsNames[obj]["type"] = "star";
+  for (let obj in dsoNames) {
+    dsoNames[obj]["id"] = obj;
+    dsoNames[obj]["type"] = "dso";    
+  }
+  for (let obj in ssNames) ssNames[obj]["type"] = "ss";
+
+  itemsNames["star"] = starsNames;
+  itemsNames["dso"] = dsoNames;
+  itemsNames["ss"] = ssNames;
+  itemsData["star"] = starsData;
+  itemsData["dso"] = dsoData;
+}
+
+App.setFiltersEvents_old = function () {
+  //Stars navigation filter events binder:
+  for (let l of objectNavF)
+  for (let evt of ["keyup", "click"])      
+    l[1].addEventListener(evt, function(){App.filterCombo(l[1].value, "navObjectsCombo", objectsNames, l[0], filterComboMinLength)});
+  //Stars calibration filter events binder:
+  for (let l of objectCalibF)
+  for (let evt of ["keyup", "click"])      
+    l[1].addEventListener(evt, function(){App.filterCombo(l[1].value, "calibObjectsCombo", objectsNames, l[0], filterComboMinLength)});
+}
+
+App.filterCombo_old = function (filter, comboId, label, minLength) {};    
+
+App.filterCombo = function (filterElement, itemElement, minLength) {        
+  let type = itemElement["typeCombo"].options[itemElement["typeCombo"].selectedIndex].value;    
+  let x = itemElement["itemCombo"];
+  x.innerText = null;
+  let label = filterElement[0];
+  let filter = filterElement[1].value;
+  if (filter.length >= minLength) {          
     let obj, l, text;        
-    let id = objectsLabels[type][objectsLabels[type].length-1];
-    for (obj in data) {
-      if ((data[obj][label] !== undefined) && (type == data[obj]["type"])) {
-        if (data[obj][label].match(RegExp(filter, 'gi'))) {
+    let id = itemElement["ids"][type];
+    for (obj in itemsNames[type]) {
+      if ((itemsNames[type][obj][label] !== undefined)) {
+        if (itemsNames[type][obj][label].match(RegExp(filter, 'gi'))) {
           let option = document.createElement("option");
           text = "";
-          for (l of objectsLabels[type]) if (data[obj][l] !== undefined) text += data[obj][l] + "|";
+          for (l of itemElement["labels"][type]) if (itemsNames[type][obj][l] !== undefined) text += itemsNames[type][obj][l] + "|";
           option.text = text;
-          if (data[obj][id] !== undefined) option.value = type + "|" + data[obj][id];
+          if (itemsNames[type][obj][id] !== undefined) option.value = type + "|" + itemsNames[type][obj][id];
           else option.value = "0";
           x.add(option);
         }
@@ -212,66 +318,12 @@ App.filterObjectCombo = function (filter, comboId, data, label) {
   }
 }
 
-App.changeObjectsType = function (elem) {
-  let objF;
-  switch (elem.id) {
-    case $navObjectsTypeCombo.id:
-      objF = objectNavF;
-      break;
-    case $calibObjectsTypeCombo.id:
-      objF = objectCalibF;
-      break;
-  }
-  let opt = elem.options[elem.selectedIndex].value;  
-  let style;
-  for (let x of objF) {
-    //if (objectsLabels[opt].includes(x[0])) x[1].disabled = false;
-    //else x[1].disabled = true;  
-    if (objectsLabels[opt].includes(x[0])) style = "block";
-    else style = "none";        
-    x[1].parentNode.style.display = style;
-    //console.log(x[0]);
-    //console.log(x[1].parentNode.previousSibling.style);
-    x[1].parentNode.previousSibling.style.display = style;    
-  }
-}
-
-App.loadObjectsDataNames = function () {
-  let starnames = JSON.parse(starnamesJSON);
-  let starsData = JSON.parse(stars6JSON);
-  let dsonames = JSON.parse(dsonamesJSON);
-  let dsoData = JSON.parse(dso6JSON);
-  
-  let ssnames = {};
-  ssnames["sun"] = {"name":"Sun"}
-  ssnames["moon"] = {"name":"Moon"};
-  ssnames["mercury"] = {"name":"Mercury"};
-  ssnames["venus"] = {"name":"Venus"};
-  ssnames["mars"] = {"name":"Mars"};
-  ssnames["jupiter"] = {"name":"Jupiter"};
-  ssnames["saturn"] = {"name":"Saturn"};
-  ssnames["uranus"] = {"name":"Uranus"};
-  ssnames["neptune"] = {"name":"Neptune"};
-
-  for (let obj in starnames) starnames[obj]["type"] = "star";
-  for (let obj in dsonames) {
-    dsonames[obj]["id"] = obj;
-    dsonames[obj]["type"] = "dso";    
-  }
-  for (let obj in ssnames) ssnames[obj]["type"] = "ss";
-
-  objectsNames = Object.assign({}, starnames, dsonames, ssnames);
-  objectsData = Object.assign({}, starsData);  
-  objectsData["features"] = objectsData["features"].concat(dsoData["features"]);
-  
-  //Set stars navigation filter events binder:
-  for (let l of objectNavF)
-    for (let evt of ["keyup", "click"])      
-      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "navObjectsCombo", objectsNames, l[0])});
-  //Set stars calibration filter events binder:
-  for (let l of objectCalibF)
-    for (let evt of ["keyup", "click"])      
-      l[1].addEventListener(evt, function(){App.filterObjectCombo(l[1].value, "calibObjectsCombo", objectsNames, l[0])});
+App.setFiltersEvents = function (item, minLength) {        
+    let i = item["filters"];
+  for (let l in i)
+    for (let evt of ["keyup", "click"]) {           
+      i[l][1].addEventListener(evt, function(){App.filterCombo(i[l], item, minLength)});  
+    }
 }
 
 App.createComboOptions = function (comboElement, options) {
@@ -329,7 +381,7 @@ CalibW.updateCalib = async function (action) {
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
             let opt = $nsc.options[$nsc.selectedIndex];            
-            let eq = App.equatorialFromObjectsData(opt);            
+            let eq = App.equatorialFromItemsData(opt);            
             if (eq) {
               let t = new Date();
               let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
@@ -469,7 +521,7 @@ NavW.readCoords = async function () {
 NavW.showCoords = function () {
   let $nsc = document.getElementById("navObjectsCombo");
   let opt = $nsc.options[$nsc.selectedIndex];  
-  CoordNavW = App.equatorialFromObjectsData(opt);
+  CoordNavW = App.equatorialFromItemsData(opt);
   $raF.value = CoordNavW.ra.toFixed(4);
   $decF.value = CoordNavW.dec.toFixed(4);  
   NavW.updateCoordSys($raF);
@@ -549,7 +601,7 @@ NavW.goStar = async function (timeOpt) {
   }
   $navDate.value = App.localDateString(date);
   $navTime.value = App.localTimeString(date);
-  CoordNavW = App.equatorialFromObjectsData(opt, date);
+  CoordNavW = App.equatorialFromItemsData(opt, date);
   await NavW.goStyle(style);
 }
 
@@ -586,14 +638,23 @@ TourW.goCircle = async function () {
 App.setWindow("appNavW");
 
 //Load sky objects data and names:
-App.loadObjectsDataNames();
+App.loadItemsDataNames();
 
 //Set pointer style options:
 App.createComboOptions($ssPointerStyle, pointerStyles);
 App.createComboOptions($coordsPointerStyle, pointerStyles);
-//Set objects type options:
-App.createComboOptions($navObjectsTypeCombo, objectsTypeOptions);
-App.createComboOptions($calibObjectsTypeCombo, calibTypeOptions);
+
+//Set items type options:
+for (let i in itemsElements) {
+  let item = itemsElements[i];  
+  App.createComboOptions(item["typeCombo"], item["options"]);  
+  App.setFiltersEvents(item, filterComboMinLength);
+  //Set initial navigation type option:  
+  item["typeCombo"].selectedIndex = 0;
+  App.changeObjectsType(item["typeCombo"]);
+}
+//App.createComboOptions($navObjectsTypeCombo, objectsTypeOptions);
+//App.createComboOptions($calibObjectsTypeCombo, calibTypeOptions);
 
 //Set initial step size:
 Controller.updateStepSize();
@@ -607,11 +668,11 @@ $navDate.value = App.localDateString(new Date());
 $navTime.value = App.localTimeString(new Date());
 
 //Set initial navigation type option:
-$navObjectsTypeCombo.selectedIndex = 0;
-App.changeObjectsType($navObjectsTypeCombo);
+//$navObjectsTypeCombo.selectedIndex = 0;
+//App.changeObjectsType($navObjectsTypeCombo);
 //Set initial calibration type option:
-$calibObjectsTypeCombo.selectedIndex = 0;
-App.changeObjectsType($calibObjectsTypeCombo);
+//$calibObjectsTypeCombo.selectedIndex = 0;
+//App.changeObjectsType($calibObjectsTypeCombo);
 
 //Initialize calib stars list:
 calibStars = [];
