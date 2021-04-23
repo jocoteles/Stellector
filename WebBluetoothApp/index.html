@@ -21,6 +21,8 @@
     <script type="text/javascript" src="data/starnames.js"></script>    
     <script type="text/javascript" src="data/dso.6.js"></script>    
     <script type="text/javascript" src="data/dsonames.js"></script>    
+    <script type="text/javascript" src="data/messier.js"></script>
+    <script type="text/javascript" src="data/constellations.js"></script>
     <script src="script.js" type="module" defer></script>
   </head>
 
@@ -99,17 +101,8 @@
       </div>
       <div style="grid-column:1/3;">
         <div>Step size: <label id="stepSizeT"></label></div>
-        <input id="stepSizeR" type="range" onchange="Controller.updateStepSize()" list="steplist">
-        <datalist id="steplist">
-          <option>0</option>
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
-          <option>4</option>
-          <option>5</option>
-          <option>6</option>
-          <option>7</option>                
-        </datalist>              
+        <input id="stepSizeR" type="range" onchange="Controller.updateStepSize()" list="stepSizeRList">
+        <datalist id="stepSizeRList"></datalist>
       </div>
       <div style="grid-column:3;" class="direcBtn" id="laserStateB" onclick="Controller.switchLaser()"></div>            
       </div>
@@ -175,16 +168,19 @@
           <div style="display:grid;grid-template-columns:1fr 3fr;">
             <div style="grid-column:1/3">Object filter</div>
             <div>Name:</div><div><input id="nameNfilter" type="text" size="9"></div>
-            <div>Es:</div><div><input id="esNfilter" type="text" size="9"></div>
+            <div>English:</div><div><input id="enNfilter" type="text" size="9"></div>
+            <div>Spanish:</div><div><input id="esNfilter" type="text" size="9"></div>
             <div>Cons:</div><div><input id="consNfilter" type="text" size="9"></div>
             <div>HIP:</div><div><input id="hipNfilter" type="text" size="9"></div>
             <div>HD:</div><div><input id="hdNfilter" type="text" size="9"></div>            
-            <div>ID:</div><div><input id="idNfilter" type="text" size="9"></div>
+            <div>Desig:</div><div><input id="desigNfilter" type="text" size="9"></div>
+            <div>M:</div><div><input id="mNfilter" type="text" size="9"></div>
+            <div>NGC:</div><div><input id="ngcNfilter" type="text" size="9"></div>
           </div>
           
           <div style="grid-column:1/3;">
             <label>Pointer style: </label>
-            <select id="ssPointerStyle"></select>
+            <select id="objectPointerStyle"></select>
           </div>
 
           <div style="grid-column:1/3;">
@@ -211,8 +207,37 @@
           
         </div>        
 
-        <button class="transitionButton" id="appNavSPathsBtn" onclick="App.changeNav('appNavSPathsW')">Sky Paths</button>
-        <div id="appNavSPathsW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">
+        <button class="transitionButton" id="appNavSTracksBtn" onclick="App.changeNav('appNavSTracksW')">Sky Tracks</button>
+        <div id="appNavSTracksW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">
+          <div>
+            <div>Track type:</div>
+            <div><select id="navTracksTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
+            <div>Track selected:</div>
+            <div><select id="navTracksCombo" style="width:80%;"></select></div>                        
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 3fr;">
+            <div style="grid-column:1/3">Object filter</div>
+            <div>Name:</div><div><input id="nameNfilter" type="text" size="9"></div>
+            <div>Es:</div><div><input id="esNfilter" type="text" size="9"></div>
+            <div>Cons:</div><div><input id="consNfilter" type="text" size="9"></div>
+            <div>HIP:</div><div><input id="hipNfilter" type="text" size="9"></div>
+            <div>HD:</div><div><input id="hdNfilter" type="text" size="9"></div>            
+            <div>ID:</div><div><input id="idNfilter" type="text" size="9"></div>
+            <div>M:</div><div><input id="mNfilter" type="text" size="9"></div>
+            <div>NGC:</div><div><input id="ngcNfilter" type="text" size="9"></div>
+          </div>
+
+          <div style="grid-column:1/3;">
+            <label>Track style: </label>
+            <select id="trackStyle"></select>
+          </div>
+          <div style="grid-column:1/3;">
+            <span>Track speed: </span>
+            <input id="trackSpeedR" type="range" onchange="Controller.updateTrackSpeed()" list="trackSpeedRList">            
+            <datalist id="trackSpeedRList"></datalist>            
+            <label id="trackSpeedT"></label>
+          </div>
         </div>
 
         <button class="transitionButton" id="appNavCoordBtn" onclick="App.changeNav('appNavCoordW')">Coordinates</button>      
