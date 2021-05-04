@@ -30,7 +30,9 @@
 
 #define FSCYCLE 4               //steppers full step cycle
 #define STPS360 2038            //steppers number of steps for a 360º rotation
-#define ZENITH_STEP 512         //steppers step values corresponding to the Zenith direction
+#define ZENITH_STEP 510         //steppers step values corresponding to the Zenith direction
+#define STEP_MIN 30             //steppers step min value for eye laser safety 
+#define STEP_MAX 989            //steppers step max value for eye laser safety 
 
 #define STPR1_GPIOS {14, 27, 26, 25}  //stepper 1 (fixed) GPIO pins
 #define STPR2_GPIOS {15,  2,  4, 16}  //stepper 2 (mobile) GPIO pins
@@ -50,6 +52,7 @@
 #define READ_ACT_STEPS_OPT 7   //option to read the steppers actual steps
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
+#define STEP_ITER 8                 //maximum number of iterations for step precision quest
 
 //BLE variables:
 //--------------
@@ -297,16 +300,17 @@ void setZenith() {
   thetaP[0] = a0;
   pathSize = 1;
   stepRead(1.0, 1000, 100);
+  int i = 0;
   do {
     execPath();
-    stepRead(1.0, 1000, 100);        
-  } while ((abs(actStep[0] - a0) > STEP_PREC) || (abs(actStep[1] - a0) > STEP_PREC));  
+    stepRead(1.0, 1000, 100);
+  } while (((abs(actStep[0] - a0) > STEP_PREC) || (abs(actStep[1] - a0) > STEP_PREC)) && (i++ < STEP_ITER));  
   steppersOff();
 }
 
 bool checkPathBoundaries() {
   /*for (uint16_t j = 0; j < pathSize; j++) {
-    if (abs(phiP[j]-STPS360/2) > STPS360/4 || abs(thetaP[j]-STPS360/2) > STPS360/4)
+    if ((phiP[j] < STEP_MIN) || (phiP[j] > STEP_MAX) || (thetaP[j] < STEP_MIN) || (thetaP[j] > STEP_MAX))
       return false;      
   }*/
   return true;
@@ -325,10 +329,18 @@ void execPath() {
     ph = phiP[j];
     th = thetaP[j];    
     dph = ph - phA;
-    dth = th - thA;    
+    dth = th - thA;        
+    //dph += dph%2;
+    //dth += dth%2;
     N = max(max(abs(dph), abs(dth)), 1);
     fph = float(dph)/N;
-    fth = float(dth)/N;    
+    fth = float(dth)/N;
+    /*Serial.println("-------------------------------------");
+    Serial.print("j: ");Serial.println(j);
+    Serial.print("phA: ");Serial.println(phA);
+    Serial.print("thA: ");Serial.println(thA);
+    Serial.print("ph: ");Serial.println(ph);
+    Serial.print("th: ");Serial.println(th);*/
     for (uint16_t i = 1; i <= N; i++) {
       ph = phA + int(i*fph);
       th = thA + int(i*fth);      
@@ -357,7 +369,9 @@ void execLastSegmentFromPath() {
   ph = phiP[j];
   th = thetaP[j];    
   dph = ph - phA;
-  dth = th - thA;    
+  dth = th - thA;
+  //dph += dph%2;
+  //dth += dth%2;    
   N = max(max(abs(dph), abs(dth)), 1);
   fph = float(dph)/N;
   fth = float(dth)/N;    
@@ -541,18 +555,14 @@ void loop() {
     stepRead(1.0, 1000, 100);
     //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
-      execPath();      
+      execPath();
+      int i = 0;      
       if (!cyclicPathF) do {
         execLastSegmentFromPath();
         //delay(500);         
         stepRead(1.0, 5000, 100);        
         //stepReadSimple(1000);
-        Serial.println("-------------------------------------");
-        Serial.print("actStep0: ");Serial.println(actStep[0]);
-        Serial.print("actStep1: ");Serial.println(actStep[1]);
-        Serial.print("phiP: ");Serial.println(phiP[pathSize-1]);
-        Serial.print("theP: ");Serial.println(thetaP[pathSize-1]);        
-      } while ((abs(actStep[0] - phiP[pathSize-1]) > STEP_PREC) || (abs(actStep[1] - thetaP[pathSize-1]) > STEP_PREC));        
+      } while (((abs(actStep[0] - phiP[pathSize-1]) > STEP_PREC) || (abs(actStep[1] - thetaP[pathSize-1]) > STEP_PREC)) && (i++ < STEP_ITER));        
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;

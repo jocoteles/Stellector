@@ -12,7 +12,9 @@ import '../libs/optimization.js'
  */
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
-	ZENITH_STEP: 512,			//steppers step values corresponding to the Zenith direction
+	ZENITH_STEP: 510,			//steppers step values corresponding to the Zenith direction
+	STEP_MIN: 30,				//steppers step min value for eye laser safety 
+	STEP_MAX: 989,				//steppers step max value for eye laser safety 
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
@@ -211,9 +213,11 @@ VecSP.Calibration = class {
 		this.t0 = new Date();
 		/**@member {object} - Calibration statistics */
 		this.stats = {dev: 0, min: 0, max: 0, minStar: null, maxStar: null};
+		/**@member {number} - Number of tries used by the optmization algorithm. */
+		this.minimizationTries = 10;
 	}
 	/**
-	 * Find the Euler rotations that relate the local reference system to the celestial reference system..
+	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
 	 * @param {VecSP.CalibStar[]} stars - array of calibration stars 
 	 */	
     calcCalib (stars) {
@@ -240,11 +244,12 @@ VecSP.Calibration = class {
 			}
 			return N - dev;
 		}
-		let angs = [[0,0,0],[1.5,0,0],[0,1.5,0],[0,0,1.5],[1.5,1.5,0],[1.5,0,1.5],[0,1.5,1.5],[1.5,1.5,1.5],[-1.5,0,0],[0,-1.5,0],[0,0,-1.5],[-1.5,-1.5,0],[-1.5,0,-1.5],[0,-1.5,-1.5],[-1.5,-1.5,-1.5]];		
+		let dims = [optimjs.Real(0, 2*Math.Pi), optimjs.Real(0, 2*Math.Pi), optimjs.Real(0, 2*Math.Pi)];		
 		let optAngs;
 		let bestValue = 1000;
-		for (let i = 0; i < angs.length; i++) {
-			let res = optimjs.minimize_Powell(optimFunction, angs[i]);
+		for (let i = 0; i < this.minimizationTries; i++) {
+			let dres = optimjs.dummy_minimize(optimFunction, dims, n_calls=256);
+			let res = optimjs.minimize_Powell(optimFunction, dres.best_x);
 			if (res.fncvalue < bestValue) {
 				bestValue = res.fncvalue;
 				optAngs = res.argument;
@@ -340,6 +345,8 @@ CommSP.CommPath = class {
 		this.calib = Calib;
 		/**@member {number[]} - Parsed path obtained from this._path. */
 		this._parsedPath = [];
+		/**@member {boolean} - True if this._parsedPath is out of steppers bounds. */
+		this.clipped = false;
 		this.composePath();
 	}
 	/**Parse a segment to be added to a parsed path.
@@ -347,8 +354,14 @@ CommSP.CommPath = class {
 	 * @returns {number[]} Array with decBase size representing the parsed segment.
 	 */
 	parseSegment (Segment) {
-		//Encoding to this._encBase:
+		//Encoding to this._encBase:		
 		let step = this.calib.stepFromEquatorial(Segment.eq);
+		//console.log(Segment.eq);
+		//console.log(step);
+		if (step.fix < ESP32.STEP_MIN || step.fix > ESP32.STEP_MAX || step.mob < ESP32.STEP_MIN || step.mob > ESP32.STEP_MAX) {
+			this.clipped = true;
+			return false;
+		}
 		let data = [Segment.laser, Segment.delay, step.fix, step.mob];
 		let x = 0;
 		let b = 0;
@@ -370,9 +383,10 @@ CommSP.CommPath = class {
 	/**Method for parsing this._path. */
 	composePath () {		
 		this._parsedPath = [];
-		for (let i = 0; i < this._path.size; i++) {			
+		this.clipped = false;
+		for (let i = 0; i < this._path.size; i++) {					    
 			let s = this.parseSegment(this._path.path[i]);
-			this._parsedPath = this._parsedPath.concat(s);
+			if (s != false) this._parsedPath = this._parsedPath.concat(s);
 		}
 	}
 	/**Set path. */
@@ -521,27 +535,31 @@ CommSP.Bluetooth = class {
 	 * @param {boolean} cyclicOpt - If false, Path is executed once, else it is excuted cyclicaly until stop signal.
 	 */
 	async goPath (Path, cyclicOpt = false) {  
-	    try {
-			await this.sendOption('resetPath');
-			let j = 0;
-			let pathChunk;
-			let path = Path.parsedPath;
-			for (let i = 0; i < path.length; i++) {
-					j = i % this.maxChunk;
-				if (j == 0) {      
-					if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
-					else pathChunk = new Uint8Array(path.length - i);
+	    try {			
+			let path = Path.parsedPath;			
+			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
+			else {
+				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
+				await this.sendOption('resetPath');
+				let j = 0;
+				let pathChunk;
+				for (let i = 0; i < path.length; i++) {
+						j = i % this.maxChunk;
+					if (j == 0) {      
+						if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
+						else pathChunk = new Uint8Array(path.length - i);
+					}
+					pathChunk[j] = path[i];
+					if ((j == this.maxChunk - 1) || (i == path.length -1)) {
+						await this.pathC.writeValue(pathChunk);
+					}
 				}
-				pathChunk[j] = path[i];
-				if ((j == this.maxChunk - 1) || (i == path.length -1)) {
-					await this.pathC.writeValue(pathChunk);
-				}
+				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
+				if (cyclicOpt) await this.sendOption('cyclicPath');
+				else await this.sendOption('execPath');
+				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
+				return true;
 			}
-			this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-			if (cyclicOpt) await this.sendOption('cyclicPath');
-			else await this.sendOption('execPath');
-			this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
-			return true;
 		} catch {return await this.disconnectMsg();}
 	}
 	/** Turn on/off the laser in the ESP32 server.
@@ -633,7 +651,7 @@ PathSP.Path = class {
 	 *  @param {PathSP.Path} Path
 	 */
 	addPath (Path) {
-		this.path.push(Path.path);
+		this.path = this.path.concat(Path.path);
 		this.size += Path.size;
 		this.duration += Path.duration;
 	}
@@ -664,6 +682,38 @@ PathSP.makeCircle = function (Center, border, angleIncrement, lpattern, delay) {
 	for (let i = 0; i < N; i++) {
 		let v = v0.clone();
 		v.applyAxisAngle(c, i*angleIncrement);
+		laser = 0;
+		if ((i%r) < lpattern[0]) laser = 1;
+		let eq = new VecSP.Equatorial();
+		eq.fromVector3(v);
+		let segment = new PathSP.Segment(eq, laser, delay);
+		path.addSegment(segment);
+	}
+	return path;   
+}
+
+/** Function to generate a geodesic path trajectory.
+*   @param {VecSP.Equatorial} eq0 - geodesic starting point.
+*	@param {VecSP.Equatorial} eq1 - geodesic ending point.
+*	@param {number} angleIncrement - angle step for the geodesic discretization in rad.
+*	@param {Array} lpattern - [laser on number of steps, laser off number of steps].
+*	@param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
+*	@returns {PathSP.Path} path for the geodesic trajectory.
+*/
+PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
+	let path = new PathSP.Path();
+	let v0 = eq0.toVector3();
+	let v1 = eq1.toVector3();	
+	let a = v0.angleTo(v1);
+	let N = Math.max(1.0, Math.round(Math.abs(a/angleIncrement)));		
+	let ainc = a/N;
+	let v3 = new THREE.Vector3();
+	v3 = THREE.crossVectors(v0, v1);	
+	let r = lpattern[0] + lpattern[1];	
+	let laser;	
+	for (let i = 0; i <= N; i++) {
+		let v = v1.clone();
+		v.applyAxisAngle(v3, i*ainc);
 		laser = 0;
 		if ((i%r) < lpattern[0]) laser = 1;
 		let eq = new VecSP.Equatorial();

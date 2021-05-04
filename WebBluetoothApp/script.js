@@ -12,9 +12,24 @@ import './libs/orb.v2.min.js';
 const $stepSizeR = document.getElementById("stepSizeR");
 const $stepSizeRList = document.getElementById("stepSizeRList");
 const $stepSizeT = document.getElementById("stepSizeT");
-const $trackSpeedR = document.getElementById("trackSpeedR");
-const $trackSpeedRList = document.getElementById("trackSpeedRList");
-const $trackSpeedT = document.getElementById("trackSpeedT");
+const $lineSpeedR = document.getElementById("lineSpeedR");
+const $lineSpeedRList = document.getElementById("lineSpeedRList");
+const $lineSpeedT = document.getElementById("lineSpeedT");
+const $lineOnR = document.getElementById("lineOnR");
+const $lineOnRList = document.getElementById("lineOnRList");
+const $lineOnT = document.getElementById("lineOnT");
+const $lineAngR = document.getElementById("lineAngR");
+const $lineAngT = document.getElementById("lineAngT");
+const $circleSpeedR = document.getElementById("circleSpeedR");
+const $circleSpeedRList = document.getElementById("circleSpeedRList");
+const $circleSpeedT = document.getElementById("circleSpeedT");
+const $circleOnR = document.getElementById("circleOnR");
+const $circleOnRList = document.getElementById("circleOnRList");
+const $circleOnT = document.getElementById("circleOnT");
+const $circleApR = document.getElementById("circleApR");
+const $circleApT = document.getElementById("circleApT");
+const $circleAngR = document.getElementById("circleAngR");
+const $circleAngT = document.getElementById("circleAngT");
 const $laserStateB = document.getElementById("laserStateB");
 const $commStatus = document.getElementById("commStatus");
 const $calibLog = document.getElementById("calibLog");
@@ -29,18 +44,25 @@ const $decS = document.getElementById("decInputS");
 const $decF = document.getElementById("decInputF");  
 const $fixI = document.getElementById("fixInput");
 const $mobI = document.getElementById("mobInput");
-const $navDate = document.getElementById("navDate");
-const $navTime = document.getElementById("navTime");
+const $objDate = document.getElementById("objDate");
+const $objTime = document.getElementById("objTime");
+const $trackDate = document.getElementById("trackDate");
+const $trackTime = document.getElementById("trackTime");
 const $timeStepY = document.getElementById("timeStepY");
 const $timeStepD = document.getElementById("timeStepD");
 const $timeStepM = document.getElementById("timeStepM");
 const $sideralOffset = document.getElementById("sideralOffset");
 const $objectPointerStyle = document.getElementById("objectPointerStyle");
+const $trackPointerStyle = document.getElementById("trackPointerStyle");
 const $coordsPointerStyle = document.getElementById("coordsPointerStyle");
 const $calibObjectsTypeCombo = document.getElementById("calibObjectsTypeCombo");
 const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
+const $navTracksTypeCombo = document.getElementById("navTracksTypeCombo");
 const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
 const $navObjectsCombo = document.getElementById("navObjectsCombo");
+const $navTracksCombo = document.getElementById("navTracksCombo");
+const $trackAtDatetime = document.getElementById("trackAtDatetime");
+const $trackCyclically = document.getElementById("trackCyclically");
 
 const laserStateBOFF = "laser is OFF";
 const laserStateBON = "laser is ON";
@@ -56,14 +78,41 @@ const stepSizeInputDatalistParams =
   'input': $stepSizeR,
   'datalist': $stepSizeRList
 };
-const trackSpeedInputDatalistParams =
+const lineSpeedInputDatalistParams =
 {
   'min': 1,
   'max': 7,
   'step': 1,
   'init': 4,
-  'input': $trackSpeedR,
-  'datalist': $trackSpeedRList
+  'input': $lineSpeedR,
+  'datalist': $lineSpeedRList
+};
+const lineOnInputDatalistParams =
+{
+  'min': 0,
+  'max': 100,
+  'step': 25,
+  'init': 100,
+  'input': $lineOnR,
+  'datalist': $lineOnRList
+};
+const circleSpeedInputDatalistParams =
+{
+  'min': 1,
+  'max': 7,
+  'step': 1,
+  'init': 4,
+  'input': $circleSpeedR,
+  'datalist': $circleSpeedRList
+};
+const circleOnInputDatalistParams =
+{
+  'min': 0,
+  'max': 100,
+  'step': 25,
+  'init': 100,
+  'input': $circleOnR,
+  'datalist': $circleOnRList
 };
 
 const objectsLabels =
@@ -73,6 +122,13 @@ const objectsLabels =
   "ss": ["name"],
   "messier": ["name", "m", "ngc"],
   "constellation": ["name", "en", "es"]
+}
+const tracksLabels = 
+{
+  "clines": ["name", "en", "es"],
+  "cbounds": ["name", "en", "es"],
+  "asterisms": ["name", "es"],
+  "ecliptic": ["name"]
 }
 
 const objectCalibF =
@@ -94,6 +150,12 @@ const objectNavF =
   ["m", document.getElementById("mNfilter")],
   ["ngc", document.getElementById("ngcNfilter")]
 ];
+const trackNavF =
+[
+  ["name", document.getElementById("nameTfilter")],
+  ["es", document.getElementById("esTfilter")],
+  ["en", document.getElementById("enTfilter")]
+]
 
 const objectsTypeOptions =
 {
@@ -108,19 +170,36 @@ const calibTypeOptions =
   'ss': {'text': 'solar system'},
   'star': {'text': 'star'}
 };
+const tracksTypeOptions = 
+{
+  'clines': {'text': 'constellation lines'},
+  'cbounds': {'text': 'constellation bounds'},
+  'asterisms': {'text': 'asterisms'},
+  'ecliptic': {'text': 'ecliptic'}
+}
 
 const itemsElements =
 {
   "navObjects": {"typeCombo": $navObjectsTypeCombo, "itemCombo": $navObjectsCombo, "options": objectsTypeOptions, "filters": objectNavF, "labels": objectsLabels},
-  "calibObjects": {"typeCombo": $calibObjectsTypeCombo, "itemCombo": $calibObjectsCombo, "options": calibTypeOptions, "filters": objectCalibF, "labels": objectsLabels}
+  "calibObjects": {"typeCombo": $calibObjectsTypeCombo, "itemCombo": $calibObjectsCombo, "options": calibTypeOptions, "filters": objectCalibF, "labels": objectsLabels},
+  "navTracks": {"typeCombo": $navTracksTypeCombo, "itemCombo": $navTracksCombo, "options": tracksTypeOptions, "filters": trackNavF, "labels": tracksLabels}
 };
 
 const pointerStyleOptions =
 {
   'point': {'text': 'point'},
   'bpoint': {'text': 'blinking point', 'interval': 2500},
-  'circle': {'text': 'circle', 'interval': 100, 'angle': Math.PI/60, 'increment': Math.PI/20}
+  'circle': {'text': 'circle'}
 };
+
+const trackStyleOptions =
+{
+  'solid': {'text': 'solid'},
+  'dashed': {'text': 'dashed'},
+  'circle': {'text': 'circle'},
+  'solidcircle': {'text': 'solid-circle'},
+  'dashedcircle': {'text': 'dashed-circle'}
+}
 
 const filterComboMinLength = 0;
 
@@ -142,6 +221,13 @@ let stepSize;
 let itemsNames = {};
 let itemsData = {};
 
+let trackPath = {'paths': [], 'fullPath': new PathSP.Path()};
+let trackStep = -1;
+
+/*let pointerConfig = {
+  'lineSpeed': 0;
+}*/
+
 /*----------------------- */
 
 
@@ -149,6 +235,8 @@ let itemsData = {};
   Astronomy constants */
 
 const sideralDay = 86164090.5; //[ms]
+const sideralYear = 366.255936; //[sideral days]
+const eclipticDivisions = 30;
 
 /*--------------------- */
 
@@ -195,9 +283,34 @@ App.localTimeString = function (date) {
   return String(hour) + ':' + String(minute);
 }
 
-App.equatorialFromItemsData = function (itemSelected, date = new Date()) {
+/**
+ * Convertion from (-180° to 180° units) to (0 to 24hs units)
+ * @param {Number} ra in -180° to 180° units
+ * @returns ra in 0 to 24hs units
+ */
+App.ra180to24 = function (ra) {
+  return (24 + ra*12/180)%24;
+}
+
+/**
+ * Convertion from (0 to 24hs units) to (-180° to 180° units)
+ * @param {Number} ra in 0 to 24hs units
+ * @returns ra in -180° to 180° units
+ */
+ App.ra24to180 = function (ra) {
+  return ra > 12 ? (ra - 24) * 15 : ra * 15;
+}
+
+App.getCoordinates = function (itemType, itemId) {
+  let items = itemsData[itemType].features;      
+  for (let i = 0; i < items.length; i++)
+    if (items[i].id == itemId) return items[i].geometry.coordinates;          
+  return false;
+}
+
+App.equatorialFromObjectData = function (value, date = new Date()) {
   try {            
-    let obj = itemSelected.value.split("|");
+    let obj = value.split("|");
     let type = obj[0];
     let id = obj[1];    
     if (type == "ss") {
@@ -210,27 +323,24 @@ App.equatorialFromItemsData = function (itemSelected, date = new Date()) {
       return new VecSP.Equatorial(radec.ra, radec.dec);
     }
     else {
-      let items = itemsData[type].features;      
-      for (let i = 0; i < items.length; i++) {                
-        if (items[i].id == id) {                    
-          let eq = items[i].geometry.coordinates;          
-          let ra = (24 + eq[0]*12/180)%24; //convertion from (-180° to 180° units) to (0 to 24hs units)        
-          ra += (date - new Date())*24/sideralDay;
-          return new VecSP.Equatorial(ra, eq[1]);
-        }
+      let eq = App.getCoordinates(type, id);
+      if (eq != false) {
+        let ra = App.ra180to24(eq[0]); 
+        ra += (date - new Date())*24/sideralDay;
+        return new VecSP.Equatorial(ra, eq[1]);
       }
     }
   }
   catch (err) {
-    alert("Equatorial coordinates not found. " + err);
+    alert("Object coordinates not found. " + err);
     return false;
   }
-  alert("Equatorial coordinates not found.");
+  alert("Object coordinates not found.");
   return false;
 }
 
 App.changeObjectsType = function (itemElement) {  
-  let opt = itemElement.options[itemElement.selectedIndex].value;  
+  let opt = App.valueSelected(itemElement);  
   let item;
   for (let i in itemsElements) {
   	if (itemsElements[i]["typeCombo"].id == itemElement.id) item = itemsElements[i];    
@@ -256,6 +366,12 @@ App.loadItemsDataNames = function () {
   let mNames = {};
   let consData = JSON.parse(constellationsJSON);
   let consNames = {};
+  let clinesData = JSON.parse(clinesJSON);
+  let cboundsData = JSON.parse(cboundsJSON);
+  let asterismsData = JSON.parse(asterismsJSON);
+  let asterismsName = {};
+  let eclipticData = {};
+  let eclipticName = {};
   
   let ssNames = {
                   "sun": {"name":"Sun", "id":"Sun"},
@@ -294,22 +410,51 @@ App.loadItemsDataNames = function () {
     consNames[id]["name"] = obj["properties"]["name"];    
     consNames[id]["en"] = obj["properties"]["en"];    
     consNames[id]["es"] = obj["properties"]["es"];    
-    obj["geometry"]["coordinates"] = obj["properties"]["display"]; //replace coordinates with display (optional)
+    obj["geometry"]["coordinates"] = obj["properties"]["display"]; //replace coordinates with display (optional)    
   }
+
+  for (let obj of asterismsData["features"]) {            
+    let id = obj["id"];
+    asterismsName[id] = {};
+    asterismsName[id]["id"] = id;
+    asterismsName[id]["name"] = obj["properties"]["n"];        
+    asterismsName[id]["es"] = obj["properties"]["es"];        
+  }
+
+  eclipticData["features"] = [{'id': 'ecliptic', 'properties': {'name': 'ecliptic'}, 'geometry': {'coordinates': []}}];
+  let eclipitic = [];
+  let dt = sideralDay*sideralYear/eclipticDivisions;  
+  let sun = new Orb.Sun();
+  let date0 = new Date().getTime();  
+  for (let i = 0; i < eclipticDivisions; i++) {    
+    let date = new Date(date0 + Math.round(i*dt));    
+    let radec = sun.radec(date);
+    eclipitic = eclipitic.concat([[App.ra24to180(radec.ra).toFixed(4), radec.dec.toFixed(4)]]);    
+  }
+  eclipticData["features"][0]["geometry"]["coordinates"] = eclipitic;
+  eclipticName['ecliptic'] = {};
+  eclipticName['ecliptic']['id'] = 'ecliptic';
+  eclipticName['ecliptic']['name'] = 'ecliptic';
 
   itemsNames["star"] = starsNames;
   itemsNames["dso"] = dsoNames;
   itemsNames["ss"] = ssNames;
   itemsNames["messier"] = mNames;
   itemsNames["constellation"] = consNames;
+  itemsNames["clines"] = consNames;
+  itemsNames["cbounds"] = consNames;
+  itemsNames["asterisms"] = asterismsName;
   itemsData["star"] = starsData;
   itemsData["dso"] = dsoData;
   itemsData["messier"] = mData;
   itemsData["constellation"] = consData;
+  itemsData["clines"] = clinesData;
+  itemsData["cbounds"] = cboundsData;
+  itemsData["asterisms"] = asterismsData;
 }
 
 App.filterCombo = function (filterElement, itemElement, minLength) {        
-  let type = itemElement["typeCombo"].options[itemElement["typeCombo"].selectedIndex].value;    
+  let type = App.valueSelected(itemElement["typeCombo"]);    
   let x = itemElement["itemCombo"];
   x.innerText = null;
   let label = filterElement[0];
@@ -351,6 +496,10 @@ App.createComboOptions = function (comboElement, options) {
     option.text = options[opt].text;    
     comboElement.add(option);
   }
+}
+
+App.valueSelected = function (element) {
+  return element.options[element.selectedIndex].value;                
 }
 
 App.setInputRangeDatalist = function (params) {
@@ -408,8 +557,8 @@ CalibW.updateCalib = async function (action) {
     if ($nsc.innerText != null) {              
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
-            let opt = $nsc.options[$nsc.selectedIndex];            
-            let eq = App.equatorialFromItemsData(opt);            
+            let opt = App.valueSelected($nsc);            
+            let eq = App.equatorialFromObjectData(opt);            
             if (eq) {
               let t = new Date();
               let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
@@ -488,14 +637,14 @@ NavW.goZenith = async function () {
 	await BleInstance.goZenith();
 }
 
-NavW.goStyle = async function (style) {
+NavW.goObjectStyle = async function (style) {
   let path = new PathSP.Path();
   let cyclicOpt;
   switch (style) {
     case "point":
-      let seg = new PathSP.Segment(CoordNavW, laser, 0);	  
+      let seg = new PathSP.Segment(CoordNavW, 1, 0);	  
 	    path.addSegment(seg);
-      cyclicOpt = false;
+      cyclicOpt = true;
       break;
     case "bpoint":
       let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
@@ -505,11 +654,16 @@ NavW.goStyle = async function (style) {
       cyclicOpt = true;
       break;
     case "circle":
-      let circle = new PathSP.makeCircle(CoordNavW, pointerStyles.circle.angle, pointerStyles.circle.increment, [1,0], pointerStyles.circle.interval);
+      let ap = 0.5*$circleApR.value*Math.PI/180;      
+      let inc = $circleAngR.value*Math.PI/180;  
+      let delay = Number($circleSpeedR.value)*100;      
+      let cp = Math.round(Number($circleOnR.value)/25);
+      let lp = [cp, 4-cp];    
+      let circle = new PathSP.makeCircle(CoordNavW, ap, inc, lp, delay);
 	    path.addPath(circle);
       cyclicOpt = true;
       break;
-  }	
+  }  
 	let commPath = new CommSP.CommPath(path, CalibInstance);	
 	await BleInstance.goPath(commPath, cyclicOpt);
 }
@@ -520,7 +674,7 @@ NavW.goEquatorial = async function () {
   CoordNavW.ra = Number($raF.value);
   CoordNavW.dec = Number($decF.value);
   let style = $coordsPointerStyle.value;
-  await NavW.goStyle(style);
+  await NavW.goObjectStyle(style);
 }
 
 NavW.goSteps = async function () {
@@ -529,7 +683,7 @@ NavW.goSteps = async function () {
   let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
   CoordNavW = CalibInstance.equatorialFromStep(Step);  
 	let style = $coordsPointerStyle.value;
-  await NavW.goStyle(style);
+  await NavW.goObjectStyle(style);
 }
 
 NavW.readCoords = async function () {
@@ -548,9 +702,9 @@ NavW.readCoords = async function () {
 
 NavW.showCoords = function () {
   let $nsc = document.getElementById("navObjectsCombo");
-  let opt = $nsc.options[$nsc.selectedIndex];  
+  let opt = App.valueSelected($nsc);  
   //console.log(opt);
-  CoordNavW = App.equatorialFromItemsData(opt);
+  CoordNavW = App.equatorialFromObjectData(opt);
   $raF.value = CoordNavW.ra.toFixed(4);
   $decF.value = CoordNavW.dec.toFixed(4);  
   NavW.updateCoordSys($raF);
@@ -603,35 +757,99 @@ NavW.timeStepCheck = function ($elem) {
 }
 
 NavW.timeTest = function ($elem) {
-  let date = new Date($navDate.value+'T'+$navTime.value);
+  let date = new Date($objDate.value+'T'+$objTime.value);
   let now = new Date();  
   console.log(now);
   console.log(date);
   console.log(date-now);
 }
 
-NavW.goStar = async function (timeOpt) {
-  let $nsc = document.getElementById("navObjectsCombo");
-  let opt = $nsc.options[$nsc.selectedIndex];                
+NavW.goStar = async function (timeOpt) {  
+  let opt = App.valueSelected($navObjectsCombo);                
   let style = $objectPointerStyle.value;
-  let date 
+  let date;
   if (timeOpt == 'now') date = new Date();  
-  else if (timeOpt == 'date') date = new Date($navDate.value+'T'+$navTime.value);
+  else if (timeOpt == 'date') date = new Date($objDate.value+'T'+$objTime.value);
   else {
     let s = Number(timeOpt);
-    let d = new Date($navDate.value+'T'+$navTime.value);    
+    let d = new Date($objDate.value+'T'+$objTime.value);    
     let year = d.getFullYear() + s*Number($timeStepY.value);
     let month = d.getMonth();
     let day = d.getDate() + s*Number($timeStepD.value);
     let hour = d.getHours();
     let minute = d.getMinutes() + s*Number($timeStepM.value);
-    let second = d.getSeconds();
     date = new Date(year, month, day, hour, minute);        
   }
-  $navDate.value = App.localDateString(date);
-  $navTime.value = App.localTimeString(date);
-  CoordNavW = App.equatorialFromItemsData(opt, date);
-  await NavW.goStyle(style);
+  $objDate.value = App.localDateString(date);
+  $objTime.value = App.localTimeString(date);
+  CoordNavW = App.equatorialFromObjectData(opt, date);
+  await NavW.goObjectStyle(style);
+}
+
+NavW.goTrack = async function (opt) {
+  let coords = true;
+  if (trackStep < 0) {    
+    let track = App.valueSelected($navTracksCombo).split("|");
+    let trackType = track[0];
+    let trackId = track[1];
+    let date;
+    if ($trackAtDatetime.checked) date = new Date($trackDate.value+'T'+$trackTime.value);
+    else date = new Date();    
+    coords = App.getCoordinates(trackType, trackId);    
+    let trackArray = [];
+    if (coords != false) {
+      let circle = App.valueSelected($trackPointerStyle).includes('circle');
+      let solid = App.valueSelected($trackPointerStyle).includes('solid');
+      let dashed = App.valueSelected($trackPointerStyle).includes('dashed');      
+      let ldelay = Number($lineSpeedR.value)*100;
+      let cdelay = Number($circleSpeedR.value)*100;
+      let lp = Math.round(Number($lineOnR.value)/25);      
+      let llp = solid ? [1, 0] : [lp, 4-lp];
+      let cp = Math.round(Number($circleOnR.value)/25);
+      let clp = [cp, 4-cp];
+      let linc = $lineAngR.value*Math.PI/180;
+      let cinc = $circleAngR.value*Math.PI/180;
+      let cap = $circleApR.value*Math.PI/180;
+      let dt = (date - new Date())*24/sideralDay;
+      let n = coords.length-1;
+      for (let i; i < n; i++) {
+        let ra0 = App.ra180to24(coords[i][0]) + dt;
+        let dec0 = coords[i][1];
+        let ra1 = App.ra180to24(coords[i+1][0]) + dt;        
+        let dec1 = coords[i+1][1];
+        let eq0 = new VecSP.Equatorial(ra0, dec0);
+        let eq1 = new VecSP.Equatorial(ra1, dec1);
+        if (circle) trackArray = trackArray.concat([PathSP.makeCircle(eq0, cap, cinc, clp, cdelay)]);
+        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);
+      }      
+      if (circle) {
+        let ra = App.ra180to24(coords[n][0]) + dt;
+        let dec = coords[n][1];
+        let eq = new VecSP.Equatorial(ra, dec);
+        trackArray = trackArray.concat([PathSP.makeCircle(eq, cap, cinc, clp, cdelay)]);        
+      }
+      trackPath.paths = trackArray;
+      for (let p of trackArray) trackPath.fullPath.addPath(p);
+    } else alert("Track coordinates not found.");    
+  }
+  if (coords != false) {
+    if (opt == 'fullTrack') {
+      let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	
+      await BleInstance.goPath(commPath, $trackCyclically.checked);
+    }
+    else {
+      trackStep += Number(opt);
+      trackStep = (trackPath.paths.length + trackStep)%trackPath.paths.length;
+      let commPath = new CommSP.CommPath(trackPath.paths[trackStep], CalibInstance);	    
+      await BleInstance.goPath(commPath, $trackCyclically.checked);    
+    }
+  }
+}
+
+NavW.resetTrack = function () {
+  trackPath.segments = [];
+  trackPath.fullPath = new PathSP.Path();
+  trackStep = -1;
 }
 
 /**
@@ -652,6 +870,40 @@ CommW.startComm = function () {
 
 
 /**
+ * A namespace for the Help Window functions in the client app.
+ * @namespace
+ */
+window.HelpW = {};
+
+HelpW.updatePointer = function (option) {
+  switch (option) {
+    case 'lineSpeed':
+      $lineSpeedT.innerHTML = $lineSpeedR.value;
+      break;
+    case 'circleSpeed':
+      $circleSpeedT.innerHTML = $circleSpeedR.value;
+      break;
+    case 'lineOn':
+      $lineOnT.innerHTML = $lineOnR.value + '%';
+      break;
+    case 'lineAng':
+        $lineAngT.innerHTML = $lineAngR.value + '°';
+        break;
+    case 'circleOn':
+      $circleOnT.innerHTML = $circleOnR.value + '%';
+      break;
+    case 'circleAp':
+      $circleApT.innerHTML = $circleApR.value + '°';
+      break;
+    case 'circleAng':
+      $circleAngT.innerHTML = $circleAngR.value + '°';
+      break;
+  }
+}
+
+
+
+/**
  * A namespace for the Tour Window functions in the client app.
  * @namespace
  */
@@ -668,7 +920,10 @@ App.setWindow("appNavW");
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
-App.setInputRangeDatalist(trackSpeedInputDatalistParams);
+App.setInputRangeDatalist(lineSpeedInputDatalistParams);
+App.setInputRangeDatalist(lineOnInputDatalistParams);
+App.setInputRangeDatalist(circleSpeedInputDatalistParams);
+App.setInputRangeDatalist(circleOnInputDatalistParams);
 
 //Load sky objects data and names:
 App.loadItemsDataNames();
@@ -676,6 +931,7 @@ App.loadItemsDataNames();
 //Set pointer style options:
 App.createComboOptions($objectPointerStyle, pointerStyleOptions);
 App.createComboOptions($coordsPointerStyle, pointerStyleOptions);
+App.createComboOptions($trackPointerStyle, trackStyleOptions);
 
 //Set items type options:
 for (let i in itemsElements) {
@@ -686,8 +942,6 @@ for (let i in itemsElements) {
   item["typeCombo"].selectedIndex = 0;
   App.changeObjectsType(item["typeCombo"]);
 }
-//App.createComboOptions($navObjectsTypeCombo, objectsTypeOptions);
-//App.createComboOptions($calibObjectsTypeCombo, calibTypeOptions);
 
 //Set initial step size:
 Controller.updateStepSize();
@@ -696,19 +950,21 @@ Controller.updateStepSize();
 $laserStateB.innerHTML = laserStateBOFF;
 $laserStateB.style.backgroundColor = laserStateBOFF_color;
 
-//Set navigation stars actual time:
-$navDate.value = App.localDateString(new Date());
-$navTime.value = App.localTimeString(new Date());
+//Set navigation actual time:
+$objDate.value = App.localDateString(new Date());
+$objTime.value = App.localTimeString(new Date());
+$trackDate.value = App.localDateString(new Date());
+$trackTime.value = App.localTimeString(new Date());
 
-//Set initial navigation type option:
-//$navObjectsTypeCombo.selectedIndex = 0;
-//App.changeObjectsType($navObjectsTypeCombo);
-//Set initial calibration type option:
-//$calibObjectsTypeCombo.selectedIndex = 0;
-//App.changeObjectsType($calibObjectsTypeCombo);
+//Set pointer config initial options:
+HelpW.updatePointer('lineSpeed');
+HelpW.updatePointer('circleSpeed');
+HelpW.updatePointer('lineOn');
+HelpW.updatePointer('lineAng');
+HelpW.updatePointer('circleOn');
+HelpW.updatePointer('circleAp');
+HelpW.updatePointer('circleAng');
+
 
 //Initialize calib stars list:
 calibStars = [];
-
-//let x = new VecSP.Step(20,30);
-//$commStatus.innerHTML = x.fix;

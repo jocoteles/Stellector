@@ -6,7 +6,9 @@ Linear Algebra and Machine Learning:
 https://mlweb.loria.fr/lalolab/lalolib.html
 https://mlweb.loria.fr/index.html#mllib
 
-Function minimization: https://github.com/benfred/fmin
+Function minimization:
+https://github.com/benfred/fmin
+https://github.com/optimization-js/optimization-js (estou usando atualmente)
 
 Astronomy:
 https://github.com/ofrohn/d3-celestial   (contém bancos de dados uteis no formato json)

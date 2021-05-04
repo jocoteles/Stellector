@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="style.css"/>
     <script src="libs/three.min.js"></script>  
     <script src="libs/optimization.js"></script>
-    <script src="libs/orb.v2.min.js"></script>
+    <script src="libs/orb.v2.min.js"></script>    
     <script src="modules/StarPointer.module.js" type="module" defer></script>
     <script type="text/javascript" src="data/stars.6.js"></script>    
     <script type="text/javascript" src="data/starnames.js"></script>    
@@ -23,6 +23,9 @@
     <script type="text/javascript" src="data/dsonames.js"></script>    
     <script type="text/javascript" src="data/messier.js"></script>
     <script type="text/javascript" src="data/constellations.js"></script>
+    <script type="text/javascript" src="data/clines.js"></script>
+    <script type="text/javascript" src="data/cbounds.js"></script>
+    <script type="text/javascript" src="data/asterisms.js"></script>
     <script src="script.js" type="module" defer></script>
   </head>
 
@@ -190,15 +193,15 @@
             <input type="number" id="timeStepM" value="0" min="0" max="1440" step="1" style="width:10%;" oninput="NavW.timeStepCheck(this)">minutes
           </div>          
           <div style="grid-column:1/3;">
-            <label>Date:</label><input type="date" id="navDate">
-            <label>Time:</label><input type="time" id="navTime">
+            <label>Date:</label><input type="date" id="objDate">
+            <label>Time:</label><input type="time" id="objTime">
           </div>
           <span style="grid-column:1;">
             <div>
               <button onclick="NavW.goStar('-1')">go Back</button>              
               <button onclick="NavW.goStar('+1')">go Forward</button>              
             </div>
-            <input type="checkbox" id="sideralOffset">sideral offset
+            <input type="checkbox" id="sideralOffset"><label>sideral offset</label>
           </span>
           <div style="grid-column:2;">
             <div><button onclick="NavW.goStar('now')">go Now</button></div>
@@ -207,37 +210,41 @@
           
         </div>        
 
-        <button class="transitionButton" id="appNavSTracksBtn" onclick="App.changeNav('appNavSTracksW')">Sky Tracks</button>
-        <div id="appNavSTracksW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">
+        <button class="transitionButton" id="appNavSTracksBtn" onclick="App.changeNav('appNavTracksW')">Sky Tracks</button>
+        <div id="appNavTracksW" style="grid-template-rows: 1fr;grid-template-columns: repeat(2, 1fr);">
           <div>
             <div>Track type:</div>
             <div><select id="navTracksTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
             <div>Track selected:</div>
-            <div><select id="navTracksCombo" style="width:80%;"></select></div>                        
+            <div><select id="navTracksCombo" style="width:80%;" onchange="NavW.resetTrack()"></select></div>                        
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 3fr;">
-            <div style="grid-column:1/3">Object filter</div>
-            <div>Name:</div><div><input id="nameNfilter" type="text" size="9"></div>
-            <div>Es:</div><div><input id="esNfilter" type="text" size="9"></div>
-            <div>Cons:</div><div><input id="consNfilter" type="text" size="9"></div>
-            <div>HIP:</div><div><input id="hipNfilter" type="text" size="9"></div>
-            <div>HD:</div><div><input id="hdNfilter" type="text" size="9"></div>            
-            <div>ID:</div><div><input id="idNfilter" type="text" size="9"></div>
-            <div>M:</div><div><input id="mNfilter" type="text" size="9"></div>
-            <div>NGC:</div><div><input id="ngcNfilter" type="text" size="9"></div>
+            <div style="grid-column:1/3">Track filter</div>
+            <div>Name:</div><div><input id="nameTfilter" type="text" size="9"></div>
+            <div>English:</div><div><input id="enTfilter" type="text" size="9"></div>
+            <div>Spanish:</div><div><input id="esTfilter" type="text" size="9"></div>
           </div>
 
           <div style="grid-column:1/3;">
             <label>Track style: </label>
-            <select id="trackStyle"></select>
+            <select id="trackPointerStyle" onchange="NavW.resetTrack()"></select>
           </div>
           <div style="grid-column:1/3;">
-            <span>Track speed: </span>
-            <input id="trackSpeedR" type="range" onchange="Controller.updateTrackSpeed()" list="trackSpeedRList">            
-            <datalist id="trackSpeedRList"></datalist>            
-            <label id="trackSpeedT"></label>
+            <label>Date:</label><input type="date" id="trackDate" onchange="NavW.resetTrack()">
+            <label>Time:</label><input type="time" id="trackTime" onchange="NavW.resetTrack()">
+            <input type="checkbox" id="trackAtDatetime" onchange="NavW.resetTrack()"><label>use date-time</label>
           </div>
+          <div style="grid-column:1/3;">
+            <input type="checkbox" id="trackCyclically"><label>execute cyclically</label>          
+          </div>          
+          <span style="grid-column:1;">
+            <div>
+              <button onclick="NavW.goTrack('-1')">step Back</button>              
+              <button onclick="NavW.goTrack('+1')">step Forw</button>              
+            </div>            
+          </span>          
+          <div style="grid-column:2;"><button onclick="NavW.goTrack('fullTrack')">go Full Track</button></div>                      
         </div>
 
         <button class="transitionButton" id="appNavCoordBtn" onclick="App.changeNav('appNavCoordW')">Coordinates</button>      
@@ -290,8 +297,53 @@
         <textarea id="commStatus" rows="10" readonly></textarea>        
       </div>
 
-      <div class="window" id="appTourW">
-        <button onclick="TourW.goCircle()">go Circle</button>
+      <div class="window" id="appHelpW" style="grid-template-rows:auto;grid-template-columns:1fr;">
+
+        <button class="transitionButton" id="appHelpPointerBtn" onclick="App.changeNav('appHelpPointerW')">Pointer Config</button>
+        <div id="appHelpPointerW" style="grid-template-columns:1fr 2fr;">
+          
+          <label style="grid-column:1;">Line speed: </label>
+          <div style="grid-column:2;">
+            <input id="lineSpeedR" type="range" onchange="HelpW.updatePointer('lineSpeed')" list="lineSpeedRList">            
+            <datalist id="lineSpeedRList"></datalist>            
+            <label id="lineSpeedT"></label>
+          </div>
+          <label style="grid-column:1;">Line On state: </label>
+          <div style="grid-column:2;">
+            <input id="lineOnR" type="range" onchange="HelpW.updatePointer('lineOn')" list="lineOnRList">            
+            <datalist id="lineOnRList"></datalist>            
+            <label id="lineOnT"></label>
+          </div>
+          <label style="grid-column:1;">Line step angle: </label>
+          <div style="grid-column:2;">
+            <input id="lineAngR" type="range" min="0.1" max="10" step="0.1" value = "0.5" onchange="HelpW.updatePointer('lineAng')">            
+            <label id="lineAngT"></label>
+          </div>
+          <label style="grid-column:1;">Circle speed: </label>
+          <div style="grid-column:2;">
+            <input id="circleSpeedR" type="range" onchange="HelpW.updatePointer('circleSpeed')" list="circleSpeedRList">            
+            <datalist id="circleSpeedRList"></datalist>            
+            <label id="circleSpeedT"></label>
+          </div>
+          <label style="grid-column:1;">Circle On state: </label>
+          <div style="grid-column:2;">
+            <input id="circleOnR" type="range" onchange="HelpW.updatePointer('circleOn')" list="circleOnRList">            
+            <datalist id="circleOnRList"></datalist>            
+            <label id="circleOnT"></label>
+          </div>
+          <label style="grid-column:1;">Circle aperture: </label>
+          <div style="grid-column:2;">
+            <input id="circleApR" type="range" min="0.5" max="45" step="0.5" value = "2.0" onchange="HelpW.updatePointer('circleAp')">            
+            <label id="circleApT"></label>
+          </div>
+          <label style="grid-column:1;">Circle step angle: </label>
+          <div style="grid-column:2;">
+            <input id="circleAngR" type="range" min="1" max="60" step="1" value = "18" onchange="HelpW.updatePointer('circleAng')">            
+            <label id="circleAngT"></label>
+          </div>
+
+        </div>
+
       </div>
       
     </div>
