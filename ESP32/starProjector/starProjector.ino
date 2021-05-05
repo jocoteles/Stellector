@@ -51,6 +51,15 @@
 #define SET_ZENITH_OPT 6       //option to point the laser toward zenith
 #define READ_ACT_STEPS_OPT 7   //option to read the steppers actual steps
 
+#define RESET_PATH_ST 1       //status to start a new path reading
+#define EXEC_PATH_ST 2        //status to execute the path
+#define CYCLIC_PATH_ST  3     //status to execute the path cyclicaly
+#define LASER_ON_ST 4         //status to turn on the laser
+#define LASER_OFF_ST 5        //status to turn off the laser
+#define SET_ZENITH_ST 6       //status to point the laser toward zenith
+#define READ_ACT_STEPS_ST 7   //status to read the steppers actual steps
+#define IDLE_ST 8             //status for the idle hardware state
+
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
 #define STEP_ITER 8                 //maximum number of iterations for step precision quest
 
@@ -60,13 +69,14 @@
 #define MAIN_S_UUID          "e80fd323-0ae1-454f-bbd5-31b571083af5"  //The single service for all device's characteristics
 #define PATH_C_UUID          "20e75b2b-6be1-4b18-b1d0-a06018dbdab5"  //characteristic for the path array
 #define POS_MEASURE_C_UUID   "e16843eb-fe97-42b4-acc7-83069473c1b5"  //characteristic for measuring the steppers position
+#define STATUS_C_UUID        "1397a481-e48f-4d23-a24c-aa8e2655b6ee"  //characteristic for indicating the hardware status
 // UUIDs generated at: https://www.uuidgenerator.net/
 
-#define mainSnumHandles  6 // = 2*(n+1), where n is the maximum number of characteristics for the mainS service (default n = 7)
+#define mainSnumHandles  8 // = 2*(n+1), where n is the maximum number of characteristics for the mainS service (default n = 7)
 
 BLEServer *server;
 BLEService *mainS;
-BLECharacteristic *pathC, *posMeasureC;
+BLECharacteristic *pathC, *posMeasureC, *statusC;
 BLEAdvertising *advertising = BLEDevice::getAdvertising();
 
 const int MPU_addr = 0x68;  // I2C address of the MPU-6050 sensor
@@ -153,28 +163,35 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
       option = vals[0];      
       cyclicPathF = false;
       switch (option) {
+        case RESET_PATH_OPT:
+          pathSize = 0;
+          statusC->setValue(uint8_t(1));
+          break;
         case EXEC_PATH_OPT:
           execPathF = true;
+          statusC->setValue(uint8_t(2));
           break;
         case CYCLIC_PATH_OPT:
           execPathF = true;
           cyclicPathF = true;
-          break;
-        case RESET_PATH_OPT:
-          pathSize = 0;
-          break;
+          statusC->setValue(uint8_t(3));
+          break;        
         case LASER_ON_OPT:        
           laserF = true;
           laser(laserF);
+          statusC->setValue(uint8_t(4));
           break;
         case LASER_OFF_OPT:        
           laserF = false;
           laser(laserF);
+          statusC->setValue(uint8_t(5));
           break;
         case SET_ZENITH_OPT:
+          statusC->setValue(uint8_t(6));
           setZenith();
           break;
     		case READ_ACT_STEPS_OPT:
+          statusC->setValue(uint8_t(7));
     		  stepRead(1.0, 5000, 100);
           //stepReadSimple(1000);
     		  sendActSteps();
@@ -523,6 +540,7 @@ void setup() {
   mainS = server->createService(BLEUUID(MAIN_S_UUID), mainSnumHandles);  // In order to set numHandles parameter, MAIN_S_UUID must be converted by function BLEUUID
   pathC = mainS->createCharacteristic(PATH_C_UUID, BLECharacteristic::PROPERTY_WRITE);
   posMeasureC = mainS->createCharacteristic(POS_MEASURE_C_UUID, BLECharacteristic::PROPERTY_READ);
+  statusC = mainS->createCharacteristic(STATUS_C_UUID, BLECharacteristic::PROPERTY_READ);
   
   pathC->setCallbacks(new ReadPathCallback());
   
@@ -549,6 +567,7 @@ void loop() {
       steppersOff();
     }    
     navigationF = false;
+    idle = false;
   }
 
   if (execPathF) { //Path execution
@@ -566,6 +585,12 @@ void loop() {
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;
+    idle = false;
+  }
+
+  if (!idle) {
+    statusC->setValue(uint8_t(8));
+    idle = true;
   }
 
   /*sendActSteps();

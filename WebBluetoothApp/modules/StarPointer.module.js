@@ -498,7 +498,7 @@ CommSP.Bluetooth = class {
 	}
 	async disconnectMsg () {
 		this.logDOM.innerHTML += this.time() + 'StarPointer disconnected!\n';
-		alert('StarPointer disconnected! Start comm again.');
+		alert('StarPointer disconnected! Start comm again.');		
 		return false;
 	}
     

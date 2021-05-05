@@ -688,7 +688,6 @@ NavW.goSteps = async function () {
 
 NavW.readCoords = async function () {
   if (await BleInstance.readActSteps()) {				
-	  setTimeout(function() {	  	
 	  	CoordNavW = CalibInstance.equatorialFromStep(BleInstance.actStep);
       $fixI.value = BleInstance.actStep.fix;
       $mobI.value = BleInstance.actStep.mob;
@@ -696,7 +695,6 @@ NavW.readCoords = async function () {
       $decF.value = CoordNavW.dec.toFixed(4);           
 	  	NavW.updateCoordSys($raF);
       NavW.updateCoordSys($decF);
-	  }, 500);
   }
 }
 
