@@ -542,12 +542,13 @@ CommSP.Bluetooth = class {
 	 * @param {boolean} cyclicOpt - If false, Path is executed once, else it is excuted cyclicaly until stop signal.
 	 */
 	async goPath (Path, cyclicOpt = false) {  
+		console.log(Path);
 	    try {			
 			let path = Path.parsedPath;			
 			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
 			else {
 				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
-				await this.sendOption('resetPath');
+				await this.sendOption('RESET_PATH_OPT');
 				let j = 0;
 				let pathChunk;
 				for (let i = 0; i < path.length; i++) {
@@ -562,8 +563,8 @@ CommSP.Bluetooth = class {
 					}
 				}
 				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-				if (cyclicOpt) await this.sendOption('cyclicPath');
-				else await this.sendOption('execPath');
+				if (cyclicOpt) await this.sendOption('CYCLIC_PATH_OPT');
+				else await this.sendOption('EXEC_PATH_OPT');
 				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
 				return true;
 			}

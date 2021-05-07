@@ -226,7 +226,6 @@ let itemsData = {};
 let trackPath = {'paths': [], 'fullPath': new PathSP.Path()};
 let trackStep = -1;
 
-let laserStatus = false;
 
 /*let pointerConfig = {
   'lineSpeed': 0;
@@ -529,10 +528,8 @@ Controller.sendStepSize = async function (ssId) {
 }
 
 Controller.switchLaser = async function () {
-  let laserStatus = await BleInstance.goLaser();  
-  //console.log('lsatus: ', BleInstance.laserStatus);
-  setTimeout( function () {
-    //console.log('lsatus: ', status);
+  await BleInstance.goLaser();  
+  setTimeout( function () {  
     switch (BleInstance.serverStatus) {
       case ESP32.LASER_OFF_ST:
         $laserStateB.innerHTML = laserStateBOFF;
@@ -545,7 +542,7 @@ Controller.switchLaser = async function () {
       default:
         $laserStateB.innerHTML = laserStateBBusy;
         $laserStateB.style.backgroundColor = laserStateBBusy_color;
-    }
+    }  
   }, 200);
 }
 
@@ -678,18 +675,14 @@ NavW.goObjectStyle = async function (style) {
 	await BleInstance.goPath(commPath, cyclicOpt);
 }
 
-NavW.goEquatorial = async function () {
-	let laser = 0;	
-	if ($laserStateB.innerHTML == laserStateBON) laser = 1;
+NavW.goEquatorial = async function () {	
   CoordNavW.ra = Number($raF.value);
   CoordNavW.dec = Number($decF.value);
   let style = $coordsPointerStyle.value;
   await NavW.goObjectStyle(style);
 }
 
-NavW.goSteps = async function () {
-	let laser = 0;	
-	if (document.getElementById("laserStateB").innerHTML == laserStateBON) laser = 1;
+NavW.goSteps = async function () {	
   let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
   CoordNavW = CalibInstance.equatorialFromStep(Step);  
 	let style = $coordsPointerStyle.value;
