@@ -20,15 +20,24 @@ let ESP32 = {
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
 	EXEC_PATH_OPT: 2,        	//option to execute the path
 	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly
-	LASER_ON_OPT: 4,         	//option to turn on the laser
-	LASER_OFF_OPT: 5,        	//option to turn off the laser
-	SET_ZENITH_OPT: 6,       	//option to point the laser toward zenith
-	READ_ACT_STEPS_OPT: 7,		//option to read the steppers actual steps
-	MAIN_S_UUID: "e80fd323-0ae1-454f-bbd5-31b571083af5",  //The single service for all device's characteristics
-	PATH_C_UUID: "20e75b2b-6be1-4b18-b1d0-a06018dbdab5",  //characteristic for the path array
-	POS_MEASURE_C_UUID: "e16843eb-fe97-42b4-acc7-83069473c1b5",  //characteristic for measuring the steppers position
+	LASER_SWITCH_OPT: 4,       	//option to turn on the laser
+	SET_ZENITH_OPT: 5,       	//option to point the laser toward zenith
+	READ_ACT_STEPS_OPT: 6,		//option to read the steppers actual steps
+	RESET_PATH_ST: 1,			//status to start a new path reading
+	EXEC_PATH_ST: 2,			//status to execute the path
+	CYCLIC_PATH_ST: 3,			//status to execute the path cyclicaly
+	LASER_ON_ST: 4,				//status to turn on the laser
+	LASER_OFF_ST: 5,			//status to turn off the laser
+	SET_ZENITH_ST: 6,			//status to point the laser toward zenith
+	READ_ACT_STEPS_ST: 7,		//status to read the steppers actual steps
+	IDLE_ST: 8,					//status for the idle hardware state
+	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
+	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
+	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
+	STATUS_C_UUID: "46425bca-0669-4f53-81bb-2bf67a3a1141",  	//characteristic for indicating the hardware status
 	DEVICE_NAME: "StarProjector"
 };
+
 
 
 /**
@@ -386,7 +395,7 @@ CommSP.CommPath = class {
 		this.clipped = false;
 		for (let i = 0; i < this._path.size; i++) {					    
 			let s = this.parseSegment(this._path.path[i]);
-			if (s != false) this._parsedPath = this._parsedPath.concat(s);
+			if (s) this._parsedPath = this._parsedPath.concat(s);
 		}
 	}
 	/**Set path. */
@@ -440,6 +449,8 @@ CommSP.Bluetooth = class {
 		this.pathC_UUID = ESP32.PATH_C_UUID;
 		/**@member {string} - Characteristic UUID for measuring the steppers position.*/
 		this.posMeasureC_UUID = ESP32.POS_MEASURE_C_UUID;
+		/**@member {string} - Characteristic UUID for measuring ESP32 status.*/
+		this.statusC_UUID = ESP32.STATUS_C_UUID;
 		/**@member {Object} - Characteristic for the CommSP.parsedPath transmission.*/
 		this.pathC = NaN;
 		/**@member {Object} - Characteristic for measuring the steppers position.*/
@@ -449,16 +460,10 @@ CommSP.Bluetooth = class {
 		/**@member {number} - 1 byte array maximum size to be sent to the server. */
 		this.maxChunk = 512;
 		/**@member {Object} - Execution options to ESP32 server. */
-		this.Opt = {	resetPath: ESP32.RESET_PATH_OPT,       	//start a new path reading
-						execPath: ESP32.EXEC_PATH_OPT,        	//execute the path
-						cyclicPath: ESP32.CYCLIC_PATH_OPT,      //execute the path cyclicaly
-						laserOn: ESP32.LASER_ON_OPT,			//turn on the laser in the navigation mode
-						laserOff: ESP32.LASER_OFF_OPT,	        //turn off the laser in the navigation mode
-						setZenith: ESP32.SET_ZENITH_OPT,       	//point the laser towards zenith
-						readActSteps: ESP32.READ_ACT_STEPS_OPT	//read the steppers actual steps
-		}
+		this.OPT = ESP32;
 		/**@member {VecSP.Step} - the steppers fix and mob coordinates obtained from the accelerometer readings. */
 		this.actStep = new VecSP.Step(0, 0);
+		this.serverStatus = 0;		
 	}
 	/**Return actual time in the format: hours minutes seconds. */
 	time () {
@@ -472,9 +477,10 @@ CommSP.Bluetooth = class {
 		let deviceOptions = {
 			filters: [{ name: this.deviceName }],
 			optionalServices: [
-			  this.mainS_UUID, 
-			  this.pathC_UUID,    
-			  this.posMeasureC_UUID]};
+				this.mainS_UUID, 
+				this.pathC_UUID,    
+				this.posMeasureC_UUID,
+				this.statusC_UUID]};
 		try {
 			this.logDOM.innerHTML = this.time() + 'Requesting StarPointer Device...\n';      
 			this.device = await navigator.bluetooth.requestDevice(deviceOptions);
@@ -488,6 +494,7 @@ CommSP.Bluetooth = class {
 			this.logDOM.innerHTML += this.time() + 'Getting GAP Characteristics...\n';
 			this.pathC = await this.mainS.getCharacteristic(this.pathC_UUID);
 			this.posMeasureC = await this.mainS.getCharacteristic(this.posMeasureC_UUID);
+			this.statusC = await this.mainS.getCharacteristic(this.statusC_UUID);
 			this.logDOM.innerHTML += this.time() + 'Connected to StarPointer on ESP32 Server.\n';
 			return true;    
 		}
@@ -506,8 +513,8 @@ CommSP.Bluetooth = class {
 	 * @param {string} option - A valid this.Opt item.
 	*/
 	async sendOption (option) {
-		if (Object.keys(this.Opt).includes(option)) {
-			await this.pathC.writeValue(new Uint8Array([this.Opt[option]]));
+		if (Object.keys(this.OPT).includes(option)) {
+			await this.pathC.writeValue(new Uint8Array([this.OPT[option]]));
 			this.logDOM.innerHTML += this.time() + 'Option ' + option + ' sent to Server.\n';
 		    return true;
 		}
@@ -562,27 +569,31 @@ CommSP.Bluetooth = class {
 			}
 		} catch {return await this.disconnectMsg();}
 	}
-	/** Turn on/off the laser in the ESP32 server.
-	 * @param {boolean} status - turn the laser on(off) if true(false). 
-	 */
-	async goLaser (status = false) {
+	/** Switch the laser status on/off in the ESP32 server. */
+	async goLaser () {
 		try {
-			if (status) {
-				await this.pathC.writeValue(new Uint8Array([this.Opt.laserOn]));
-				this.logDOM.innerHTML += this.time() + "Laser turned on.\n";			
+			let status = await this.checkStatus();	
+			if ((status == this.OPT.LASER_OFF_ST) || (status == this.OPT.LASER_ON_ST)) {
+				await this.pathC.writeValue(new Uint8Array([this.OPT.LASER_SWITCH_OPT]));								
+				let s = await this.checkStatus();
+				switch (s) {
+					case ESP32.LASER_ON_ST:							
+						this.logDOM.innerHTML += this.time() + "Laser state is on.\n";
+						break;
+					case ESP32.LASER_OFF_ST:
+						this.logDOM.innerHTML += this.time() + "Laser state is off.\n";
+						break;
+					default:				
+						this.logDOM.innerHTML += this.time() + "Laser state is busy.\n";					
+				}
 			}
-			else {
-				await this.pathC.writeValue(new Uint8Array([this.Opt.laserOff]));
-				this.logDOM.innerHTML += this.time() + "Laser turned off.\n";
-			}
-			return true;
 		} catch {return await this.disconnectMsg();}		
 	}
 	/** Move the steppers in the ESP32 server until the laser points toward zenith.	 
 	 */
 	async goZenith() {
 		try {
-			await this.pathC.writeValue(new Uint8Array([this.Opt.setZenith]));
+			await this.pathC.writeValue(new Uint8Array([this.OPT.SET_ZENITH_OPT]));
 			this.logDOM.innerHTML += this.time() + "Laser beam pointed to zenith.\n";
 			return true;
 		} catch {return await this.disconnectMsg();}
@@ -591,7 +602,7 @@ CommSP.Bluetooth = class {
 	 */
 	async readActSteps () {		
 	    try {
-			await this.pathC.writeValue(new Uint8Array([this.Opt.readActSteps]));
+			await this.pathC.writeValue(new Uint8Array([this.OPT.READ_ACT_STEPS_OPT]));
 			let value = await this.posMeasureC.readValue();		
 			let fix = value.getUint8(0)*256 + value.getUint8(1);
 			let mob = value.getUint8(2)*256 + value.getUint8(3);
@@ -600,6 +611,16 @@ CommSP.Bluetooth = class {
 			return true;
 		} catch {return await this.disconnectMsg();}
 	}
+	async checkStatus () {
+		try {
+			let value = await this.statusC.readValue();		
+			this.serverStatus = value.getUint8(0);
+			return this.serverStatus;
+		} catch {
+			alert("No status read.");
+			return false;
+		}
+	}		
 }
 
 
@@ -724,4 +745,4 @@ PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
 	return path;   
 }
 
-export {VecSP, CommSP, PathSP};
+export {ESP32, VecSP, CommSP, PathSP};

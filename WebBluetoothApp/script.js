@@ -2,7 +2,7 @@
 
 //stars6JSON equatorial coordinates are: ra - the Right Ascension (-180° to 180°) coordinate and dec - the Declination (-90º to 90º) coordinate.
 
-import {VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
+import {ESP32, VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
 import './libs/orb.v2.min.js';
 
 
@@ -66,8 +66,10 @@ const $trackCyclically = document.getElementById("trackCyclically");
 
 const laserStateBOFF = "laser is OFF";
 const laserStateBON = "laser is ON";
+const laserStateBBusy = "laser is Busy"
 const laserStateBON_color = "#9bf296";
 const laserStateBOFF_color = "#f76459";
+const laserStateBBusy_color = "gray";
 
 const stepSizeInputDatalistParams =  
 {
@@ -224,6 +226,8 @@ let itemsData = {};
 let trackPath = {'paths': [], 'fullPath': new PathSP.Path()};
 let trackStep = -1;
 
+let laserStatus = false;
+
 /*let pointerConfig = {
   'lineSpeed': 0;
 }*/
@@ -324,7 +328,7 @@ App.equatorialFromObjectData = function (value, date = new Date()) {
     }
     else {
       let eq = App.getCoordinates(type, id);
-      if (eq != false) {
+      if (eq) {
         let ra = App.ra180to24(eq[0]); 
         ra += (date - new Date())*24/sideralDay;
         return new VecSP.Equatorial(ra, eq[1]);
@@ -525,18 +529,24 @@ Controller.sendStepSize = async function (ssId) {
 }
 
 Controller.switchLaser = async function () {
-	if ($laserStateB.innerHTML == laserStateBOFF) {
-	  	if (await BleInstance.goLaser(true)) {
-			$laserStateB.innerHTML = laserStateBON;
-			$laserStateB.style.backgroundColor = laserStateBON_color;
-	  	}
-	}
-	else {
-		if (await BleInstance.goLaser(false)) {
-			$laserStateB.innerHTML = laserStateBOFF;
-			$laserStateB.style.backgroundColor = laserStateBOFF_color;
-		}
-	}
+  let laserStatus = await BleInstance.goLaser();  
+  //console.log('lsatus: ', BleInstance.laserStatus);
+  setTimeout( function () {
+    //console.log('lsatus: ', status);
+    switch (BleInstance.serverStatus) {
+      case ESP32.LASER_OFF_ST:
+        $laserStateB.innerHTML = laserStateBOFF;
+        $laserStateB.style.backgroundColor = laserStateBOFF_color;
+        break;
+      case ESP32.LASER_ON_ST:
+        $laserStateB.innerHTML = laserStateBON;
+        $laserStateB.style.backgroundColor = laserStateBON_color;
+        break;
+      default:
+        $laserStateB.innerHTML = laserStateBBusy;
+        $laserStateB.style.backgroundColor = laserStateBBusy_color;
+    }
+  }, 200);
 }
 
 Controller.updateStepSize = function () {
@@ -795,7 +805,7 @@ NavW.goTrack = async function (opt) {
     else date = new Date();    
     coords = App.getCoordinates(trackType, trackId);    
     let trackArray = [];
-    if (coords != false) {
+    if (coords) {
       let circle = App.valueSelected($trackPointerStyle).includes('circle');
       let solid = App.valueSelected($trackPointerStyle).includes('solid');
       let dashed = App.valueSelected($trackPointerStyle).includes('dashed');      
@@ -830,7 +840,7 @@ NavW.goTrack = async function (opt) {
       for (let p of trackArray) trackPath.fullPath.addPath(p);
     } else alert("Track coordinates not found.");    
   }
-  if (coords != false) {
+  if (coords) {
     if (opt == 'fullTrack') {
       let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	
       await BleInstance.goPath(commPath, $trackCyclically.checked);
@@ -899,6 +909,11 @@ HelpW.updatePointer = function (option) {
   }
 }
 
+HelpW.checkStatus = async function () {
+  await BleInstance.checkStatus();
+  document.getElementById("statusLog").innerHTML = String(BleInstance.serverStatus);
+}
+
 
 
 /**
@@ -914,7 +929,7 @@ TourW.goCircle = async function () {
 }
 
 //Set initial window:
-App.setWindow("appNavW");
+App.setWindow("appCommW");
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
