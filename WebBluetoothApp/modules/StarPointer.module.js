@@ -23,14 +23,13 @@ let ESP32 = {
 	LASER_SWITCH_OPT: 4,       	//option to turn on the laser
 	SET_ZENITH_OPT: 5,       	//option to point the laser toward zenith
 	READ_ACT_STEPS_OPT: 6,		//option to read the steppers actual steps
-	RESET_PATH_ST: 1,			//status to start a new path reading
-	EXEC_PATH_ST: 2,			//status to execute the path
-	CYCLIC_PATH_ST: 3,			//status to execute the path cyclicaly
-	LASER_ON_ST: 4,				//status to turn on the laser
-	LASER_OFF_ST: 5,			//status to turn off the laser
-	SET_ZENITH_ST: 6,			//status to point the laser toward zenith
-	READ_ACT_STEPS_ST: 7,		//status to read the steppers actual steps
-	IDLE_ST: 8,					//status for the idle hardware state
+	RESET_PATH_ST: 7,			//status to start a new path reading
+	EXEC_PATH_ST: 8,			//status to execute the path
+	CYCLIC_PATH_ST: 9,			//status to execute the path cyclicaly
+	LASER_ON_ST: 10,			//status to turn on the laser
+	LASER_OFF_ST: 11,			//status to turn off the laser
+	SET_ZENITH_ST: 12,			//status to point the laser toward zenith
+	READ_ACT_STEPS_ST: 13,		//status to read the steppers actual steps	
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -470,6 +469,14 @@ CommSP.Bluetooth = class {
 		let d = new Date();
 		return d.getHours() + 'h' + d.getMinutes() + 'm' + d.getSeconds() + 's: ';
 	}
+	optKeyFromValue (value) {
+		for (let x of Object.entries(this.OPT)) if (x[1] == value) return x[0];
+		return 'undefined';
+	}
+	isServerIdle (opt) {
+		if ((opt == this.OPT.LASER_OFF_ST) || (opt == this.OPT.LASER_ON_ST)) return true;
+		else return false;
+	}
 	/**Start bluetooth communication with ESP32 server.
 	 * @returns {boolean} connection status.
 	*/
@@ -503,20 +510,25 @@ CommSP.Bluetooth = class {
 			return false;
 		}	
 	}
-	async disconnectMsg () {
-		this.logDOM.innerHTML += this.time() + 'StarPointer disconnected!\n';
-		alert('StarPointer disconnected! Start comm again.');		
+	disconnectMsg (errorMsg) {
+		this.logDOM.innerHTML += this.time() + errorMsg + '. StarPointer disconnected!\n';
+		alert(errorMsg + '. StarPointer disconnected! Start comm again.');
 		return false;
 	}
     
 	/** Send a this.Opt item to ESP32 Server.
 	 * @param {string} option - A valid this.Opt item.
 	*/
-	async sendOption (option) {
-		if (Object.keys(this.OPT).includes(option)) {
-			await this.pathC.writeValue(new Uint8Array([this.OPT[option]]));
+	async sendOption (option) {		
+		if (Object.keys(this.OPT).includes(option)) {			
 			this.logDOM.innerHTML += this.time() + 'Option ' + option + ' sent to Server.\n';
-		    return true;
+			await this.pathC.writeValue(new Uint8Array([this.OPT[option]]));			
+			if (await this.checkStatus()) {
+				let opt = this.optKeyFromValue(this.serverStatus);
+				this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
+				return this.serverStatus;
+			}
+			else return false;
 		}
 		else {
 		  this.logDOM.innerHTML += this.time() + 'Option ' + option + ' not recognized. Nothing sent to Server.\n';
@@ -535,7 +547,7 @@ CommSP.Bluetooth = class {
 			await this.pathC.writeValue(new Uint8Array([fix, mob]));
 			this.logDOM.innerHTML += this.time() + 'Step size of (' + (fix-127) + ',' + (mob-127) + ') sent to (fixed,mobile) steppers on Server.\n';
 			return true;
-		} catch {return await this.disconnectMsg();}
+		} catch {return this.disconnectMsg();}
 	}
 	/**Execute a parsedPath on steppers in the ESP32 server.
 	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
@@ -568,37 +580,30 @@ CommSP.Bluetooth = class {
 				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
 				return true;
 			}
-		} catch {return await this.disconnectMsg();}
+		} catch (error) {return this.disconnectMsg(error);}
 	}
 	/** Switch the laser status on/off in the ESP32 server. */
 	async goLaser () {
-		try {
-			let status = await this.checkStatus();	
-			if ((status == this.OPT.LASER_OFF_ST) || (status == this.OPT.LASER_ON_ST)) {
-				await this.pathC.writeValue(new Uint8Array([this.OPT.LASER_SWITCH_OPT]));								
-				let s = await this.checkStatus();
-				switch (s) {
-					case ESP32.LASER_ON_ST:							
-						this.logDOM.innerHTML += this.time() + "Laser state is on.\n";
-						break;
-					case ESP32.LASER_OFF_ST:
-						this.logDOM.innerHTML += this.time() + "Laser state is off.\n";
-						break;
-					default:				
-						this.logDOM.innerHTML += this.time() + "Laser state is busy.\n";					
-				}
-			}
-		} catch {return await this.disconnectMsg();}		
+		try {			
+			if (this.isServerIdle(await this.checkStatus())) await this.sendOption('LASER_SWITCH_OPT');												
+		} catch (error) {			
+			return this.disconnectMsg(error);}		
 	}
 	/** Move the steppers in the ESP32 server until the laser points toward zenith.	 
 	 */
 	async goZenith() {
-		try {
+		try {			
+			if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');												
+		} catch (error) {			
+			return this.disconnectMsg(error);
+		}
+	}
+		/*try {
 			await this.pathC.writeValue(new Uint8Array([this.OPT.SET_ZENITH_OPT]));
 			this.logDOM.innerHTML += this.time() + "Laser beam pointed to zenith.\n";
 			return true;
-		} catch {return await this.disconnectMsg();}
-	}
+		} catch (error) {return await this.disconnectMsg(error);}
+	}*/
 	/** Read (using the server accelerometer) the steppers fix and mob coordinates in the ESP32 server.
 	 */
 	async readActSteps () {		
@@ -610,7 +615,7 @@ CommSP.Bluetooth = class {
 			this.logDOM.innerHTML += this.time() + 'Actual steps readings from server: fix=' + fix + ', mob=' + mob + '\n';
 			this.actStep = new VecSP.Step(fix, mob);		
 			return true;
-		} catch {return await this.disconnectMsg();}
+		} catch (error) {return this.disconnectMsg(error);}
 	}
 	async checkStatus () {
 		try {
@@ -618,7 +623,6 @@ CommSP.Bluetooth = class {
 			this.serverStatus = value.getUint8(0);
 			return this.serverStatus;
 		} catch {
-			alert("No status read.");
 			return false;
 		}
 	}		

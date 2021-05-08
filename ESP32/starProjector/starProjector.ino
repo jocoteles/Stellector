@@ -50,14 +50,13 @@
 #define SET_ZENITH_OPT 5       //option to point the laser toward zenith
 #define READ_ACT_STEPS_OPT 6   //option to read the steppers actual steps
 
-#define RESET_PATH_ST 1       //status to start a new path reading
-#define EXEC_PATH_ST 2        //status to execute the path
-#define CYCLIC_PATH_ST  3     //status to execute the path cyclicaly
-#define LASER_ON_ST 4         //status to turn on the laser
-#define LASER_OFF_ST 5        //status to turn off the laser
-#define SET_ZENITH_ST 6       //status to point the laser toward zenith
-#define READ_ACT_STEPS_ST 7   //status to read the steppers actual steps
-#define IDLE_ST 8             //status for the idle hardware state
+#define RESET_PATH_ST 7       //status to start a new path reading
+#define EXEC_PATH_ST 8        //status to execute the path
+#define CYCLIC_PATH_ST 9      //status to execute the path cyclicaly
+#define LASER_ON_ST 10        //status to turn on the laser
+#define LASER_OFF_ST 11       //status to turn off the laser
+#define SET_ZENITH_ST 12      //status to point the laser toward zenith
+#define READ_ACT_STEPS_ST 13  //status to read the steppers actual steps
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
 #define STEP_ITER 8                 //maximum number of iterations for step precision quest
@@ -182,11 +181,6 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           if (laserF) sendStatus(LASER_ON_ST);
           else sendStatus(LASER_OFF_ST);
           break;
-        /*case LASER_OFF_OPT:        
-          laserF = false;
-          laser(laserF);
-          sendStatus(LASER_OFF_ST);
-          break;*/
         case SET_ZENITH_OPT:
           sendStatus(SET_ZENITH_ST);
           setZenith();
