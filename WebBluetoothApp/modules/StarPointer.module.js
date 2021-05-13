@@ -12,7 +12,7 @@ import '../libs/optimization.js'
  */
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
-	ZENITH_STEP: 510,			//steppers step values corresponding to the Zenith direction
+	STEP_AT_ZENITH: 510,			//steppers step values corresponding to the Zenith direction
 	STEP_MIN: 30,				//steppers step min value for eye laser safety 
 	STEP_MAX: 989,				//steppers step max value for eye laser safety 
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
@@ -122,7 +122,7 @@ VecSP.Step = class {
 		this._fix = fix;
 		this._mob = mob;
 		this.maxSteps = ESP32.STPS360;
-		this.zenithSteps = ESP32.ZENITH_STEP;
+		this.zenithSteps = ESP32.STEP_AT_ZENITH;
 		this.correctCoords();
 	}
 	/** Set this.fix */
@@ -554,7 +554,7 @@ CommSP.Bluetooth = class {
 	 * @param {boolean} cyclicOpt - If false, Path is executed once, else it is excuted cyclicaly until stop signal.
 	 */
 	async goPath (Path, cyclicOpt = false) {  
-		console.log(Path);
+		//console.log(Path);
 	    try {			
 			let path = Path.parsedPath;			
 			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
@@ -585,7 +585,8 @@ CommSP.Bluetooth = class {
 	/** Switch the laser status on/off in the ESP32 server. */
 	async goLaser () {
 		try {			
-			if (this.isServerIdle(await this.checkStatus())) await this.sendOption('LASER_SWITCH_OPT');												
+			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('LASER_SWITCH_OPT');												
+			await this.sendOption('LASER_SWITCH_OPT');
 		} catch (error) {			
 			return this.disconnectMsg(error);}		
 	}
@@ -593,7 +594,9 @@ CommSP.Bluetooth = class {
 	 */
 	async goZenith() {
 		try {			
-			if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');												
+			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');
+			//await this.sendOption('RESET_PATH_OPT');
+			await this.sendOption('SET_ZENITH_OPT');												
 		} catch (error) {			
 			return this.disconnectMsg(error);
 		}
