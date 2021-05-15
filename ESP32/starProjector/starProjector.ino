@@ -103,7 +103,7 @@ uint16_t thetaP[PATH_MAX_SIZE];     //mobile stepper array of segments in step u
 uint16_t laserP[PATH_MAX_SIZE];     //laser state on/off array of segments (boolean - 1 bit)
 uint16_t delayP[PATH_MAX_SIZE];     //step delay array of segments in 1 us times DELAY_FACTOR units
 uint16_t pathSize = 0;
-uint16_t segment[2];
+uint16_t phiA, thetaA;              //auxiliary fixed and mobile steppers coordinates
 const uint8_t pathBase[PATHBASE_SIZE] = PATHBASE;   //number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 const uint8_t commBase[COMMBASE_SIZE] = COMMBASE;   //number of bits of the base used to communicate the path segments
 bool cyclicPathF = false;
@@ -387,37 +387,6 @@ void execPath() {
   actStep[1] = th;
 }
 
-void execLastSegmentFromPath() {
-  uint16_t N, ph, th, phA, thA;
-  int dph, dth;
-  float fph, fth;
-  uint16_t j;
-
-  phA = actStep[0];
-  thA = actStep[1];  
-  
-  j = pathSize - 1;
-  ph = phiP[j];
-  th = thetaP[j];    
-  dph = ph - phA;
-  dth = th - thA;
-  //dph += dph%2;
-  //dth += dth%2;    
-  N = max(max(abs(dph), abs(dth)), 1);
-  fph = float(dph)/N;
-  fth = float(dth)/N;    
-  for (uint16_t i = 1; i <= N; i++) {
-    ph = phA + int(i*fph);
-    th = thA + int(i*fth);      
-    stepperFix(ph);
-    stepperMob(th);      
-    delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
-  }
-  actStep[0] = ph;
-  actStep[1] = th;
-  laser(laserP[j]);      
-}
-
 void execSingleSegment(uint16_t phs, uint16_t ths, bool lstate) {
   uint16_t N, phA, thA, ph, th;
   int dph, dth;
@@ -625,17 +594,14 @@ void loop() {
     stepRead(1.0, 1000, 100);    
     //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
-      segment[0] = phiP[pathSize-1];
-      segment[1] = thetaP[pathSize-1];
+      phiA = phiP[pathSize-1];
+      thetaA = thetaP[pathSize-1];
       execPath();
       int i = 0;      
-      if (precisePathF) do {        
-        //execLastSegmentFromPath();        
-        execSingleSegment(segment[0], segment[1], laserOnState);
-        //delay(500);         
-        stepRead(1.0, 5000, 100);        
-        //stepReadSimple(1000);
-      } while (steppersOutTarget(segment[0], segment[1], i++));        
+      if (precisePathF) do {                      
+        execSingleSegment(phiA, thetaA, laserOnState);        
+        stepRead(1.0, 5000, 100);                
+      } while (steppersOutTarget(phiA, thetaA, i++));        
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;
