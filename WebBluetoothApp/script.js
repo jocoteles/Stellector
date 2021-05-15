@@ -408,6 +408,19 @@ App.loadItemsDataNames = function () {
     consNames[id]["es"] = obj["properties"]["es"];    
     obj["geometry"]["coordinates"] = obj["properties"]["display"]; //replace coordinates with display (optional)    
   }
+  
+  function coordinatesMakeLinear (data) {  
+    for (let i = 0; i < data["features"].length; i++) {
+      let cn = [];
+      let carray = data["features"][i]["geometry"]["coordinates"]; 
+      if (carray[0][0][0] == undefined) for (let a of carray) cn = cn.concat([a]);
+      else for (let a of carray) for (let b of a) cn = cn.concat([b]);
+      data["features"][i]["geometry"]["coordinates"] = cn;
+    }  
+  }
+  coordinatesMakeLinear(clinesData);
+  coordinatesMakeLinear(cboundsData);
+  coordinatesMakeLinear(asterismsData);
 
   for (let obj of asterismsData["features"]) {            
     let id = obj["id"];
@@ -779,9 +792,9 @@ NavW.goTrack = async function (opt) {
     let date;
     if ($trackAtDatetime.checked) date = new Date($trackDate.value+'T'+$trackTime.value);
     else date = new Date();    
-    coords = App.getCoordinates(trackType, trackId);    
+    coords = App.getCoordinates(trackType, trackId);        
     let trackArray = [];
-    if (coords) {
+    if (coords) {      
       let circle = App.valueSelected($trackPointerStyle).includes('circle');
       let solid = App.valueSelected($trackPointerStyle).includes('solid');
       let dashed = App.valueSelected($trackPointerStyle).includes('dashed');      
@@ -795,15 +808,17 @@ NavW.goTrack = async function (opt) {
       let cinc = $circleAngR.value*Math.PI/180;
       let cap = $circleApR.value*Math.PI/180;
       let dt = (date - new Date())*24/sideralDay;
-      let n = coords.length-1;
-      for (let i; i < n; i++) {
+      let n = coords.length-1;      
+      for (let i = 0; i < n; i++) {
         let ra0 = App.ra180to24(coords[i][0]) + dt;
         let dec0 = coords[i][1];
         let ra1 = App.ra180to24(coords[i+1][0]) + dt;        
         let dec1 = coords[i+1][1];
         let eq0 = new VecSP.Equatorial(ra0, dec0);
         let eq1 = new VecSP.Equatorial(ra1, dec1);
-        if (circle) trackArray = trackArray.concat([PathSP.makeCircle(eq0, cap, cinc, clp, cdelay)]);
+        let circlePath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);
+        circlePath.path[circlePath.size-1].laser = 0;
+        if (circle) trackArray = trackArray.concat([circlePath]);        
         if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);
       }      
       if (circle) {
@@ -812,14 +827,15 @@ NavW.goTrack = async function (opt) {
         let eq = new VecSP.Equatorial(ra, dec);
         trackArray = trackArray.concat([PathSP.makeCircle(eq, cap, cinc, clp, cdelay)]);        
       }
-      trackPath.paths = trackArray;
+      trackPath.paths = trackArray;      
       for (let p of trackArray) trackPath.fullPath.addPath(p);
     } else alert("Track coordinates not found.");    
   }
   if (coords) {
     if (opt == 'fullTrack') {
-      let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	
+      let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	      
       await BleInstance.goPath(commPath, $trackCyclically.checked);
+      NavW.resetTrack();
     }
     else {
       trackStep += Number(opt);

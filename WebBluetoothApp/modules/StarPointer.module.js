@@ -742,7 +742,7 @@ PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
 	let N = Math.max(1.0, Math.round(Math.abs(a/angleIncrement)));		
 	let ainc = a/N;
 	let v3 = new THREE.Vector3();
-	v3 = THREE.crossVectors(v0, v1);	
+	v3.crossVectors(v0, v1);	
 	let r = lpattern[0] + lpattern[1];	
 	let laser;	
 	for (let i = 0; i <= N; i++) {
