@@ -61,7 +61,6 @@
 #define LASER_SWITCH_ST 15    //status to switch laser state
 #define SET_ZENITH_ST 16      //status to point the laser toward zenith
 #define READ_ACT_STEPS_ST 17  //status to read the steppers actual steps
-#define IDLE_ST 18            //status when in idle state
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
 #define STEP_ITER 5                 //maximum number of iterations for step precision quest
@@ -115,7 +114,6 @@ bool laserSwitchF = false;
 bool setZenithF = false;
 bool readActStepsF = false;
 bool laserOnState = false;
-bool idle = true;
 //bool started = false;
 
 float origin[3] = ACC_ZENITH;   //direction where phi = 0 and theta = 0 
@@ -613,7 +611,6 @@ void setup() {
 void loop() {
   
   if (navigationF) { //Steppers free navigation movement    
-    idle = false;
     if (checkPathBoundaries()) {
       //stepRead(10.0, 100, 10);
       execPath();
@@ -625,7 +622,6 @@ void loop() {
   }
 
   if (execPathF) { //Path execution    
-    idle = false;
     stepRead(1.0, 1000, 100);    
     //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
@@ -644,7 +640,6 @@ void loop() {
     steppersOff();
     execPathF = false;
     precisePathF = false;
-    //idle = false;
   }
 
   if (laserSwitchF) {    
@@ -653,8 +648,7 @@ void loop() {
     laserSwitchF = false;    
   }
   
-  if (setZenithF) {
-    idle = false;
+  if (setZenithF) {    
     laserP[0] = laserOnState;
     delayP[0] = DELAY_MIN;
     phiP[0] = STEP_AT_ZENITH;
@@ -670,28 +664,11 @@ void loop() {
     setZenithF = false;
   }
 
-  if (readActStepsF) {
-    idle = false;
+  if (readActStepsF) {    
     stepRead(1.0, 5000, 100);
     //stepReadSimple(1000);
     sendActSteps();
     readActStepsF = false;
   }
 
-  if (!idle) {
-    sendStatus(IDLE_ST);
-    idle = true;
-  }
-
-  /*sendActSteps();
-  delay(500);*/
-  /*if (!started) {
-    setZenith();
-    started = true;
-  }*/
-
-  /*mpuRead(ACC_TRE, ACC_ITER_MAX, ACC_AVG);
-  delay(1000);  
-  Serial.print("phi: "); Serial.println(actStep[0]);
-  Serial.print("theta: "); Serial.println(actStep[1]);*/
 }

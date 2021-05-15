@@ -31,7 +31,6 @@ const $circleApT = document.getElementById("circleApT");
 const $circleAngR = document.getElementById("circleAngR");
 const $circleAngT = document.getElementById("circleAngT");
 const $precisePoint = document.getElementById("precisePoint");
-const $laserStateB = document.getElementById("laserStateB");
 const $commStatus = document.getElementById("commStatus");
 const $calibLog = document.getElementById("calibLog");
 const $calibInfo = document.getElementById("calibInfo");
@@ -64,13 +63,6 @@ const $navObjectsCombo = document.getElementById("navObjectsCombo");
 const $navTracksCombo = document.getElementById("navTracksCombo");
 const $trackAtDatetime = document.getElementById("trackAtDatetime");
 const $trackCyclically = document.getElementById("trackCyclically");
-
-const laserStateBOFF = "laser is OFF";
-const laserStateBON = "laser is ON";
-const laserStateBBusy = "laser is Busy"
-const laserStateBON_color = "#9bf296";
-const laserStateBOFF_color = "#f76459";
-const laserStateBBusy_color = "gray";
 
 const stepSizeInputDatalistParams =  
 {
@@ -530,31 +522,7 @@ Controller.sendStepSize = async function (ssId) {
 
 Controller.switchLaser = async function () {
   await BleInstance.goLaser();  
-  await Controller.setLaserButton();
-}
-
-Controller.setLaserButton = async function () {
-  let status = await BleInstance.checkStatus();  
-  if ((status == BleInstance.OPT.IDLE_ST) || (status == BleInstance.OPT.LASER_SWITCH_ST)) {    
-    let lstatus = await BleInstance.sendOption(BleInstance.OPT.LASER_CHECK_OPT);  
-    switch (lstatus) {
-      case BleInstance.OPT.LASER_OFF_ST:
-        $laserStateB.innerHTML = laserStateBOFF;
-        $laserStateB.style.backgroundColor = laserStateBOFF_color;
-        break;
-      case BleInstance.OPT.LASER_ON_ST:
-        $laserStateB.innerHTML = laserStateBON;
-        $laserStateB.style.backgroundColor = laserStateBON_color;
-        break;
-      default:
-        $laserStateB.innerHTML = laserStateBBusy;
-        $laserStateB.style.backgroundColor = laserStateBBusy_color;
-    }    
-  }
-  else {
-    $laserStateB.innerHTML = laserStateBBusy;
-    $laserStateB.style.backgroundColor = laserStateBBusy_color;
-  }
+  await BleInstance.sendOption(BleInstance.OPT.LASER_CHECK_OPT);  
 }
 
 Controller.updateStepSize = function () {
@@ -687,8 +655,7 @@ NavW.goObjectStyle = async function (style) {
       break;
   }
   let commPath = new CommSP.CommPath(path, CalibInstance);	
-  await BleInstance.goPath(commPath, cyclicOpt);
-  await Controller.setLaserButton();
+  await BleInstance.goPath(commPath, cyclicOpt);  
 }
 
 NavW.goEquatorial = async function () {	
@@ -967,10 +934,6 @@ for (let i in itemsElements) {
 
 //Set initial step size:
 Controller.updateStepSize();
-
-//Set initial laser status
-$laserStateB.innerHTML = laserStateBOFF;
-$laserStateB.style.backgroundColor = laserStateBOFF_color;
 
 //Set navigation actual time:
 $objDate.value = App.localDateString(new Date());

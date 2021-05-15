@@ -34,7 +34,6 @@ let ESP32 = {
 	LASER_SWITCH_ST: 15,	    //status to switch laser state
 	SET_ZENITH_ST: 16,			//status to point the laser toward zenith
 	READ_ACT_STEPS_ST: 17,		//status to read the steppers actual steps
-	IDLE_ST: 18,	            //status when in idle state	
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
