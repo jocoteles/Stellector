@@ -20,16 +20,21 @@ let ESP32 = {
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
 	EXEC_PATH_OPT: 2,        	//option to execute the path
 	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly
-	LASER_SWITCH_OPT: 4,       	//option to turn on the laser
-	SET_ZENITH_OPT: 5,       	//option to point the laser toward zenith
-	READ_ACT_STEPS_OPT: 6,		//option to read the steppers actual steps
-	RESET_PATH_ST: 7,			//status to start a new path reading
-	EXEC_PATH_ST: 8,			//status to execute the path
-	CYCLIC_PATH_ST: 9,			//status to execute the path cyclicaly
-	LASER_ON_ST: 10,			//status to turn on the laser
-	LASER_OFF_ST: 11,			//status to turn off the laser
-	SET_ZENITH_ST: 12,			//status to point the laser toward zenith
-	READ_ACT_STEPS_ST: 13,		//status to read the steppers actual steps	
+	PRECISE_PATH_OPT: 4,   		//option to execute a precise single segment path
+	LASER_SWITCH_OPT: 5,       	//option to turn on the laser
+	LASER_CHECK_OPT: 6,    		//option to check the laser	state
+	SET_ZENITH_OPT: 7,       	//option to point the laser toward zenith
+	READ_ACT_STEPS_OPT: 8,		//option to read the steppers actual steps
+	RESET_PATH_ST: 9,			//status to start a new path reading
+	EXEC_PATH_ST: 10,			//status to execute the path
+	CYCLIC_PATH_ST: 11,			//status to execute the path cyclicaly
+	PRECISE_PATH_ST: 12,	    //status to execute a precise single segment path
+	LASER_ON_ST: 13,			//status to turn on the laser
+	LASER_OFF_ST: 14,			//status to turn off the laser
+	LASER_SWITCH_ST: 15,	    //status to switch laser state
+	SET_ZENITH_ST: 16,			//status to point the laser toward zenith
+	READ_ACT_STEPS_ST: 17,		//status to read the steppers actual steps
+	IDLE_ST: 18,	            //status when in idle state	
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -471,7 +476,7 @@ CommSP.Bluetooth = class {
 	}
 	optKeyFromValue (value) {
 		for (let x of Object.entries(this.OPT)) if (x[1] == value) return x[0];
-		return 'undefined';
+		return false;
 	}
 	isServerIdle (opt) {
 		if ((opt == this.OPT.LASER_OFF_ST) || (opt == this.OPT.LASER_ON_ST)) return true;
@@ -517,12 +522,13 @@ CommSP.Bluetooth = class {
 	}
     
 	/** Send a this.Opt item to ESP32 Server.
-	 * @param {string} option - A valid this.Opt item.
+	 * @param {number} optValue - A valid this.Opt item value.
 	*/
-	async sendOption (option) {		
-		if (Object.keys(this.OPT).includes(option)) {			
-			this.logDOM.innerHTML += this.time() + 'Option ' + option + ' sent to Server.\n';
-			await this.pathC.writeValue(new Uint8Array([this.OPT[option]]));			
+	async sendOption (optValue) {
+		let optKey = this.optKeyFromValue(optValue);
+		if (optKey) {			
+			this.logDOM.innerHTML += this.time() + 'Option ' + optKey + ' sent to Server.\n';
+			await this.pathC.writeValue(new Uint8Array([optValue]));			
 			if (await this.checkStatus()) {
 				let opt = this.optKeyFromValue(this.serverStatus);
 				this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
@@ -560,7 +566,7 @@ CommSP.Bluetooth = class {
 			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
 			else {
 				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
-				await this.sendOption('RESET_PATH_OPT');
+				await this.sendOption(this.OPT.RESET_PATH_OPT);
 				let j = 0;
 				let pathChunk;
 				for (let i = 0; i < path.length; i++) {
@@ -575,8 +581,8 @@ CommSP.Bluetooth = class {
 					}
 				}
 				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-				if (cyclicOpt) await this.sendOption('CYCLIC_PATH_OPT');
-				else await this.sendOption('EXEC_PATH_OPT');
+				if (cyclicOpt) await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
+				else await this.sendOption(this.OPT.EXEC_PATH_OPT);
 				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
 				return true;
 			}
@@ -586,7 +592,7 @@ CommSP.Bluetooth = class {
 	async goLaser () {
 		try {			
 			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('LASER_SWITCH_OPT');												
-			await this.sendOption('LASER_SWITCH_OPT');
+			await this.sendOption(this.OPT.LASER_SWITCH_OPT);
 		} catch (error) {			
 			return this.disconnectMsg(error);}		
 	}
@@ -596,7 +602,7 @@ CommSP.Bluetooth = class {
 		try {			
 			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');
 			//await this.sendOption('RESET_PATH_OPT');
-			await this.sendOption('SET_ZENITH_OPT');												
+			await this.sendOption(this.OPT.SET_ZENITH_OPT);												
 		} catch (error) {			
 			return this.disconnectMsg(error);
 		}

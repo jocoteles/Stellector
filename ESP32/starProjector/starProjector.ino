@@ -46,20 +46,25 @@
 #define RESET_PATH_OPT 1       //option to start a new path reading
 #define EXEC_PATH_OPT 2        //option to execute the path
 #define CYCLIC_PATH_OPT  3     //option to execute the path cyclicaly
-#define LASER_SWITCH_OPT 4     //option to switch the laser
-#define SET_ZENITH_OPT 5       //option to point the laser toward zenith
-#define READ_ACT_STEPS_OPT 6   //option to read the steppers actual steps
+#define PRECISE_PATH_OPT 4     //option to execute a precise single segment path
+#define LASER_SWITCH_OPT 5     //option to switch the laser
+#define LASER_CHECK_OPT 6      //option to check the laser status
+#define SET_ZENITH_OPT 7       //option to point the laser toward zenith
+#define READ_ACT_STEPS_OPT 8   //option to read the steppers actual steps
 
-#define RESET_PATH_ST 7       //status to start a new path reading
-#define EXEC_PATH_ST 8        //status to execute the path
-#define CYCLIC_PATH_ST 9      //status to execute the path cyclicaly
-#define LASER_ON_ST 10        //status to turn on the laser
-#define LASER_OFF_ST 11       //status to turn off the laser
-#define SET_ZENITH_ST 12      //status to point the laser toward zenith
-#define READ_ACT_STEPS_ST 13  //status to read the steppers actual steps
+#define RESET_PATH_ST 9       //status to start a new path reading
+#define EXEC_PATH_ST 10       //status to execute the path
+#define CYCLIC_PATH_ST 11     //status to execute the path cyclicaly
+#define PRECISE_PATH_ST 12    //status to execute a precise single segment path
+#define LASER_ON_ST 13        //status if laser is on
+#define LASER_OFF_ST 14       //status if laser is off
+#define LASER_SWITCH_ST 15    //status to switch laser state
+#define SET_ZENITH_ST 16      //status to point the laser toward zenith
+#define READ_ACT_STEPS_ST 17  //status to read the steppers actual steps
+#define IDLE_ST 18            //status when in idle state
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
-#define STEP_ITER 8                 //maximum number of iterations for step precision quest
+#define STEP_ITER 5                 //maximum number of iterations for step precision quest
 
 //BLE variables:
 //--------------
@@ -104,12 +109,13 @@ const uint8_t pathBase[PATHBASE_SIZE] = PATHBASE;   //number of bits of the base
 const uint8_t commBase[COMMBASE_SIZE] = COMMBASE;   //number of bits of the base used to communicate the path segments
 bool cyclicPathF = false;
 bool execPathF = false;
+bool precisePathF = false;
 bool navigationF = false;
-bool laserF = false;
+bool laserSwitchF = false;
 bool setZenithF = false;
 bool readActStepsF = false;
 bool laserOnState = false;
-//bool idle = true;
+bool idle = true;
 //bool started = false;
 
 float origin[3] = ACC_ZENITH;   //direction where phi = 0 and theta = 0 
@@ -165,7 +171,7 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     if (vals.length() == 1) {
       option = vals[0];      
       execPathF = false;
-      cyclicPathF = false;
+      cyclicPathF = false;      
       switch (option) {
         case RESET_PATH_OPT:
           delay(200);
@@ -181,13 +187,21 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           cyclicPathF = true;
           sendStatus(CYCLIC_PATH_ST);
           break;        
+        case PRECISE_PATH_OPT:          
+          precisePathF = true;
+          sendStatus(PRECISE_PATH_ST);
+          break;
         case LASER_SWITCH_OPT:        
-          laserF = true;          
+          laserSwitchF = true;
+          sendStatus(LASER_SWITCH_ST);
+          break;
+        case LASER_CHECK_OPT:
+          if (laserOnState) sendStatus(LASER_ON_ST);
+          else sendStatus(LASER_OFF_ST);
           break;
         case SET_ZENITH_OPT:
           setZenithF = true;
-          sendStatus(SET_ZENITH_ST);
-          //setZenith();
+          sendStatus(SET_ZENITH_ST);          
           break;
     		case READ_ACT_STEPS_OPT:
           readActStepsF = true;
@@ -430,7 +444,7 @@ void execSingleSegment(uint16_t phs, uint16_t ths, bool lstate) {
     delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
   }
   actStep[0] = ph;
-  actStep[1] = th;
+  actStep[1] = th;  
   laser(lstate);      
 }
 
@@ -599,6 +613,7 @@ void setup() {
 void loop() {
   
   if (navigationF) { //Steppers free navigation movement    
+    idle = false;
     if (checkPathBoundaries()) {
       //stepRead(10.0, 100, 10);
       execPath();
@@ -606,11 +621,11 @@ void loop() {
       //sendActSteps();
       steppersOff();
     }    
-    navigationF = false;
-    //idle = false;
+    navigationF = false;    
   }
 
-  if (execPathF) { //Path execution
+  if (execPathF) { //Path execution    
+    idle = false;
     stepRead(1.0, 1000, 100);    
     //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
@@ -618,9 +633,9 @@ void loop() {
       segment[1] = thetaP[pathSize-1];
       execPath();
       int i = 0;      
-      if (!cyclicPathF) do {
-        //execLastSegmentFromPath();
-        execSingleSegment(segment[0], segment[1], false);
+      if (precisePathF) do {        
+        //execLastSegmentFromPath();        
+        execSingleSegment(segment[0], segment[1], laserOnState);
         //delay(500);         
         stepRead(1.0, 5000, 100);        
         //stepReadSimple(1000);
@@ -628,18 +643,18 @@ void loop() {
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;
+    precisePathF = false;
     //idle = false;
   }
 
-  if (laserF) {
-    laserOnState = !laserOnState;          
-    if (laserOnState) sendStatus(LASER_ON_ST);
-    else sendStatus(LASER_OFF_ST);
-    laser(laserOnState);
-    laserF = false;
+  if (laserSwitchF) {    
+    laserOnState = !laserOnState;              
+    laser(laserOnState);    
+    laserSwitchF = false;    
   }
   
   if (setZenithF) {
+    idle = false;
     laserP[0] = laserOnState;
     delayP[0] = DELAY_MIN;
     phiP[0] = STEP_AT_ZENITH;
@@ -656,17 +671,17 @@ void loop() {
   }
 
   if (readActStepsF) {
+    idle = false;
     stepRead(1.0, 5000, 100);
     //stepReadSimple(1000);
     sendActSteps();
     readActStepsF = false;
   }
 
-  /*if (!idle) {
+  if (!idle) {
     sendStatus(IDLE_ST);
     idle = true;
-  }*/
-  
+  }
 
   /*sendActSteps();
   delay(500);*/

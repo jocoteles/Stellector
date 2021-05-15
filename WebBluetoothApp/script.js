@@ -2,7 +2,7 @@
 
 //stars6JSON equatorial coordinates are: ra - the Right Ascension (-180° to 180°) coordinate and dec - the Declination (-90º to 90º) coordinate.
 
-import {ESP32, VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
+import {VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
 import './libs/orb.v2.min.js';
 
 
@@ -30,6 +30,7 @@ const $circleApR = document.getElementById("circleApR");
 const $circleApT = document.getElementById("circleApT");
 const $circleAngR = document.getElementById("circleAngR");
 const $circleAngT = document.getElementById("circleAngT");
+const $precisePoint = document.getElementById("precisePoint");
 const $laserStateB = document.getElementById("laserStateB");
 const $commStatus = document.getElementById("commStatus");
 const $calibLog = document.getElementById("calibLog");
@@ -529,21 +530,31 @@ Controller.sendStepSize = async function (ssId) {
 
 Controller.switchLaser = async function () {
   await BleInstance.goLaser();  
-  setTimeout( function () {  
-    switch (BleInstance.serverStatus) {
-      case ESP32.LASER_OFF_ST:
+  await Controller.setLaserButton();
+}
+
+Controller.setLaserButton = async function () {
+  let status = await BleInstance.checkStatus();  
+  if ((status == BleInstance.OPT.IDLE_ST) || (status == BleInstance.OPT.LASER_SWITCH_ST)) {    
+    let lstatus = await BleInstance.sendOption(BleInstance.OPT.LASER_CHECK_OPT);  
+    switch (lstatus) {
+      case BleInstance.OPT.LASER_OFF_ST:
         $laserStateB.innerHTML = laserStateBOFF;
         $laserStateB.style.backgroundColor = laserStateBOFF_color;
         break;
-      case ESP32.LASER_ON_ST:
+      case BleInstance.OPT.LASER_ON_ST:
         $laserStateB.innerHTML = laserStateBON;
         $laserStateB.style.backgroundColor = laserStateBON_color;
         break;
       default:
         $laserStateB.innerHTML = laserStateBBusy;
         $laserStateB.style.backgroundColor = laserStateBBusy_color;
-    }  
-  }, 200);
+    }    
+  }
+  else {
+    $laserStateB.innerHTML = laserStateBBusy;
+    $laserStateB.style.backgroundColor = laserStateBBusy_color;
+  }
 }
 
 Controller.updateStepSize = function () {
@@ -649,9 +660,13 @@ NavW.goObjectStyle = async function (style) {
   let cyclicOpt;
   switch (style) {
     case "point":
-      let seg = new PathSP.Segment(CoordNavW, 1, 0);	  
-	    path.addSegment(seg);
-      cyclicOpt = true;
+      let seg = new PathSP.Segment(CoordNavW, 1, 0);
+	    path.addSegment(seg);            
+	    if ($precisePoint.checked) {
+        console.log($precisePoint.checked)
+        await BleInstance.sendOption(BleInstance.OPT.PRECISE_PATH_OPT);
+      }      
+      cyclicOpt = false;
       break;
     case "bpoint":
       let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
@@ -670,9 +685,10 @@ NavW.goObjectStyle = async function (style) {
 	    path.addPath(circle);
       cyclicOpt = true;
       break;
-  }  
-	let commPath = new CommSP.CommPath(path, CalibInstance);	
-	await BleInstance.goPath(commPath, cyclicOpt);
+  }
+  let commPath = new CommSP.CommPath(path, CalibInstance);	
+  await BleInstance.goPath(commPath, cyclicOpt);
+  await Controller.setLaserButton();
 }
 
 NavW.goEquatorial = async function () {	
