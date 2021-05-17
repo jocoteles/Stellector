@@ -190,15 +190,13 @@ VecSP.Step = class {
 VecSP.CalibStar = class {
 	/**
 	 * Crate a calib star object.
-	 * @param {string} text - a text output with this star information
-	 * @param {string} value - a unique Id for this star object
+	 * @param {string} text - a text output with this star information	 
 	 * @param {Date} date - date when the star object was measured by the StarProjector system
 	 * @param {VecSP.Step} step - local steppers coordinates for the star object
 	 * @param {VecSP.Equatorial} eq - celestial equatorial coordinates for the star object
 	 */
-	constructor (text = null, value = null, date = null, step = null, eq = null) {
-		this.text = text;
-		this.value = value;
+	constructor (text = null, date = null, step = null, eq = null) {
+		this.text = text;		
 		this.date = date;
 		this.step = step;
 		this.eq = eq;
@@ -256,17 +254,19 @@ VecSP.Calibration = class {
 			}
 			return N - dev;
 		}
-		let dims = [optimjs.Real(0, 2*Math.Pi), optimjs.Real(0, 2*Math.Pi), optimjs.Real(0, 2*Math.Pi)];		
+		let dims = [optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI)];		
 		let optAngs;
 		let bestValue = 1000;
 		for (let i = 0; i < this.minimizationTries; i++) {
-			let dres = optimjs.dummy_minimize(optimFunction, dims, n_calls=256);
+			let dres = optimjs.dummy_minimize(optimFunction, dims, 256);
 			let res = optimjs.minimize_Powell(optimFunction, dres.best_x);
 			if (res.fncvalue < bestValue) {
 				bestValue = res.fncvalue;
 				optAngs = res.argument;
+				console.log(bestValue);
+				console.log(optAngs);
 			}
-		}
+		}		
 		this.eulerLocalToCelestial.fromArray(optAngs);
 		let invM = new THREE.Matrix4().makeRotationFromEuler(this.eulerLocalToCelestial).transpose();
 		this.eulerCelestialToLocal.setFromRotationMatrix(invM);

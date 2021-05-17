@@ -56,6 +56,7 @@ const $objectPointerStyle = document.getElementById("objectPointerStyle");
 const $trackPointerStyle = document.getElementById("trackPointerStyle");
 const $coordsPointerStyle = document.getElementById("coordsPointerStyle");
 const $calibObjectsTypeCombo = document.getElementById("calibObjectsTypeCombo");
+const $calibListCombo = document.getElementById("calibListCombo");
 const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
 const $navTracksTypeCombo = document.getElementById("navTracksTypeCombo");
 const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
@@ -511,6 +512,10 @@ App.valueSelected = function (element) {
   return element.options[element.selectedIndex].value;                
 }
 
+App.textSelected = function (element) {
+  return element.options[element.selectedIndex].text;                
+}
+
 App.setInputRangeDatalist = function (params) {
   params.input.min = params.min;
   params.input.max = params.max;
@@ -550,36 +555,38 @@ Controller.updateStepSize = function () {
  */
 window.CalibW = {};
 
-CalibW.updateCalib = async function (action) {    	
-	let $nsc = document.getElementById("calibStarsCombo");
-	let $csc = document.getElementById("calibListCombo");
-    if ($nsc.innerText != null) {              
+CalibW.updateCalib = async function (action) {    		
+    if ($calibObjectsCombo.innerText != null) {              
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
-            let opt = App.valueSelected($nsc);            
-            let eq = App.equatorialFromObjectData(opt);            
+            let opt = App.valueSelected($calibObjectsCombo);            
+            console.log(opt);
+            //let track = App.valueSelected($navTracksCombo).split("|");
+            //let trackType = track[0];
+            //let trackId = track[1];
+            let eq = App.equatorialFromObjectData(opt);                        
             if (eq) {
               let t = new Date();
-              let s = new VecSP.CalibStar(opt.text, opt.value, t, BleInstance.actStep, eq);
-              calibStars.push(s);
+              let s = new VecSP.CalibStar(App.textSelected($calibObjectsCombo), t, BleInstance.actStep, eq);
+              calibStars.push(s);              
             }
           }
         }
         if (action == "remThis") {
             if (calibStars.length > 0) {
-                let index = $csc.selectedIndex;
+                let index = $calibLis.selectedIndex;
                 calibStars.splice(index, 1);
             }
         }
         if (action == "remAll") calibStars = [];
 
-        $csc.innerText = null;   
+        $calibListCombo.innerText = null;   
         for (let i = 0; i < calibStars.length; i++) {
             let option = document.createElement("option");
             option.text = calibStars[i].text;
-            $csc.add(option);
+            $calibListCombo.add(option);
         }
-        $csc.selectedIndex = Math.max(0, calibStars.length-1);      
+        $calibListCombo.selectedIndex = Math.max(0, calibStars.length-1);      
     }
 }
 
@@ -697,10 +704,8 @@ NavW.readCoords = async function () {
   }
 }
 
-NavW.showCoords = function () {
-  let $nsc = document.getElementById("navObjectsCombo");
-  let opt = App.valueSelected($nsc);  
-  //console.log(opt);
+NavW.showCoords = function () {  
+  let opt = App.valueSelected($navObjectsCombo);    
   CoordNavW = App.equatorialFromObjectData(opt);
   $raF.value = CoordNavW.ra.toFixed(4);
   $decF.value = CoordNavW.dec.toFixed(4);  
