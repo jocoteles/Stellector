@@ -25,15 +25,16 @@ let ESP32 = {
 	LASER_CHECK_OPT: 6,    		//option to check the laser	state
 	SET_ZENITH_OPT: 7,       	//option to point the laser toward zenith
 	READ_ACT_STEPS_OPT: 8,		//option to read the steppers actual steps
-	RESET_PATH_ST: 9,			//status to start a new path reading
-	EXEC_PATH_ST: 10,			//status to execute the path
-	CYCLIC_PATH_ST: 11,			//status to execute the path cyclicaly
-	PRECISE_PATH_ST: 12,	    //status to execute a precise single segment path
-	LASER_ON_ST: 13,			//status to turn on the laser
-	LASER_OFF_ST: 14,			//status to turn off the laser
-	LASER_SWITCH_ST: 15,	    //status to switch laser state
-	SET_ZENITH_ST: 16,			//status to point the laser toward zenith
-	READ_ACT_STEPS_ST: 17,		//status to read the steppers actual steps
+	RESET_READ_OPT: 9,	        //option to make the read steppers procedure ready
+	RESET_PATH_ST: 10,			//status to start a new path reading
+	EXEC_PATH_ST: 11,			//status to execute the path
+	CYCLIC_PATH_ST: 12,			//status to execute the path cyclicaly
+	PRECISE_PATH_ST: 13,	    //status to execute a precise single segment path
+	LASER_ON_ST: 14,			//status to turn on the laser
+	LASER_OFF_ST: 15,			//status to turn off the laser
+	LASER_SWITCH_ST: 16,	    //status to switch laser state
+	SET_ZENITH_ST: 17,			//status to point the laser toward zenith
+	READ_ACT_STEPS_ST: 18,		//status to read the steppers actual steps
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -616,12 +617,21 @@ CommSP.Bluetooth = class {
 	 */
 	async readActSteps () {		
 	    try {
+			let value;
+			await this.pathC.writeValue(new Uint8Array([this.OPT.RESET_READ_OPT]));
+			do {
+				value = await this.posMeasureC.readValue();				
+			} while (value.byteLength > 1);
 			await this.pathC.writeValue(new Uint8Array([this.OPT.READ_ACT_STEPS_OPT]));
-			let value = await this.posMeasureC.readValue();		
+			do {
+				value = await this.posMeasureC.readValue();				
+			} while (value.byteLength < 4);
 			let fix = value.getUint8(0)*256 + value.getUint8(1);
 			let mob = value.getUint8(2)*256 + value.getUint8(3);
 			this.logDOM.innerHTML += this.time() + 'Actual steps readings from server: fix=' + fix + ', mob=' + mob + '\n';
 			this.actStep = new VecSP.Step(fix, mob);		
+			//console.log(value.byteLength);
+			//console.log(this.actStep);
 			return true;
 		} catch (error) {return this.disconnectMsg(error);}
 	}

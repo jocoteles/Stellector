@@ -51,16 +51,18 @@
 #define LASER_CHECK_OPT 6      //option to check the laser status
 #define SET_ZENITH_OPT 7       //option to point the laser toward zenith
 #define READ_ACT_STEPS_OPT 8   //option to read the steppers actual steps
+#define RESET_READ_OPT 9       //option to make the read steppers procedure ready
 
-#define RESET_PATH_ST 9       //status to start a new path reading
-#define EXEC_PATH_ST 10       //status to execute the path
-#define CYCLIC_PATH_ST 11     //status to execute the path cyclicaly
-#define PRECISE_PATH_ST 12    //status to execute a precise single segment path
-#define LASER_ON_ST 13        //status if laser is on
-#define LASER_OFF_ST 14       //status if laser is off
-#define LASER_SWITCH_ST 15    //status to switch laser state
-#define SET_ZENITH_ST 16      //status to point the laser toward zenith
-#define READ_ACT_STEPS_ST 17  //status to read the steppers actual steps
+#define RESET_PATH_ST 10       //status to start a new path reading
+#define EXEC_PATH_ST 11       //status to execute the path
+#define CYCLIC_PATH_ST 12     //status to execute the path cyclicaly
+#define PRECISE_PATH_ST 13    //status to execute a precise single segment path
+#define LASER_ON_ST 14        //status if laser is on
+#define LASER_OFF_ST 15       //status if laser is off
+#define LASER_SWITCH_ST 16    //status to switch laser state
+#define SET_ZENITH_ST 17      //status to point the laser toward zenith
+#define READ_ACT_STEPS_ST 18  //status to read the steppers actual steps
+
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
 #define STEP_ITER 5                 //maximum number of iterations for step precision quest
@@ -203,8 +205,13 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           break;
     		case READ_ACT_STEPS_OPT:
           readActStepsF = true;
-          sendStatus(READ_ACT_STEPS_ST);
-          break;    		  
+          //sendStatus(READ_ACT_STEPS_ST);
+          break;
+        case RESET_READ_OPT:          
+          uint8_t r[1] = {0};  
+          size_t size = 1;
+          posMeasureC->setValue(r, size);
+          break;
       }
     }
     if (vals.length() >= COMMBASE_SIZE) { //Read path
@@ -510,6 +517,24 @@ void sendActSteps() {
   uint16_t r01 = actStep[0] % 256;
   uint16_t r10 = actStep[1] / 256;
   uint16_t r11 = actStep[1] % 256;
+  uint8_t r[4] = {r00, r01, r10, r11};
+  /*Serial.println(actStep[0]);
+  Serial.println(actStep[1]);
+  Serial.println(r[0]);
+  Serial.println(r[1]);
+  Serial.println(r[2]);
+  Serial.println(r[3]);*/
+  size_t size = 4;
+  posMeasureC->setValue(r, size);
+  //posMeasureC->setValue(r00);
+  //posMeasureC->notify();
+}
+
+void sendReadySteps() {
+  uint16_t r00 = STPS360 / 256;
+  uint16_t r01 = STPS360 % 256;
+  uint16_t r10 = STPS360 / 256;
+  uint16_t r11 = STPS360 % 256;
   uint8_t r[4] = {r00, r01, r10, r11};
   /*Serial.println(actStep[0]);
   Serial.println(actStep[1]);
