@@ -225,7 +225,7 @@ VecSP.Calibration = class {
 		/**@member {object} - Calibration statistics */
 		this.stats = {dev: 0, min: 0, max: 0, minStar: null, maxStar: null};
 		/**@member {number} - Number of tries used by the optmization algorithm. */
-		this.minimizationTries = 10;
+		this.minimizationTrial = 10;
 	}
 	/**
 	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
@@ -258,7 +258,7 @@ VecSP.Calibration = class {
 		let dims = [optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI)];		
 		let optAngs;
 		let bestValue = 1000;
-		for (let i = 0; i < this.minimizationTries; i++) {
+		for (let i = 0; i < this.minimizationTrial; i++) {
 			let dres = optimjs.dummy_minimize(optimFunction, dims, 256);
 			let res = optimjs.minimize_Powell(optimFunction, dres.best_x);
 			if (res.fncvalue < bestValue) {

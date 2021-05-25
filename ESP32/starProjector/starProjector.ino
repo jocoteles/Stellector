@@ -65,7 +65,11 @@
 
 
 #define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
-#define STEP_ITER 5                 //maximum number of iterations for step precision quest
+#define STEP_ITER 10                //maximum number of iterations for step precision quest
+
+#define TIME_STEPPERS_OFF 15000       //time delay to turn off steppers when idle in miliseconds.
+#define TIME_LASER_OFF 60000          //time delay to turn off laser when idle in miliseconds.
+#define TIME_STEPPERS_SETTLEDOWN 10   //time delay to steppers settle down after halt in miliseconds.
 
 //BLE variables:
 //--------------
@@ -96,6 +100,7 @@ const int stpr1[4] = STPR1_GPIOS;   //fixed stepper GPIO pins (phi)
 const int stpr2[4] = STPR2_GPIOS;   //mobile stepper GPIO pins  (theta)
 
 uint16_t actStep[2] = {STPS360/2, STPS360/2};   //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
+uint16_t nomStep[2] = {STPS360/2, STPS360/2};   //nominal step values for the fixed (phi) and mobile (theta) stepper, respectively
 float actRect[3] = {0.0, 1.0, 0.0};             //actual laser rectangular coordinates (x, y, z)
 
 //Path variables:
@@ -105,7 +110,7 @@ uint16_t thetaP[PATH_MAX_SIZE];     //mobile stepper array of segments in step u
 uint16_t laserP[PATH_MAX_SIZE];     //laser state on/off array of segments (boolean - 1 bit)
 uint16_t delayP[PATH_MAX_SIZE];     //step delay array of segments in 1 us times DELAY_FACTOR units
 uint16_t pathSize = 0;
-uint16_t phiA, thetaA;              //auxiliary fixed and mobile steppers coordinates
+uint16_t phiA, thetaA, phiB, thetaB;              //auxiliary fixed and mobile steppers coordinates
 const uint8_t pathBase[PATHBASE_SIZE] = PATHBASE;   //number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 const uint8_t commBase[COMMBASE_SIZE] = COMMBASE;   //number of bits of the base used to communicate the path segments
 bool cyclicPathF = false;
@@ -119,6 +124,9 @@ bool laserOnState = false;
 //bool started = false;
 
 float origin[3] = ACC_ZENITH;   //direction where phi = 0 and theta = 0 
+
+unsigned long steppersTime = 0;
+unsigned long laserTime = 0;
 
 
 uint16_t * decode(uint32_t x) {
@@ -232,11 +240,17 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     if (vals.length() == 2) { //Read step sizes for free navigation      
       laserP[0] = laserOnState;
       delayP[0] = DELAY_MIN;
+      //laserP[1] = laserOnState;
+      //delayP[1] = DELAY_MIN;
       //Serial.println(vals[0] - 127);
+      //phiP[0] = actStep[0];
+      //thetaP[0] = actStep[1];
       phiP[0] = (actStep[0] + vals[0] - 127) % STPS360;
       thetaP[0] = (actStep[1] + vals[1] - 127) % STPS360;
       pathSize = 1;
       navigationF = true;
+      steppersTime = millis();
+      laserTime = millis();
       /*phSS = vals[0] - 128;
       thSS = vals[1] - 128;*/
     }
@@ -292,7 +306,9 @@ void stepperFix (uint16_t s) {
     digitalWrite(stpr1[j], fullStep[s % FSCYCLE][j]);
   }
   //Serial.println();
-  actStep[0] = s;  
+  actStep[0] = s;
+  nomStep[0] = s;  
+  Serial.print("ph: ");Serial.println(s);    
 }
 
 void stepperMob (uint16_t s) {
@@ -302,7 +318,9 @@ void stepperMob (uint16_t s) {
     digitalWrite(stpr2[j], fullStep[s % FSCYCLE][j]);
   }
   //Serial.println();
-  actStep[1] = s;  
+  actStep[1] = s;    
+  nomStep[1] = s;
+  Serial.print("th: ");Serial.println(s);
 }
 
 void steppersOff () {
@@ -380,8 +398,8 @@ void execPath() {
     Serial.print("ph: ");Serial.println(ph);
     Serial.print("th: ");Serial.println(th);*/
     for (uint16_t i = 1; i <= N; i++) {
-      ph = phA + int(i*fph);
-      th = thA + int(i*fth);      
+      ph = phA + round(i*fph);
+      th = thA + round(i*fth);            
       stepperFix(ph);
       stepperMob(th);      
       delayMicroseconds(delayP[j]*DELAY_FACTOR);
@@ -395,12 +413,14 @@ void execPath() {
 }
 
 void execSingleSegment(uint16_t phs, uint16_t ths, bool lstate) {
-  uint16_t N, phA, thA, ph, th;
+  uint16_t N, phA, thA, phN, thN, ph, th;
   int dph, dth;
   float fph, fth;
 
   phA = actStep[0];
   thA = actStep[1];
+  phN = nomStep[0];   //Aplicar nomStep para todos os procedimentos e reescrever o actStep
+  thN = nomStep[1];   
   ph = phs;
   th = ths;      
   dph = ph - phA;
@@ -411,8 +431,8 @@ void execSingleSegment(uint16_t phs, uint16_t ths, bool lstate) {
   fph = float(dph)/N;
   fth = float(dth)/N;    
   for (uint16_t i = 1; i <= N; i++) {
-    ph = phA + int(i*fph);
-    th = thA + int(i*fth);      
+    ph = phN + round(i*fph);
+    th = thN + round(i*fth);      
     stepperFix(ph);
     stepperMob(th);      
     delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
@@ -530,33 +550,31 @@ void sendActSteps() {
   //posMeasureC->notify();
 }
 
-void sendReadySteps() {
-  uint16_t r00 = STPS360 / 256;
-  uint16_t r01 = STPS360 % 256;
-  uint16_t r10 = STPS360 / 256;
-  uint16_t r11 = STPS360 % 256;
-  uint8_t r[4] = {r00, r01, r10, r11};
-  /*Serial.println(actStep[0]);
-  Serial.println(actStep[1]);
-  Serial.println(r[0]);
-  Serial.println(r[1]);
-  Serial.println(r[2]);
-  Serial.println(r[3]);*/
-  size_t size = 4;
-  posMeasureC->setValue(r, size);
-  //posMeasureC->setValue(r00);
-  //posMeasureC->notify();
-}
-
 void sendStatus(uint8_t st) {
   uint8_t v[1] = {st};
   size_t size = 1;  
   statusC->setValue(v, size);
 }
 
-bool steppersOutTarget(uint16_t phTarget, uint16_t thTarget, int i) {
+/*bool steppersOutTarget(uint16_t phTarget, uint16_t thTarget, int i) {
   if (((abs(actStep[0] - phTarget) > STEP_PREC) || (abs(actStep[1] - thTarget) > STEP_PREC)) && (i < STEP_ITER)) return true;
   else return false;
+}*/
+
+bool stepperPhiOutTarget(uint16_t phTarget) {
+  if (abs(actStep[0] - phTarget) > STEP_PREC) return true;
+  else return false;
+}
+
+bool stepperThetaOutTarget(uint16_t thTarget) {
+  if (abs(actStep[1] - thTarget) > STEP_PREC) return true;
+  else return false;
+}
+
+uint16_t sign(uint16_t d) {
+  if (d > 0) return 1;
+  else if (d < 0) return -1;
+  else return 0;
 }
 
 void setup() {
@@ -610,7 +628,7 @@ void loop() {
       execPath();
       //stepRead(10.0, 100, 10);
       //sendActSteps();
-      steppersOff();
+      //steppersOff();
     }    
     navigationF = false;    
   }
@@ -619,14 +637,31 @@ void loop() {
     stepRead(1.0, 1000, 100);    
     //stepReadSimple(1000);
     if (checkPathBoundaries()) do {
-      phiA = phiP[pathSize-1];
-      thetaA = thetaP[pathSize-1];
       execPath();
-      int i = 0;      
-      if (precisePathF) do {                      
-        execSingleSegment(phiA, thetaA, laserOnState);        
-        stepRead(1.0, 5000, 100);                
-      } while (steppersOutTarget(phiA, thetaA, i++));        
+      phiA = phiP[pathSize-1];
+      thetaA = thetaP[pathSize-1];      
+      int i = 0;
+      int jphi = 0;      
+      int jtheta = 0;
+      bool phiOut = false;
+      bool thetaOut = false;
+      if (precisePathF) do {
+        phiB = actStep[0];
+        thetaB = actStep[1];
+        execSingleSegment(phiA + jphi, thetaA + jtheta, laserOnState);
+        delay(TIME_STEPPERS_SETTLEDOWN);        
+        stepRead(1.0, 5000, 100);
+        //Serial.print("actStep0: ");Serial.println(actStep[0]);                
+        //Serial.print("actStep1: ");Serial.println(actStep[1]);                
+        phiB -= actStep[0];
+        thetaB -= actStep[1];
+        phiOut = stepperPhiOutTarget(phiA);
+        thetaOut = stepperThetaOutTarget(thetaA);
+        //if (phiB == 0) jphi += sign(phiA - actStep[0]);
+        //if (thetaB == 0) jtheta += sign(thetaA - actStep[1]);
+        if (!phiOut) jphi = 0;
+        if (!thetaOut) jtheta = 0;
+      } while ((phiOut || thetaOut) && (i++ < STEP_ITER));        
     } while (cyclicPathF);
     steppersOff();
     execPathF = false;
@@ -636,21 +671,38 @@ void loop() {
   if (laserSwitchF) {    
     laserOnState = !laserOnState;              
     laser(laserOnState);    
-    laserSwitchF = false;    
+    laserSwitchF = false;
+    laserTime = millis();    
   }
   
-  if (setZenithF) {    
+  if (setZenithF) {
+    phiA = STEP_AT_ZENITH;
+    thetaA = STEP_AT_ZENITH;
     laserP[0] = laserOnState;
-    delayP[0] = DELAY_MIN;
-    phiP[0] = STEP_AT_ZENITH;
-    thetaP[0] = STEP_AT_ZENITH;
+    delayP[0] = DELAY_MIN;    
     pathSize = 1;
     stepRead(1.0, 1000, 100);
     int i = 0;
+    int jphi = 0;      
+    int jtheta = 0;
+    bool phiOut = false;
+    bool thetaOut = false;
     do {
+      phiP[0] = phiA + jphi;
+      thetaP[0] = thetaA + jtheta;
+      phiB = actStep[0];
+      thetaB = actStep[1];
       execPath();
-      stepRead(1.0, 1000, 100);
-    } while (steppersOutTarget(STEP_AT_ZENITH, STEP_AT_ZENITH, i++));    
+      stepRead(1.0, 5000, 100);
+      phiB -= actStep[0];
+      thetaB -= actStep[1];
+      phiOut = stepperPhiOutTarget(phiA);
+      thetaOut = stepperThetaOutTarget(thetaA);
+      if (phiB == 0) jphi += sign(phiA - actStep[0]);
+      if (thetaB == 0) jtheta += sign(thetaA - actStep[1]);
+      if (!phiOut) jphi = 0;
+      if (!thetaOut) jtheta = 0;
+    } while ((phiOut || thetaOut) && (i++ < STEP_ITER));    
     steppersOff();
     setZenithF = false;
   }
@@ -660,6 +712,16 @@ void loop() {
     //stepReadSimple(1000);
     sendActSteps();
     readActStepsF = false;
+  }
+
+  if ((millis() - steppersTime) > TIME_STEPPERS_OFF) {
+    steppersOff();
+    steppersTime = millis();
+  }
+
+  if ((millis() - laserTime) > TIME_LASER_OFF) {
+    laser(false);
+    laserTime = millis();
   }
 
 }
