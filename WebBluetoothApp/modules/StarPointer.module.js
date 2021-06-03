@@ -6,35 +6,35 @@
 
 import '../libs/three.min.js';
 import '../libs/optimization.js'
+import '../libs/lalolib-noglpk-module.min.js'
+import { nelderMead } from '../libs/nelderMead.js';
 
 /**
  * @param {Object} ESP32 - constants used in the ESP32 server
  */
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
-	STEP_AT_ZENITH: 510,			//steppers step values corresponding to the Zenith direction
+	STEP_AT_ZENITH: 510,		//steppers step values corresponding to the Zenith direction
 	STEP_MIN: 30,				//steppers step min value for eye laser safety 
 	STEP_MAX: 989,				//steppers step max value for eye laser safety 
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
 	EXEC_PATH_OPT: 2,        	//option to execute the path
-	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly
-	PRECISE_PATH_OPT: 4,   		//option to execute a precise single segment path
-	LASER_SWITCH_OPT: 5,       	//option to turn on the laser
-	LASER_CHECK_OPT: 6,    		//option to check the laser	state
-	SET_ZENITH_OPT: 7,       	//option to point the laser toward zenith
-	READ_ACT_STEPS_OPT: 8,		//option to read the steppers actual steps
-	RESET_READ_OPT: 9,	        //option to make the read steppers procedure ready
-	RESET_PATH_ST: 10,			//status to start a new path reading
-	EXEC_PATH_ST: 11,			//status to execute the path
-	CYCLIC_PATH_ST: 12,			//status to execute the path cyclicaly
-	PRECISE_PATH_ST: 13,	    //status to execute a precise single segment path
-	LASER_ON_ST: 14,			//status to turn on the laser
-	LASER_OFF_ST: 15,			//status to turn off the laser
-	LASER_SWITCH_ST: 16,	    //status to switch laser state
-	SET_ZENITH_ST: 17,			//status to point the laser toward zenith
-	READ_ACT_STEPS_ST: 18,		//status to read the steppers actual steps
+	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly	
+	LASER_SWITCH_OPT: 4,       	//option to turn on the laser
+	LASER_CHECK_OPT: 5,    		//option to check the laser	state
+	SET_ZENITH_OPT: 6,       	//option to make actSteps equal to STEP_AT_ZENITH
+	READ_ACT_STEPS_OPT: 7,		//option to read the steppers actual steps
+	RESET_READ_OPT: 8,	        //option to make the read steppers procedure ready
+	RESET_PATH_ST: 9,			//status to start a new path reading
+	EXEC_PATH_ST: 10,			//status to execute the path
+	CYCLIC_PATH_ST: 11,			//status to execute the path cyclicaly	
+	LASER_ON_ST: 12,			//status to turn on the laser
+	LASER_OFF_ST: 13,			//status to turn off the laser
+	LASER_SWITCH_ST: 14,	    //status to switch laser state
+	SET_ZENITH_ST: 15,			//status to make actSteps equal to STEP_AT_ZENITH
+	READ_ACT_STEPS_ST: 16,		//status to read the steppers actual steps
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -86,7 +86,7 @@ VecSP.Equatorial = class {
 		let n = Math.ceil(Math.abs(this._ra)/24);
 		this._ra = (n*24 + this._ra) % 24;
 		this._dec = Math.sign(this._dec)*Math.min(Math.abs(this._dec), 90);
-	}
+	}	
 	/**
 	 * Return the rectangular representation of this object.
 	 * @returns {THREE.Vector3} rectangular representation of this object.
@@ -95,7 +95,17 @@ VecSP.Equatorial = class {
 		let phi = this.ra*Math.PI/12;
 		let theta = (90-this.dec)*Math.PI/180;				
 		return new THREE.Vector3().setFromSphericalCoords(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation with the usual notation
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}
+	/**
+	 * Return the spherical representation of this object.
+	 * @returns {THREE.Spherical} spherical representation of this object.
+	 */
+	 toSpherical () {
+		let phi = this.ra*Math.PI/12;
+		let theta = (90-this.dec)*Math.PI/180;				
+		return new THREE.Spherical(1.0, theta, phi);
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
 	}
 	/**
 	 * Set this object from rectangular representation.	 
@@ -105,7 +115,16 @@ VecSP.Equatorial = class {
 		let sph = new THREE.Spherical().setFromVector3(vec);
 		this.ra = sph.theta*12/Math.PI;
 		this.dec = (90-sph.phi*180/Math.PI);
-		//Phi and theta are exchanged in Three.js in relation with the usual notation
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}
+	/**
+	 * Set this object from spherical representation.	 
+	 * @param {THREE.Spherical} vec - spherical representation of a vector.
+	 */
+	 fromSpherical (sph) {		
+		this.ra = sph.theta*12/Math.PI;
+		this.dec = (90-sph.phi*180/Math.PI);
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
 	}
 	/**
 	 * Make a copy of this vector.
@@ -128,18 +147,18 @@ VecSP.Step = class {
 		this._mob = mob;
 		this.maxSteps = ESP32.STPS360;
 		this.zenithSteps = ESP32.STEP_AT_ZENITH;
-		this.correctCoords();
+		this.correctSteps();
 	}
 	/** Set this.fix */
 	set fix (fix) {
-		this._fix = fix;
-		this.correctCoords();
+		this._fix = fix;		
+		this.correctSteps();
 	}
 	/** Set this.mob */
 	set mob (mob) {
 		this._mob = mob;
-		this.correctCoords();
-	}
+		this.correctSteps();
+	}	
 	/** Get this.fix */
 	get fix () {
 		let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
@@ -151,12 +170,12 @@ VecSP.Step = class {
 		return (n*this.maxSteps + this._mob) % this.maxSteps;
 	}
 	/** Correct coordinates to their boundary values */
-	correctCoords () {
+	correctSteps () {
 		let nf = Math.ceil(Math.abs(this._fix)/this.maxSteps);
 		let nm = Math.ceil(Math.abs(this._mob)/this.maxSteps);
 		this._fix = (nf*this.maxSteps + this._fix) % this.maxSteps;
-		this._mob = (nm*this.maxSteps + this._mob) % this.maxSteps;
-	}
+		this._mob = (nm*this.maxSteps + this._mob) % this.maxSteps;	
+	}	
 	/**
 	 * Return the rectangular representation of this object.
 	 * @returns {THREE.Vector3} rectangular representation of this object.
@@ -165,7 +184,17 @@ VecSP.Step = class {
 		let phi = this.fix*2*Math.PI/this.maxSteps;
 		let theta = Math.PI - this.mob*2*Math.PI/this.maxSteps;		
 		return new THREE.Vector3().setFromSphericalCoords(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation with the usual notation
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}
+	/**
+	 * Return the spherical representation of this object.
+	 * @returns {THREE.Spherical} spherical representation of this object.
+	 */
+	 toSpherical () {
+		let phi = this.fix*2*Math.PI/this.maxSteps;
+		let theta = Math.PI - this.mob*2*Math.PI/this.maxSteps;		
+		return new THREE.Spherical(1.0, theta, phi);
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
 	}
 	/**
 	 * Set this object from rectangular representation.	 
@@ -175,7 +204,16 @@ VecSP.Step = class {
 		let sph = new THREE.Spherical().setFromVector3(vec);
 		this.fix = Math.round(sph.theta*this.maxSteps/(2*Math.PI));
 		this.mob = Math.round((Math.PI - sph.phi)*this.maxSteps/(2*Math.PI));
-		//Phi and theta are exchanged in Three.js in relation with the usual notation
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}
+	/**
+	 * Set this object from spherical representation.	 
+	 * @param {THREE.Spherical} vec - spherical representation of a vector.
+	 */
+	 fromSpherical (sph) {		
+		this.fix = Math.round(sph.theta*this.maxSteps/(2*Math.PI));
+		this.mob = Math.round((Math.PI - sph.phi)*this.maxSteps/(2*Math.PI));
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
 	}
 	/**
 	 * Make a copy of this vector.
@@ -211,21 +249,32 @@ VecSP.Calibration = class {
 	 */
     constructor() {
 		/**@member {VecSP.CalibStar[]} - Array of star objects used to perform calibration of the reference frame. */
-		this.stars = [];
-		/**@member {THREE.Vector3[]} - Celestial equatorial coordinates of this.stars. */
-		this.equatorials = [];
-		/**@member {THREE.Vector3[]} - Local steps coordinates of this.stars. */
-		this.steps = [];
-		/**@member {THREE.Euler} - Euler angles associated with the transformation from celestial to local reference frame. */
-		this.eulerCelestialToLocal = new THREE.Euler();
-		/**@member {THREE.Euler} - Euler angles associated with the transformation from local to celestial reference frame. */
-		this.eulerLocalToCelestial = new THREE.Euler();		
+		this.stars = [];		
+		/**@member {THREE.Vector3[3]} - optimized vectors for the stepper fix, stepper mob and laser axes. */
+		this.axes = {
+			fix: new THREE.Vector3(1.0, 0.0, 0.0),
+			mob: new THREE.Vector3(0.0, 1.0, 0.0),
+			laser: new THREE.Vector3(1.0, 0.0, 0.0)
+		};
+		//this.randomAxes();				
 		/**@member {Date} - First calib star date of assignment to calibration */
 		this.t0 = new Date();
 		/**@member {object} - Calibration statistics */
 		this.stats = {dev: 0, min: 0, max: 0, minStar: null, maxStar: null};
-		/**@member {number} - Number of tries used by the optmization algorithm. */
-		this.minimizationTrial = 10;
+		/**@member {number} - Number of tries used by the axes optmization algorithm. */
+		this.axesTrial = 20;
+	}
+	randomAxes () {
+		let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+		let mob = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+		let laser = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+		fix.normalize();
+		mob.normalize();
+		laser.normalize();
+		this.axes.fix.applyAxisAngle(fix, (0.5-Math.random())*Math.PI/2.5);
+		this.axes.mob.applyAxisAngle(mob, (0.5-Math.random())*Math.PI/2.5);
+		this.axes.laser.applyAxisAngle(laser, (0.5-Math.random())*Math.PI/2.5);
+		
 	}
 	/**
 	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
@@ -234,43 +283,47 @@ VecSP.Calibration = class {
     calcCalib (stars) {
 		this.stars = stars;
 		this.t0 = stars[0].date;
-		this.equatorials = [];
-		this.steps = [];
+		window.equatorials = [];
+		window.steps = [];
 		for (let s of this.stars) {
-			this.equatorials.push(s.eq.toVector3());
-			this.steps.push(s.step.toVector3())
-		}
-		window.euler = this.eulerLocalToCelestial;
-		window.stars = this.stars;
-		window.steps = this.steps;
-		window.equatorials = this.equatorials;
-		let optimFunction = function (angs) {
-			window.euler.fromArray(angs);
-			let N = window.stars.length;
-			let dev = 0;		
-			let eq;
+			window.equatorials.push(s.eq.toVector3());			
+			window.steps.push(s.step.toSpherical());
+		}						
+		let optimFunction = function (ac) {			
+			let fix = new THREE.Vector3().setFromSphericalCoords(1.0, ac[0], ac[1]);
+			let mob = new THREE.Vector3().setFromSphericalCoords(1.0, ac[2], ac[3]);
+			let laser = new THREE.Vector3().setFromSphericalCoords(1.0, ac[4], ac[5]);
+			let N = window.steps.length;
+			let dots = 0;
 			for (let i = 0; i < N; i++) {
-				eq = window.steps[i].clone().applyEuler(window.euler);
-				dev += window.equatorials[i].dot(eq);
+				let l = laser.clone();
+				l.applyAxisAngle(mob, window.steps[i].phi);
+				l.applyAxisAngle(fix, window.steps[i].theta);
+				dots += l.dot(window.equatorials[i]);
 			}
-			return N - dev;
-		}
-		let dims = [optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI), optimjs.Real(0, 2*Math.PI)];		
+			return (1 - dots/N)**0.5;
+		}		
 		let optAngs;
 		let bestValue = 1000;
-		for (let i = 0; i < this.minimizationTrial; i++) {
-			let dres = optimjs.dummy_minimize(optimFunction, dims, 256);
-			let res = optimjs.minimize_Powell(optimFunction, dres.best_x);
+		for (let i = 0; i < this.axesTrial; i++) {			
+			/*let res = optimjs.minimize_Powell(optimFunction, vini);
 			if (res.fncvalue < bestValue) {
 				bestValue = res.fncvalue;
 				optAngs = res.argument;
 				console.log(bestValue);
 				console.log(optAngs);
+			}*/			
+			let res = nelderMead(optimFunction, [Math.random()*Math.PI, Math.random()*2*Math.PI, Math.random()*Math.PI, Math.random()*2*Math.PI, Math.random()*Math.PI, Math.random()*2*Math.PI]);		
+			if (res.fx < bestValue) {
+				bestValue = res.fx;
+				optAngs = res.x;
 			}
 		}		
-		this.eulerLocalToCelestial.fromArray(optAngs);
-		let invM = new THREE.Matrix4().makeRotationFromEuler(this.eulerLocalToCelestial).transpose();
-		this.eulerCelestialToLocal.setFromRotationMatrix(invM);
+		console.log('bestValue: ' + bestValue);
+		console.log('optAngs:' + optAngs);
+		this.axes.fix = new THREE.Vector3().setFromSphericalCoords(1.0, optAngs[0], optAngs[1]);
+		this.axes.mob = new THREE.Vector3().setFromSphericalCoords(1.0, optAngs[2], optAngs[3]);
+		this.axes.laser = new THREE.Vector3().setFromSphericalCoords(1.0, optAngs[4], optAngs[5]);
 		this.stats.dev = 0;
 		this.stats.min = 1e3;
 		this.stats.max = 0;
@@ -297,25 +350,78 @@ VecSP.Calibration = class {
 	 * @returns {VecSP.Equatorial} celestial coordinate
 	 */
 	equatorialFromStep (s, d = new Date()) {		
-		let eq3 = s.toVector3()
-		eq3.applyEuler(this.eulerLocalToCelestial);
+		let laser = this.axes.laser.clone();
+		let sph = s.toSpherical();
+		laser.applyAxisAngle(this.axes.mob, sph.phi); //Phi and theta are exchanged in Three.js in relation to the usual notation
+		laser.applyAxisAngle(this.axes.fix, sph.theta); //Phi and theta are exchanged in Three.js in relation to the usual notation
 		let eq = new VecSP.Equatorial();
-		eq.fromVector3(eq3);		
+		eq.fromVector3(laser);		
 		eq.ra += (d - this.t0)/3.6e6;
 		return eq;
-	}
+	}	
 	/**
 	 * Local from Celestial coordinates convertion on the given date.
 	 * @param {VecSP.Equatorial} eq - celestial coordinate
 	 * @param {Date} d - given date (actual date, if ommitted)
 	 * @returns {VecSP.Step} local coordinate
 	 */
-	stepFromEquatorial (eq0, d = new Date()) {		
+	stepFromEquatorial (eq0, d = new Date()) {						
 		let eq = eq0.clone();		
 		eq.ra -= (d - this.t0)/3.6e6;
-		let step3 = eq.toVector3().applyEuler(this.eulerCelestialToLocal);
-		let step = new VecSP.Step();
-		step.fromVector3(step3);
+		window.eq3 = eq.toVector3();
+		window.fix = this.axes.fix.clone();
+		window.mob = this.axes.mob.clone();
+		window.laser = this.axes.laser.clone();			
+		let regPhi = function (phi) {return (10*Math.PI+phi)%(2*Math.PI);}	
+		let regTheta = function (theta) {return (10*Math.PI+theta)%Math.PI;}	
+		let optimFunction = function (sph) {
+			let laser = window.laser.clone();			
+			laser.applyAxisAngle(window.mob, regTheta(sph[1]));
+			laser.applyAxisAngle(window.fix, regPhi(sph[0]));			
+			return (1.0 - laser.dot(window.eq3))**0.5;			
+		}
+		let grad = function (sph) {
+			let ds = 0.01;
+			let l0 = window.laser.clone();			
+			l0.applyAxisAngle(window.mob, regTheta(sph[1]));
+			l0.applyAxisAngle(window.fix, regPhi(sph[0]));			
+			let s0 = (1.0 - l0.dot(window.eq3))**0.5;
+			let l1 = window.laser.clone();			
+			l1.applyAxisAngle(window.mob, regTheta(sph[1]));
+			l1.applyAxisAngle(window.fix, regPhi(sph[0]+ds));			
+			let s1 = (1.0 - l1.dot(window.eq3))**0.5;
+			let l2 = window.laser.clone();			
+			l2.applyAxisAngle(window.mob, regTheta(sph[1]+ds));
+			l2.applyAxisAngle(window.fix, regPhi(sph[0]));			
+			let s2 = (1.0 - l2.dot(window.eq3))**0.5;
+			return [(s1-s0)/ds, (s2-s0)/ds];
+		}
+		let optAngs;
+		let bestValue = 1000;
+		for (let i = 0; i < 1; i++) {						
+			/*let res = optimjs.minimize_Powell(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
+			if (res.fncvalue < bestValue) {
+				bestValue = res.fncvalue;
+				optAngs = res.argument;
+			}*/
+			let res = nelderMead(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
+			if (res.fx < bestValue) {
+				bestValue = res.fx;
+				optAngs = res.x;
+			}
+		}
+		let phi = regPhi(optAngs[0]);
+		let theta = regTheta(optAngs[1]);
+		let sph = new THREE.Spherical(1.0, theta, phi);
+		let step = new VecSP.Step();		
+		step.fromSpherical(sph);
+		console.log(bestValue);
+		//console.log(sph);
+		//console.log(step);
+		console.log(this.equatorialFromStep(step));
+		console.log(this.axes.fix);
+		console.log(this.axes.mob);
+		console.log(this.axes.laser);
 		return step;
 	}
 	/**
@@ -324,13 +430,11 @@ VecSP.Calibration = class {
 	 */
 	clone () {
 		let Calib = new VecSP.Calibration();
-		Calib.stars = this.stars;
-		Calib.equatorials = this.equatorials;
-		Calib.steps = this.steps;
-		Calib.eulerCelestialToLocal = this.eulerCelestialToLocal;
-		Calib.eulerLocalToCelestial = this.eulerLocalToCelestial;
+		Calib.stars = this.stars;		
+		for (let x in this.axes) Calib.axes[x] = this.axes[x];				
 		Calib.t0 = this.t0;		
 		for (let x in this.stats) Calib.stats[x] = this.stats[x];
+		Calib.axesTrial = this.axesTrial;
 		return Calib;
 	}
 }
@@ -596,9 +700,9 @@ CommSP.Bluetooth = class {
 		} catch (error) {			
 			return this.disconnectMsg(error);}		
 	}
-	/** Move the steppers in the ESP32 server until the laser points toward zenith.	 
+	/** Asign the actual steppers step values to ESP32.STEP_AT_ZENITH.	 
 	 */
-	async goZenith() {
+	async setZenith() {
 		try {			
 			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');
 			//await this.sendOption('RESET_PATH_OPT');

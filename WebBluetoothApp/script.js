@@ -639,8 +639,8 @@ CalibW.acceptCalib = function () {
  */
 window.NavW = {};
 
-NavW.goZenith = async function () {
-	await BleInstance.goZenith();
+NavW.setZenith = async function () {
+	await BleInstance.setZenith();
 }
 
 NavW.goObjectStyle = async function (style) {
@@ -649,11 +649,7 @@ NavW.goObjectStyle = async function (style) {
   switch (style) {
     case "point":
       let seg = new PathSP.Segment(CoordNavW, 1, 0);
-	    path.addSegment(seg);            
-	    if ($precisePoint.checked) {
-        console.log($precisePoint.checked)
-        await BleInstance.sendOption(BleInstance.OPT.PRECISE_PATH_OPT);
-      }      
+	    path.addSegment(seg);            	    
       cyclicOpt = false;
       break;
     case "bpoint":
@@ -758,13 +754,13 @@ NavW.timeStepCheck = function ($elem) {
   $elem.value = Math.round(value);    
 }
 
-NavW.timeTest = function ($elem) {
+/*NavW.timeTest = function ($elem) {
   let date = new Date($objDate.value+'T'+$objTime.value);
   let now = new Date();  
   console.log(now);
   console.log(date);
   console.log(date-now);
-}
+}*/
 
 NavW.goStar = async function (timeOpt) {  
   let opt = App.valueSelected($navObjectsCombo);                

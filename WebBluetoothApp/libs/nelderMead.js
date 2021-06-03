@@ -1,6 +1,6 @@
 /* https://raw.githubusercontent.com/benfred/fmin/master/src/nelderMead.js */
 
-import {dot, norm2, weightedSum} from "./blas1";
+import {dot, norm2, weightedSum} from "./blas1.js";
 
 /** minimizes a function using the downhill simplex method */
 export function nelderMead(f, x0, parameters) {

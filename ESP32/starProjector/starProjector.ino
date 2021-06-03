@@ -30,7 +30,7 @@
 
 #define FSCYCLE 4               //steppers full step cycle
 #define STPS360 2038            //steppers number of steps for a 360º rotation
-#define STEP_AT_ZENITH 510         //steppers step values corresponding to the Zenith direction
+#define STEP_AT_ZENITH 510      //steppers step values corresponding to the Zenith direction
 #define STEP_MIN 30             //steppers step min value for eye laser safety 
 #define STEP_MAX 989            //steppers step max value for eye laser safety 
 
@@ -38,38 +38,26 @@
 #define STPR2_GPIOS {15,  2,  4, 16}  //stepper 2 (mobile) GPIO pins
 #define LASER_GPIO 13                 //laser GPIO pin
 
-#define ACC_TRE 1e-4                //accelerometer relative deviation treshold to stop taking averages
-#define ACC_ITER_MAX 1000           //accelerometer maximum iterations used to take averages and standard deviations
-#define ACC_AVG 100                 //accelerometer number of averages
-#define ACC_ZENITH {0.0, 1.0, 0.0}  //accelerometer zenith direction {x, y, z}
-
 #define RESET_PATH_OPT 1       //option to start a new path reading
 #define EXEC_PATH_OPT 2        //option to execute the path
 #define CYCLIC_PATH_OPT  3     //option to execute the path cyclicaly
-#define PRECISE_PATH_OPT 4     //option to execute a precise single segment path
-#define LASER_SWITCH_OPT 5     //option to switch the laser
-#define LASER_CHECK_OPT 6      //option to check the laser status
-#define SET_ZENITH_OPT 7       //option to point the laser toward zenith
-#define READ_ACT_STEPS_OPT 8   //option to read the steppers actual steps
-#define RESET_READ_OPT 9       //option to make the read steppers procedure ready
+#define LASER_SWITCH_OPT 4     //option to switch the laser
+#define LASER_CHECK_OPT 5      //option to check the laser status
+#define SET_ZENITH_OPT 6       //option to make actSteps equal to STEP_AT_ZENITH
+#define READ_ACT_STEPS_OPT 7   //option to read the steppers actual steps
+#define RESET_READ_OPT 8       //option to make the read steppers procedure ready
 
-#define RESET_PATH_ST 10       //status to start a new path reading
-#define EXEC_PATH_ST 11       //status to execute the path
-#define CYCLIC_PATH_ST 12     //status to execute the path cyclicaly
-#define PRECISE_PATH_ST 13    //status to execute a precise single segment path
-#define LASER_ON_ST 14        //status if laser is on
-#define LASER_OFF_ST 15       //status if laser is off
-#define LASER_SWITCH_ST 16    //status to switch laser state
-#define SET_ZENITH_ST 17      //status to point the laser toward zenith
-#define READ_ACT_STEPS_ST 18  //status to read the steppers actual steps
-
-
-#define STEP_PREC 1                 //step precision used as stop criterion in the steppers direction setting
-#define STEP_ITER 10                //maximum number of iterations for step precision quest
+#define RESET_PATH_ST 9       //status to start a new path reading
+#define EXEC_PATH_ST 10       //status to execute the path
+#define CYCLIC_PATH_ST 11     //status to execute the path cyclicaly
+#define LASER_ON_ST 12        //status if laser is on
+#define LASER_OFF_ST 13       //status if laser is off
+#define LASER_SWITCH_ST 14    //status to switch laser state
+#define SET_ZENITH_ST 15      //status to make actSteps equal to STEP_AT_ZENITH
+#define READ_ACT_STEPS_ST 16  //status to read the steppers actual steps
 
 #define TIME_STEPPERS_OFF 15000       //time delay to turn off steppers when idle in miliseconds.
 #define TIME_LASER_OFF 60000          //time delay to turn off laser when idle in miliseconds.
-#define TIME_STEPPERS_SETTLEDOWN 10   //time delay to steppers settle down after halt in miliseconds.
 
 //BLE variables:
 //--------------
@@ -100,8 +88,6 @@ const int stpr1[4] = STPR1_GPIOS;   //fixed stepper GPIO pins (phi)
 const int stpr2[4] = STPR2_GPIOS;   //mobile stepper GPIO pins  (theta)
 
 uint16_t actStep[2] = {STPS360/2, STPS360/2};   //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
-uint16_t nomStep[2] = {STPS360/2, STPS360/2};   //nominal step values for the fixed (phi) and mobile (theta) stepper, respectively
-float actRect[3] = {0.0, 1.0, 0.0};             //actual laser rectangular coordinates (x, y, z)
 
 //Path variables:
 //------------------
@@ -110,20 +96,15 @@ uint16_t thetaP[PATH_MAX_SIZE];     //mobile stepper array of segments in step u
 uint16_t laserP[PATH_MAX_SIZE];     //laser state on/off array of segments (boolean - 1 bit)
 uint16_t delayP[PATH_MAX_SIZE];     //step delay array of segments in 1 us times DELAY_FACTOR units
 uint16_t pathSize = 0;
-uint16_t phiA, thetaA, phiB, thetaB;              //auxiliary fixed and mobile steppers coordinates
 const uint8_t pathBase[PATHBASE_SIZE] = PATHBASE;   //number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 const uint8_t commBase[COMMBASE_SIZE] = COMMBASE;   //number of bits of the base used to communicate the path segments
 bool cyclicPathF = false;
 bool execPathF = false;
-bool precisePathF = false;
 bool navigationF = false;
 bool laserSwitchF = false;
 bool setZenithF = false;
 bool readActStepsF = false;
 bool laserOnState = false;
-//bool started = false;
-
-float origin[3] = ACC_ZENITH;   //direction where phi = 0 and theta = 0 
 
 unsigned long steppersTime = 0;
 unsigned long laserTime = 0;
@@ -194,11 +175,7 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           execPathF = true;
           cyclicPathF = true;
           sendStatus(CYCLIC_PATH_ST);
-          break;        
-        case PRECISE_PATH_OPT:          
-          precisePathF = true;
-          sendStatus(PRECISE_PATH_ST);
-          break;
+          break;                
         case LASER_SWITCH_OPT:        
           laserSwitchF = true;
           sendStatus(LASER_SWITCH_ST);
@@ -212,8 +189,7 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           sendStatus(SET_ZENITH_ST);          
           break;
     		case READ_ACT_STEPS_OPT:
-          readActStepsF = true;
-          //sendStatus(READ_ACT_STEPS_ST);
+          readActStepsF = true;          
           break;
         case RESET_READ_OPT:          
           uint8_t r[1] = {0};  
@@ -240,57 +216,13 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     if (vals.length() == 2) { //Read step sizes for free navigation      
       laserP[0] = laserOnState;
       delayP[0] = DELAY_MIN;
-      //laserP[1] = laserOnState;
-      //delayP[1] = DELAY_MIN;
-      //Serial.println(vals[0] - 127);
-      //phiP[0] = actStep[0];
-      //thetaP[0] = actStep[1];
       phiP[0] = (actStep[0] + vals[0] - 127) % STPS360;
       thetaP[0] = (actStep[1] + vals[1] - 127) % STPS360;
       pathSize = 1;
       navigationF = true;
       steppersTime = millis();
       laserTime = millis();
-      /*phSS = vals[0] - 128;
-      thSS = vals[1] - 128;*/
-    }
-    if (vals.length() == 3) {
-      stepRead(1e-2, 100.0, 10);
-      float gx = actRect[0];
-      float gy = -actRect[1];
-      float gz = actRect[2];
-      //Serial.print("gxa: ");Serial.println(gx);      
-      //Serial.print("gya: ");Serial.println(gy);
-      //Serial.print("gza: ");Serial.println(gz);
-      //Serial.print("fixa: ");Serial.println(actStep[0]);      
-      //Serial.print("moba: ");Serial.println(actStep[1]);      
-      float az = atan(gx/gz);
-      float al = atan(gy/pow(gx*gx + gz*gz, 0.5));
-      if (gz < 0) az += PI;
-      az += (vals[0]-127)*2*PI/STPS360;
-      al += (vals[1]-127)*2*PI/STPS360;
-      if (al > PI/2) {
-        al = PI - al;
-        az += PI;
-      }
-      if (al < 0) al = 0.0;      
-      gz = -sin(az)*pow(gx*gx + gz*gz, 0.5);
-      gy = sin(al)*pow(gx*gx + gy*gy + gz*gz, 0.5);
-      gx = -cos(az)*pow(gx*gx + gz*gz, 0.5);      
-      float ph = atan(-gx/pow(gy*gy + gz*gz, 0.5));
-      float th = atan(-gz/gy);
-      phiP[0] = angToStep(ph) % STPS360;
-      thetaP[0] = angToStep(th) % STPS360;    
-      laserP[0] = laserOnState;
-      delayP[0] = DELAY_MIN;
-      pathSize = 1;
-      //navigationF = true;
-      //Serial.print("gxd: ");Serial.println(gx);      
-      //Serial.print("gyd: ");Serial.println(gy);
-      //Serial.print("gzd: ");Serial.println(gz);
-      //Serial.print("fixd: ");Serial.println(phiP[0]);      
-      //Serial.print("mobd: ");Serial.println(thetaP[0]);      
-    }
+    }    
   }
 };
 
@@ -306,9 +238,8 @@ void stepperFix (uint16_t s) {
     digitalWrite(stpr1[j], fullStep[s % FSCYCLE][j]);
   }
   //Serial.println();
-  actStep[0] = s;
-  nomStep[0] = s;  
-  Serial.print("ph: ");Serial.println(s);    
+  actStep[0] = s;  
+  //Serial.print("ph: ");Serial.println(s);    
 }
 
 void stepperMob (uint16_t s) {
@@ -318,9 +249,8 @@ void stepperMob (uint16_t s) {
     digitalWrite(stpr2[j], fullStep[s % FSCYCLE][j]);
   }
   //Serial.println();
-  actStep[1] = s;    
-  nomStep[1] = s;
-  Serial.print("th: ");Serial.println(s);
+  actStep[1] = s;      
+  //Serial.print("th: ");Serial.println(s);
 }
 
 void steppersOff () {
@@ -334,35 +264,6 @@ void laser (bool s) {
   digitalWrite(LASER_GPIO, s);
   laserOnState = s;
 }
-
-uint16_t angToStep(float ang) {
-  //Serial.println(round(ang*STPS360*0.5/PI) + STEP_AT_ZENITH);  
-  return round(ang*STPS360*0.5/PI) + STEP_AT_ZENITH;
-}
-
-/*void measureActualSteps(uint16_t steps[]) {
-  float ph, th;
-  ph = atan(-amX/pow(amY*amY + amZ*amZ, 0.5));
-  th = atan(-amZ/amY);
-  steps[0] = angToStep(ph);
-  steps[1] = angToStep(th);
-}*/
-
-/*void setZenith() {  
-  uint16_t a0 = angToStep(0.0);
-  laserP[0] = laserOnState;
-  delayP[0] = DELAY_MIN;
-  phiP[0] = a0;
-  thetaP[0] = a0;
-  pathSize = 1;
-  stepRead(1.0, 1000, 100);
-  int i = 0;
-  do {
-    execPath();
-    stepRead(1.0, 1000, 100);
-  } while (((abs(actStep[0] - a0) > STEP_PREC) || (abs(actStep[1] - a0) > STEP_PREC)) && (i++ < STEP_ITER));  
-  steppersOff();
-}*/
 
 bool checkPathBoundaries() {
   /*for (uint16_t j = 0; j < pathSize; j++) {
@@ -385,9 +286,7 @@ void execPath() {
     ph = phiP[j];
     th = thetaP[j];    
     dph = ph - phA;
-    dth = th - thA;        
-    //dph += dph%2;
-    //dth += dth%2;
+    dth = th - thA;            
     N = max(max(abs(dph), abs(dth)), 1);
     fph = float(dph)/N;
     fth = float(dth)/N;
@@ -408,128 +307,6 @@ void execPath() {
     phA = ph;
     thA = th;
   }
-  actStep[0] = ph;
-  actStep[1] = th;
-}
-
-void execSingleSegment(uint16_t phs, uint16_t ths, bool lstate) {
-  uint16_t N, phA, thA, phN, thN, ph, th;
-  int dph, dth;
-  float fph, fth;
-
-  phA = actStep[0];
-  thA = actStep[1];
-  phN = nomStep[0];   //Aplicar nomStep para todos os procedimentos e reescrever o actStep
-  thN = nomStep[1];   
-  ph = phs;
-  th = ths;      
-  dph = ph - phA;
-  dth = th - thA;
-  //dph += dph%2;
-  //dth += dth%2;    
-  N = max(max(abs(dph), abs(dth)), 1);
-  fph = float(dph)/N;
-  fth = float(dth)/N;    
-  for (uint16_t i = 1; i <= N; i++) {
-    ph = phN + round(i*fph);
-    th = thN + round(i*fth);      
-    stepperFix(ph);
-    stepperMob(th);      
-    delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
-  }
-  actStep[0] = ph;
-  actStep[1] = th;  
-  laser(lstate);      
-}
-
-void stepRead(float treshold, int maxIter, int avgNumber) {
-  /* Read MPU6050 averaged accelerometer values
-   * treshold: average deviation stopping criterion
-   * maxIter: max number of averages
-   * avgNumber: number of partial averages
-   */
-  float x = 0.0, y = 0.0, z = 0.0;  
-  float aXa = 32e3, aYa = 32e3, aZa = 32e3;
-  float dev = 1.0e3;
-  float N = 0;
-  float ph, th;
-  int16_t acX, acY, acZ;
-  float amX, amY, amZ; // accelerometer average values
-  float adX, adY, adZ; // accelerometer standard deviation values  
-    
-  while ((dev > treshold) && (N < maxIter)) {
-    Wire.beginTransmission(MPU_addr);
-    Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_addr, 6, true);  // request a total of 6 registers
-    acX = -Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
-    acY =  Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-    acZ = -Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-    //tmp = Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
-    x += (float) acZ;
-    y += (float) acY;
-    z += (float) acX;
-    /*x2 += acX*acX;
-    y2 += acY*acY;
-    z2 += acZ*acZ;*/
-    N++;    
-    if (((int) N)%avgNumber == 0) {
-      amX = x/N;
-      amY = y/N;
-      amZ = z/N;
-      adX = fabs(amX - aXa);
-      adY = fabs(amY - aYa);
-      adZ = fabs(amZ - aZa);
-      dev = (fabs(amX - aXa) + fabs(amY - aYa) + fabs(amZ - aZa))/3;
-      aXa = amX; aYa = amY; aZa = amZ;      
-    }    
-    //delay(5);
-  }
-  //Serial.println(N);  
-  ph = atan(-amX/pow(amY*amY + amZ*amZ, 0.5));
-  th = atan(-amZ/amY);
-  actRect[0] = amX;
-  actRect[1] = amY;
-  actRect[2] = amZ;
-  actStep[0] = angToStep(ph);
-  actStep[1] = angToStep(th);      
-  /*Serial.print("amX, adX: "); Serial.print(amX); Serial.print(", "); Serial.println(adX);
-  Serial.print("amY, adY: "); Serial.print(amY); Serial.print(", "); Serial.println(adY);
-  Serial.print("amZ, adZ: "); Serial.print(amZ); Serial.print(", "); Serial.println(adZ);*/
-}
-
-void stepReadSimple(int avgNumber) {
-  /* Read MPU6050 averaged accelerometer values
-   * avgNumber: number of averages
-   */
-  int32_t x = 0, y = 0, z = 0;    
-  float ph, th;
-  int16_t acX, acY, acZ;
-  float amX, amY, amZ;
-    
-  for (int i = 0; i < avgNumber; i++) {
-    Wire.beginTransmission(MPU_addr);
-    Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_addr, 6, true);  // request a total of 6 registers
-    acX = -Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
-    acY =  Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-    acZ = -Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-    x += acZ;
-    y += acY;
-    z += acX;
-    //delay(5);
-  }
-  amX = float(x)/avgNumber;
-  amY = float(y)/avgNumber;
-  amZ = float(z)/avgNumber;  
-  ph = atan(-amX/pow(amY*amY + amZ*amZ, 0.5));
-  th = atan(-amZ/amY);
-  actRect[0] = amX;
-  actRect[1] = amY;
-  actRect[2] = amZ;
-  actStep[0] = angToStep(ph);
-  actStep[1] = angToStep(th);      
 }
 
 void sendActSteps() {
@@ -554,27 +331,6 @@ void sendStatus(uint8_t st) {
   uint8_t v[1] = {st};
   size_t size = 1;  
   statusC->setValue(v, size);
-}
-
-/*bool steppersOutTarget(uint16_t phTarget, uint16_t thTarget, int i) {
-  if (((abs(actStep[0] - phTarget) > STEP_PREC) || (abs(actStep[1] - thTarget) > STEP_PREC)) && (i < STEP_ITER)) return true;
-  else return false;
-}*/
-
-bool stepperPhiOutTarget(uint16_t phTarget) {
-  if (abs(actStep[0] - phTarget) > STEP_PREC) return true;
-  else return false;
-}
-
-bool stepperThetaOutTarget(uint16_t thTarget) {
-  if (abs(actStep[1] - thTarget) > STEP_PREC) return true;
-  else return false;
-}
-
-uint16_t sign(uint16_t d) {
-  if (d > 0) return 1;
-  else if (d < 0) return -1;
-  else return 0;
 }
 
 void setup() {
@@ -624,48 +380,18 @@ void loop() {
   
   if (navigationF) { //Steppers free navigation movement    
     if (checkPathBoundaries()) {
-      //stepRead(10.0, 100, 10);
       execPath();
-      //stepRead(10.0, 100, 10);
-      //sendActSteps();
       //steppersOff();
     }    
     navigationF = false;    
   }
 
-  if (execPathF) { //Path execution    
-    stepRead(1.0, 1000, 100);    
-    //stepReadSimple(1000);
+  if (execPathF) { //Path execution        
     if (checkPathBoundaries()) do {
-      execPath();
-      phiA = phiP[pathSize-1];
-      thetaA = thetaP[pathSize-1];      
-      int i = 0;
-      int jphi = 0;      
-      int jtheta = 0;
-      bool phiOut = false;
-      bool thetaOut = false;
-      if (precisePathF) do {
-        phiB = actStep[0];
-        thetaB = actStep[1];
-        execSingleSegment(phiA + jphi, thetaA + jtheta, laserOnState);
-        delay(TIME_STEPPERS_SETTLEDOWN);        
-        stepRead(1.0, 5000, 100);
-        //Serial.print("actStep0: ");Serial.println(actStep[0]);                
-        //Serial.print("actStep1: ");Serial.println(actStep[1]);                
-        phiB -= actStep[0];
-        thetaB -= actStep[1];
-        phiOut = stepperPhiOutTarget(phiA);
-        thetaOut = stepperThetaOutTarget(thetaA);
-        //if (phiB == 0) jphi += sign(phiA - actStep[0]);
-        //if (thetaB == 0) jtheta += sign(thetaA - actStep[1]);
-        if (!phiOut) jphi = 0;
-        if (!thetaOut) jtheta = 0;
-      } while ((phiOut || thetaOut) && (i++ < STEP_ITER));        
+      execPath();      
     } while (cyclicPathF);
     steppersOff();
-    execPathF = false;
-    precisePathF = false;
+    execPathF = false;    
   }
 
   if (laserSwitchF) {    
@@ -676,40 +402,12 @@ void loop() {
   }
   
   if (setZenithF) {
-    phiA = STEP_AT_ZENITH;
-    thetaA = STEP_AT_ZENITH;
-    laserP[0] = laserOnState;
-    delayP[0] = DELAY_MIN;    
-    pathSize = 1;
-    stepRead(1.0, 1000, 100);
-    int i = 0;
-    int jphi = 0;      
-    int jtheta = 0;
-    bool phiOut = false;
-    bool thetaOut = false;
-    do {
-      phiP[0] = phiA + jphi;
-      thetaP[0] = thetaA + jtheta;
-      phiB = actStep[0];
-      thetaB = actStep[1];
-      execPath();
-      stepRead(1.0, 5000, 100);
-      phiB -= actStep[0];
-      thetaB -= actStep[1];
-      phiOut = stepperPhiOutTarget(phiA);
-      thetaOut = stepperThetaOutTarget(thetaA);
-      if (phiB == 0) jphi += sign(phiA - actStep[0]);
-      if (thetaB == 0) jtheta += sign(thetaA - actStep[1]);
-      if (!phiOut) jphi = 0;
-      if (!thetaOut) jtheta = 0;
-    } while ((phiOut || thetaOut) && (i++ < STEP_ITER));    
-    steppersOff();
+    actStep[0] = STEP_AT_ZENITH;
+    actStep[1] = STEP_AT_ZENITH;
     setZenithF = false;
   }
 
-  if (readActStepsF) {    
-    stepRead(1.0, 5000, 100);
-    //stepReadSimple(1000);
+  if (readActStepsF) {        
     sendActSteps();
     readActStepsF = false;
   }

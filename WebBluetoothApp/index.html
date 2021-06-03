@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="style.css"/>
     <script src="libs/three.min.js"></script>  
     <script src="libs/optimization.js"></script>
+    <script src="libs/nelderMead.js" type="module" defer></script>
+    <script src="libs/lalolib-noglpk-module.min.js"></script>
     <script src="libs/orb.v2.min.js"></script>    
     <script src="modules/StarPointer.module.js" type="module" defer></script>
     <script type="text/javascript" src="data/stars.6.js"></script>    
@@ -270,7 +272,7 @@
           </div>          
           <button style="grid-row:3; grid-column:1;" onclick="NavW.goEquatorial()">go Equatorial</button>
           <button style="grid-row:3; grid-column:2;" onclick="NavW.readCoords()">read Coords</button>
-          <button style="grid-row:3; grid-column:3;" onclick="NavW.goZenith()">go Zenith</button>          
+          <button style="grid-row:3; grid-column:3;" onclick="NavW.setZenith()">set Zenith</button>          
           <div style="grid-row:4; grid-column:1;">Fix:</div>
           <div style="grid-row:4; grid-column:2;">
             <input type="number" id="fixInput" min="0" max="1023" step="1" style="width:25%;" oninput="NavW.updateCoordSys(this)">steps

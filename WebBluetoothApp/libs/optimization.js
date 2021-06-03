@@ -437,15 +437,14 @@
    * value of the function at the best found argument.
   */
   module.exports.minimize_Powell = function (fnc, x0) {
-      var eps = 1e-2;
+      var eps = 1e-3;
   
       var convergence = false;
       var x = x0.slice(); // make copy of initialization
       var alpha = 0.001; // scaling factor
   
       var pfx = Math.exp(10);
-      var fx = fnc(x);
-      var pidx = 1;
+      var fx = fnc(x);      
       while (!convergence) {
   
           var indicies = shuffleIndiciesOf(x);
@@ -460,13 +459,13 @@
               var dx = (fxi - fx) / 1e-6;
   
               if (Math.abs(dx) > eps) {
-                  convergence = false;
+                  convergence = false;                  
               }
   
               x[indicies[i]] = x[indicies[i]] - alpha * dx;
               fx = fnc(x);
   
-          }
+          }          
   
           // a simple step size selection rule. Near x function acts linear 
           // (this is assumed at least) and thus very small values of alpha
@@ -474,12 +473,7 @@
           // yield better improvement up to certain alpha size.
           
           alpha = pfx > fx ? alpha * 1.1 : alpha * 0.7;
-          pfx = fx;
-  
-          pidx--;
-          if (pidx === 0) {
-              pidx = 1;
-          }
+          pfx = fx;           
   
       }
   
