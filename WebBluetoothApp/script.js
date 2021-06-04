@@ -590,10 +590,10 @@ CalibW.updateCalib = async function (action) {
     }
 }
 
-CalibW.calcCalib = function () {
+CalibW.calcCalib = function (opt) {
 	if (calibStars.length < 2) alert("You must add at least two calibration stars.");
 	else {    
-    CalibTemp.calcCalib(calibStars)
+    CalibTemp.calcCalib(calibStars, opt)
     $calibLog.innerHTML += '-------------------------------------\n';
     $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
     for (let s of CalibTemp.stars) $calibLog.innerHTML += s.text + '\n';
