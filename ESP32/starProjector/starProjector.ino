@@ -216,8 +216,8 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     if (vals.length() == 2) { //Read step sizes for free navigation      
       laserP[0] = laserOnState;
       delayP[0] = DELAY_MIN;
-      phiP[0] = (actStep[0] + vals[0] - 127) % STPS360;
-      thetaP[0] = (actStep[1] + vals[1] - 127) % STPS360;
+      phiP[0] = (actStep[0] + vals[0] - 127); //% STPS360;
+      thetaP[0] = (actStep[1] + vals[1] - 127); //% STPS360;
       pathSize = 1;
       navigationF = true;
       steppersTime = millis();

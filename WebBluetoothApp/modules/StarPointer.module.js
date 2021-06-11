@@ -256,6 +256,8 @@ VecSP.Calibration = class {
 			mob: new THREE.Vector3(1.0, 0.0, 0.0),
 			laser: new THREE.Vector3(0.0, 1.0, 0.0),
 			dTheta: 0.0,
+			aTheta: 1.0,
+			aPhi: 1.0,
 			localToEquatorial: new THREE.Euler(),
 			equatorialToLocal: new THREE.Euler()
 		};
@@ -266,6 +268,8 @@ VecSP.Calibration = class {
 		this.stats = {dev: 0, min: 0, max: 0, minStar: null, maxStar: null};
 		/**@member {number} - Number of tries used by the axes optmization algorithm. */
 		this.axesTrial = 20;
+		this.maxIter = 10;
+		this.treshold = 0.05;
 	}
 	/*randomAxes () {
 		let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
@@ -294,7 +298,7 @@ VecSP.Calibration = class {
 			eq.ra -= (s.date - this.t0)/3.6e6;
 			window.equatorials.push(eq.toVector3());			
 			window.steps.push(s.step.toSpherical());
-		}						
+		}
 		window.fix = this.params.fix;
 		window.mob = this.params.mob;
 		window.laser = this.params.laser;		
@@ -302,14 +306,15 @@ VecSP.Calibration = class {
 			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
 			let N = window.steps.length;
 			let dots = 0;
+			let penal = 2.0 - Math.exp(-1.0*(p[4]-1.0)**4) - Math.exp(-1.0*(p[5]-1.0)**4);
 			for (let i = 0; i < N; i++) {
 				let l = window.laser.clone();
-				l.applyAxisAngle(window.mob, window.steps[i].phi + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].theta);
+				l.applyAxisAngle(window.mob, window.steps[i].phi*p[5] + p[3]);
+				l.applyAxisAngle(window.fix, window.steps[i].theta*p[4]);
 				l.applyEuler(localToEquatorial);
 				dots += l.dot(window.equatorials[i]);
 			}
-			return (1 - dots/N)**0.5;
+			return (1 - dots/N)**0.5 + penal;
 		}
 		window.Y = new THREE.Vector3(0, 1, 0);
 		window.Z = new THREE.Vector3(0, 0, 1);
@@ -333,9 +338,9 @@ VecSP.Calibration = class {
 		let objFunc;
 		if (opt == 0) {
 			objFunc = func0;
-			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4];
+			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 1.0, 1.0];
 		}
-		if (opt == 1) {
+		if (opt == 1) {			
 			objFunc = func1;
 			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, (0.5-Math.random())*0.3, (0.5-Math.random())*0.3];
 		}
@@ -359,7 +364,13 @@ VecSP.Calibration = class {
 		console.log('optAngs:' + P);
 		this.params.localToEquatorial = new THREE.Euler(P[0], P[1], P[2]);
 		this.params.dTheta = P[3];
+		if (opt == 0) {
+			this.params.aPhi = P[4];
+			this.params.aTheta = P[5];
+		}
 		if (opt == 1) {
+			this.params.aPhi = 1.0;
+			this.params.aTheta = 1.0;			
 			this.params.mob.applyAxisAngle(window.Y, P[4]);
 			this.params.mob.applyAxisAngle(window.Z, P[5]);
 		}
@@ -371,7 +382,7 @@ VecSP.Calibration = class {
 		this.stats.max = 0;
 		let eq1, eq2, ang;
 		for (let s of this.stars) {
-			eq1 = this.equatorialFromStep(s.step).toVector3();				
+			eq1 = this.equatorialFromStep(s.step, s.date).toVector3();				
 			eq2 = s.eq.toVector3();
 			ang = eq1.angleTo(eq2)*180/Math.PI;
 			if (ang < this.stats.min) {
@@ -394,8 +405,8 @@ VecSP.Calibration = class {
 	equatorialFromStep (s, d = new Date()) {		
 		let laser = this.params.laser.clone();
 		let sph = s.toSpherical();
-		laser.applyAxisAngle(this.params.mob, sph.phi + this.params.dTheta); //Phi and theta are exchanged in Three.js in relation to the usual notation
-		laser.applyAxisAngle(this.params.fix, sph.theta); //Phi and theta are exchanged in Three.js in relation to the usual notation
+		laser.applyAxisAngle(this.params.mob, sph.phi*this.params.aTheta + this.params.dTheta); //Phi and theta are exchanged in Three.js in relation to the usual notation
+		laser.applyAxisAngle(this.params.fix, sph.theta*this.params.aPhi); //Phi and theta are exchanged in Three.js in relation to the usual notation
 		laser.applyEuler(this.params.localToEquatorial);
 		let eq = new VecSP.Equatorial();
 		eq.fromVector3(laser);		
@@ -417,17 +428,20 @@ VecSP.Calibration = class {
 		window.mob = this.params.mob.clone();
 		window.laser = this.params.laser.clone();	
 		window.dTheta = this.params.dTheta;
+		window.aTheta = this.params.aTheta;
+		window.aPhi = this.params.aPhi;
 		let regPhi = function (phi) {return (10*Math.PI+phi)%(2*Math.PI);}	
 		let regTheta = function (theta) {return (10*Math.PI+theta)%Math.PI;}	
 		let optimFunction = function (sph) {
 			let laser = window.laser.clone();			
-			laser.applyAxisAngle(window.mob, regTheta(sph[1]) + window.dTheta);
-			laser.applyAxisAngle(window.fix, regPhi(sph[0]));			
+			laser.applyAxisAngle(window.mob, regTheta(sph[1]*window.aTheta) + window.dTheta);
+			laser.applyAxisAngle(window.fix, regPhi(sph[0]*window.aPhi));			
 			return (1.0 - laser.dot(window.eq3))**0.5;			
 		}
 		let optAngs;
 		let bestValue = 1000;
-		for (let i = 0; i < 1; i++) {						
+		let i = 0;
+		do {						
 			/*let res = optimjs.minimize_Powell(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
 			if (res.fncvalue < bestValue) {
 				bestValue = res.fncvalue;
@@ -438,7 +452,8 @@ VecSP.Calibration = class {
 				bestValue = res.fx;
 				optAngs = res.x;
 			}
-		}
+		} while ((i++ < this.maxIter) && (bestValue > this.treshold));
+		if (i >= this.maxIter) alert('stepFromEquatorial could not converge. Do not execute path!');
 		let phi = regPhi(optAngs[0]);
 		let theta = regTheta(optAngs[1]);
 		let sph = new THREE.Spherical(1.0, theta, phi);

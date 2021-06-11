@@ -574,7 +574,7 @@ CalibW.updateCalib = async function (action) {
         }
         if (action == "remThis") {
             if (calibStars.length > 0) {
-                let index = $calibLis.selectedIndex;
+                let index = $calibListCombo.selectedIndex;
                 calibStars.splice(index, 1);
             }
         }
