@@ -267,9 +267,9 @@ VecSP.Calibration = class {
 		/**@member {object} - Calibration statistics */
 		this.stats = {dev: 0, min: 0, max: 0, minStar: null, maxStar: null};
 		/**@member {number} - Number of tries used by the axes optmization algorithm. */
-		this.axesTrial = 20;
-		this.maxIter = 10;
-		this.treshold = 0.05;
+		this.axesTrial = 50;
+		this.maxIter = 50;
+		this.treshold = 1e-4;
 	}
 	/*randomAxes () {
 		let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
@@ -338,7 +338,7 @@ VecSP.Calibration = class {
 		let objFunc;
 		if (opt == 0) {
 			objFunc = func0;
-			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 1.0, 1.0];
+			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];
 		}
 		if (opt == 1) {			
 			objFunc = func1;
@@ -511,12 +511,13 @@ CommSP.CommPath = class {
 		this.composePath();
 	}
 	/**Parse a segment to be added to a parsed path.
-	 * @param {PathSP.Segment} Segment - Segment to be parsed.
+	 * @param {PathSP.Segment} Segment - Segmentto be parsed. 	 
 	 * @returns {number[]} Array with decBase size representing the parsed segment.
 	 */
-	parseSegment (Segment) {
+	parseSegment (Segment) {		
 		//Encoding to this._encBase:		
-		let step = this.calib.stepFromEquatorial(Segment.eq);
+		let step = Segment.eq;
+		if (Segment.eq.constructor.name == "VecSP.Equatorial") step = this.calib.stepFromEquatorial(Segment.eq);		
 		//console.log(Segment.eq);
 		//console.log(step);
 		/*if (step.fix < ESP32.STEP_MIN || step.fix > ESP32.STEP_MAX || step.mob < ESP32.STEP_MIN || step.mob > ESP32.STEP_MAX) {
@@ -703,6 +704,38 @@ CommSP.Bluetooth = class {
 			return true;
 		} catch {return this.disconnectMsg();}
 	}
+	/**Execute a parsed step on steppers in the ESP32 server.
+	 * @param {VecSP.Step} Step - Step to be executed by the ESP32 server steppers.	 
+	 */
+	 async goStep (Step) {  
+		//console.log(Path);
+	    try {			
+			let path = Path.parsedPath;			
+			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
+			else {
+				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
+				await this.sendOption(this.OPT.RESET_PATH_OPT);
+				let j = 0;
+				let pathChunk;
+				for (let i = 0; i < path.length; i++) {
+					j = i % this.maxChunk;
+					if (j == 0) {      
+						if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
+						else pathChunk = new Uint8Array(path.length - i);
+					}
+					pathChunk[j] = path[i];
+					if ((j == this.maxChunk - 1) || (i == path.length -1)) {
+						await this.pathC.writeValue(pathChunk);
+					}
+				}
+				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
+				if (cyclicOpt) await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
+				else await this.sendOption(this.OPT.EXEC_PATH_OPT);
+				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
+				return true;
+			}
+		} catch (error) {return this.disconnectMsg(error);}
+	}
 	/**Execute a parsedPath on steppers in the ESP32 server.
 	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
 	 * @param {boolean} cyclicOpt - If false, Path is executed once, else it is excuted cyclicaly until stop signal.
@@ -804,8 +837,8 @@ let PathSP = {};
 /** Class for the Star Pointer Segment construction. */
 PathSP.Segment = class {
     /**
-     * Create a segment for the path followed by the Star Pointer composed by ra and dec equatorial coords, laser status and time delay between steps.
-	 * @param {VecSP.Equatorial} eq - equatorial coords of the path segment.
+     * Create a segment for the path followed by the Star Pointer composed by equatorial or steps coords, laser status and time delay between steps.
+	 * @param {VecSP.Equatorial|VecSP.Step} eq - equatorial or step coords of the path segment.
 	 * @param {number} laser - Laser state: 0 = off, 1 = on.
 	 * @param {number} delay - Time delay between steppers sucessive steps in multiples of 100 us.
      */
@@ -818,7 +851,7 @@ PathSP.Segment = class {
 
 /**Class for the Star Pointer General Path construction. */
 PathSP.Path = class {
-    /**Create the path followed by the Star Pointer composed by ra and dec equatorial coords, laser status and time delay between steps. */
+    /**Create the path followed by the Star Pointer composed by equatorial or step coords, laser status and time delay between steps. */
 	constructor () {
 		this.reset();
 	}

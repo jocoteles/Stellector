@@ -682,10 +682,13 @@ NavW.goEquatorial = async function () {
 }
 
 NavW.goSteps = async function () {	
-  let Step = new VecSP.Step(Number($fixI.value), Number($mobI.value));
-  CoordNavW = CalibInstance.equatorialFromStep(Step);  
-	let style = $coordsPointerStyle.value;
-  await NavW.goObjectStyle(style);
+  let step = new VecSP.Step(Number($fixI.value), Number($mobI.value));  
+  let seg = new PathSP.Segment(step, 1, 0);
+  let path = new PathSP.Path();
+  path.addSegment(seg);
+  let commPath = new CommSP.CommPath(path, CalibInstance);	
+  let cyclicOpt = false;
+  await BleInstance.goPath(commPath, cyclicOpt);  
 }
 
 NavW.readCoords = async function () {
@@ -781,7 +784,17 @@ NavW.goStar = async function (timeOpt) {
   $objDate.value = App.localDateString(date);
   $objTime.value = App.localTimeString(date);
   CoordNavW = App.equatorialFromObjectData(opt, date);
-  await NavW.goObjectStyle(style);
+  
+  //await NavW.goObjectStyle(style);
+
+  //Simulation:
+  let theorEqVec = CoordNavW.toVector3();
+  optimStep = CalibInstance.stepFromEquatorial(theorEqVec);
+  optimStepVec = optimStep.toVector3();
+  console.log('--------------------------------------');
+  console.log("Nominal: Ra " + CoordNavW.ra + ", Dec: " + CoordNavW.dec);
+  console.log("Optimiz: Fix " + optimStep.fix + ", Mob: " + optimStep.mob);
+  console.log("Angle deviation: " + String(theorEqVec.angleTo(optimStepVec)*Math.PI/180));
 }
 
 NavW.goTrack = async function (opt) {
@@ -919,6 +932,81 @@ TourW.goCircle = async function () {
   let path = PathSP.makeCircle(CoordNavW, Math.PI/40, Math.PI/10, [1,0], 50);
   let commPath = new CommSP.CommPath(path, CalibInstance);
   await BleInstance.goPath(commPath, true);
+}
+
+
+/**
+ * A namespace for simulations of the optimization algorithms performance. It is not used by the client app.
+ * @namespace
+ */
+ window.Sim = {};
+
+Sim.createSimCalib = function () {
+  let simCalib = new VecSP.Calibration();
+
+  //Random axes:
+  let deltaAxis = Math.PI/40;
+  let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+  let mob = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+  let laser = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
+  fix.normalize();
+  mob.normalize();
+  laser.normalize();
+  simCalib.params.fix.applyAxisAngle(fix, (0.5-Math.random())*deltaAxis);
+  simCalib.params.mob.applyAxisAngle(mob, (0.5-Math.random())*deltaAxis);
+  simCalib.params.laser.applyAxisAngle(laser, (0.5-Math.random())*deltaAxis);
+
+  //Random linear angle corrections:
+  let delta_dTheta = Math.PI/6;  
+  let delta_aAng = 0.2;
+  simCalib.params.dTheta = (0.5-Math.random())*delta_dTheta + Math.PI/2;
+  simCalib.params.aTheta = (0.5-Math.random())*delta_aAng + 1.0;
+  simCalib.params.aPhi = (0.5-Math.random())*delta_aAng + 1.0;
+
+  //Random Star Projector orientation relative to Equatorial system:
+  simCalib.params.localToEquatorial = new THREE.Euler(Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI);
+  let invM = new THREE.Matrix4().makeRotationFromEuler(simCalib.params.localToEquatorial).transpose();
+	simCalib.params.equatorialToLocal.setFromRotationMatrix(invM);
+
+  return simCalib;
+}
+
+Sim.simParams = {calib: Sim.createSimCalib()};
+
+Sim.updateCalib = function (action) {    		
+  
+  let deltaEq = 0.0000025; //Random error in equatorial coords in degrees
+
+  if ($calibObjectsCombo.innerText != null) {              
+      if (action == "add") {                   
+        let opt = App.valueSelected($calibObjectsCombo);                    
+        let eq = App.equatorialFromObjectData(opt);
+
+        //Random measurement procedure:
+        let b = new VecSP.Equatorial(eq.ra, eq.dec + deltaEq*Math.random()*Math.PI/180.0);            
+        let v = b.toVector3();
+        let c = eq.toVector3();
+        v.applyAxisAngle(c, Math.random()*2*Math.PI);
+        eq.fromVector3(v);
+
+        let actStep = Sim.simParams.calib.stepFromEquatorial(eq);
+        let name = App.textSelected($calibObjectsCombo);
+        console.log(name.split("|")[0] + " added with fix: " + actStep.fix + ", mob: " + actStep.mob);
+        if (eq) {
+          let t = new Date();
+          let s = new VecSP.CalibStar(App.textSelected($calibObjectsCombo), t, actStep, eq);
+          calibStars.push(s);              
+        }        
+      }
+
+      $calibListCombo.innerText = null;   
+      for (let i = 0; i < calibStars.length; i++) {
+          let option = document.createElement("option");
+          option.text = calibStars[i].text;
+          $calibListCombo.add(option);
+      }
+      $calibListCombo.selectedIndex = Math.max(0, calibStars.length-1);      
+  }
 }
 
 //Set initial window:
