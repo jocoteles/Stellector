@@ -14,9 +14,9 @@ import { nelderMead } from '../libs/nelderMead.js';
  */
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
-	STEP_AT_ZENITH: 510,		//steppers step values corresponding to the Zenith direction
-	STEP_MIN: 30,				//steppers step min value for eye laser safety 
-	STEP_MAX: 989,				//steppers step max value for eye laser safety 
+	STEP_AT_ZENITH: 1019,		//steppers step values corresponding to the Zenith direction
+	STEP_MIN: 500,				//steppers step min value for eye laser safety 
+	STEP_MAX: 1540,				//steppers step max value for eye laser safety 
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
@@ -50,6 +50,75 @@ let ESP32 = {
  */
 let VecSP = {};
 
+/** Class representing a unity vector in spherical coordinates (phi = 0 to 2*pi; theta = 0 to pi). */
+VecSP.Spherical = class {
+    /**
+     * Create a spherical representation of a unity vector.
+     * @param {number} phi - azimuthal angle: 0 to 2*pi.
+	 * @param {number} theta - polar angle: 0 to pi.
+     */
+    constructor (phi = 0.0, theta = 0.0) {
+		this._phi = phi;
+		this._theta = theta;
+		this.correctCoords();
+	}
+	/** Set this.phi */
+	set phi (phi) {
+		this._phi = phi;
+		this.correctCoords();
+	}
+	/** Set this.theta */
+	set theta (theta) {		
+		this._theta = theta;
+		this.correctCoords();
+	}
+	/** Get this.phi */
+	get phi () {		
+		return this._phi;
+	}
+	/** Get this.theta */
+	get theta () {		
+		return this._theta;
+	}
+	/** Correct coordinates to their boundary values */
+	correctCoords () {
+		let pi = Math.PI;
+		let pi2 = 2.0*pi;
+		let n = Math.ceil(Math.abs(this.phi)/pi2);
+		this._phi = (n*pi2 + this._phi) % pi2;
+		let m = Math.ceil(Math.abs(this.theta)/pi2);
+		this._theta = (m*pi2 + this._theta) % pi2;
+		if (this._theta > pi) {
+			this._theta = pi2 - this._theta;
+			this._phi = (this._phi + pi) % pi2;
+		}
+	}	
+	/**
+	 * Return the rectangular representation of this object.
+	 * @returns {THREE.Vector3} rectangular representation of this object.
+	 */
+	toVector3 () {		
+		return new THREE.Vector3().setFromSphericalCoords(1.0, this._theta, this._phi);
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}	
+	/**
+	 * Set this object from rectangular representation.	 
+	 * @param {THREE.Vector3} vec - rectangular representation of a vector.
+	 */
+	fromVector3 (vec) {
+		let sph = new THREE.Spherical().setFromVector3(vec);
+		this._phi = sph.theta;
+		this._theta = sph.phi;
+		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	}	
+	/**
+	 * Make a copy of this vector.
+	 * @returns {VecSP.Spherical} copy of this vector.
+	 */
+	clone () {
+		return new VecSP.Spherical(this.phi, this.theta);
+	}
+}
 
 /** Class representing a unity vector in equatorial coordinates with RA ranging from 0 to 24hs. */
 VecSP.Equatorial = class {
@@ -83,48 +152,42 @@ VecSP.Equatorial = class {
 	}
 	/** Correct coordinates to their boundary values */
 	correctCoords () {
-		let n = Math.ceil(Math.abs(this._ra)/24);
-		this._ra = (n*24 + this._ra) % 24;
-		this._dec = Math.sign(this._dec)*Math.min(Math.abs(this._dec), 90);
+		let sph = this.toSpherical();
+		this.fromSpherical(sph);
 	}	
 	/**
 	 * Return the rectangular representation of this object.
 	 * @returns {THREE.Vector3} rectangular representation of this object.
 	 */
-	toVector3 () {
-		let phi = this.ra*Math.PI/12;
-		let theta = (90-this.dec)*Math.PI/180;				
-		return new THREE.Vector3().setFromSphericalCoords(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	toVector3 () {		
+		let sph = this.toSpherical();				
+		return sph.toVector3();		
 	}
 	/**
 	 * Return the spherical representation of this object.
-	 * @returns {THREE.Spherical} spherical representation of this object.
+	 * @returns {VecSP.Spherical} spherical representation of this object.
 	 */
 	 toSpherical () {
-		let phi = this.ra*Math.PI/12;
-		let theta = (90-this.dec)*Math.PI/180;				
-		return new THREE.Spherical(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+		let phi = this._ra*Math.PI/12;
+		let theta = (90-this._dec)*Math.PI/180;				
+		return new VecSP.Spherical(phi, theta);		
 	}
 	/**
 	 * Set this object from rectangular representation.	 
 	 * @param {THREE.Vector3} vec - rectangular representation of a vector.
 	 */
 	fromVector3 (vec) {
-		let sph = new THREE.Spherical().setFromVector3(vec);
-		this.ra = sph.theta*12/Math.PI;
-		this.dec = (90-sph.phi*180/Math.PI);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+		let sph = new VecSP.Spherical();
+		sph.fromVector3(vec);
+		this.fromSpherical(sph);
 	}
 	/**
 	 * Set this object from spherical representation.	 
-	 * @param {THREE.Spherical} vec - spherical representation of a vector.
+	 * @param {VecSP.Spherical} vec - spherical representation of a vector.
 	 */
-	 fromSpherical (sph) {		
-		this.ra = sph.theta*12/Math.PI;
-		this.dec = (90-sph.phi*180/Math.PI);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	fromSpherical (sph) {		
+		this._ra = sph.phi*12/Math.PI;
+		this._dec = (90-sph.theta*180/Math.PI);		
 	}
 	/**
 	 * Make a copy of this vector.
@@ -146,7 +209,8 @@ VecSP.Step = class {
 		this._fix = fix;
 		this._mob = mob;
 		this.maxSteps = ESP32.STPS360;
-		this.zenithSteps = ESP32.STEP_AT_ZENITH;
+		this.stepAtZenith = ESP32.STEP_AT_ZENITH;
+		this.step90 = Math.trunc(ESP32.STPS360/4);				
 		this.correctSteps();
 	}
 	/** Set this.fix */
@@ -160,60 +224,41 @@ VecSP.Step = class {
 		this.correctSteps();
 	}	
 	/** Get this.fix */
-	get fix () {
-		let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
-		return (n*this.maxSteps + this._fix) % this.maxSteps;
+	get fix () {		
+		return this._fix;
 	}
 	/** Get this.mob */
-	get mob () {
-		let n = Math.ceil(Math.abs(this._mob)/this.maxSteps);
-		return (n*this.maxSteps + this._mob) % this.maxSteps;
+	get mob () {		
+		return this._mob;
 	}
 	/** Correct coordinates to their boundary values */
-	correctSteps () {
-		let nf = Math.ceil(Math.abs(this._fix)/this.maxSteps);
-		let nm = Math.ceil(Math.abs(this._mob)/this.maxSteps);
-		this._fix = (nf*this.maxSteps + this._fix) % this.maxSteps;
-		this._mob = (nm*this.maxSteps + this._mob) % this.maxSteps;	
-	}	
-	/**
-	 * Return the rectangular representation of this object.
-	 * @returns {THREE.Vector3} rectangular representation of this object.
-	 */
-	toVector3 () {
-		let phi = this.fix*2*Math.PI/this.maxSteps;
-		let theta = Math.PI - this.mob*2*Math.PI/this.maxSteps;		
-		return new THREE.Vector3().setFromSphericalCoords(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	correctSteps () {		
+		let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
+		this._fix = (n*this.maxSteps + this._fix) % this.maxSteps;
+		let m = Math.ceil(Math.abs(this._mob)/this.maxSteps);
+		this._mob = (m*this.maxSteps + this._mob) % this.maxSteps;
 	}
-	/**
-	 * Return the spherical representation of this object.
-	 * @returns {THREE.Spherical} spherical representation of this object.
-	 */
-	 toSpherical () {
-		let phi = this.fix*2*Math.PI/this.maxSteps;
-		let theta = Math.PI - this.mob*2*Math.PI/this.maxSteps;		
-		return new THREE.Spherical(1.0, theta, phi);
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	/** Return fix coordinate in radians
+	 * @returns {number} this.fix in radians */		
+	fixToRad () {
+		return this._fix*2.0*Math.PI/this.maxSteps;
 	}
-	/**
-	 * Set this object from rectangular representation.	 
-	 * @param {THREE.Vector3} vec - rectangular representation of a vector.
-	 */
-	fromVector3 (vec) {
-		let sph = new THREE.Spherical().setFromVector3(vec);
-		this.fix = Math.round(sph.theta*this.maxSteps/(2*Math.PI));
-		this.mob = Math.round((Math.PI - sph.phi)*this.maxSteps/(2*Math.PI));
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	/** Return mob coordinate in radians
+	 * @returns {number} this.mob in radians */		
+	mobToRad () {
+		return (this._mob - this.stepAtZenith + this.step90)*2.0*Math.PI/this.maxSteps;
 	}
-	/**
-	 * Set this object from spherical representation.	 
-	 * @param {THREE.Spherical} vec - spherical representation of a vector.
-	 */
-	 fromSpherical (sph) {		
-		this.fix = Math.round(sph.theta*this.maxSteps/(2*Math.PI));
-		this.mob = Math.round((Math.PI - sph.phi)*this.maxSteps/(2*Math.PI));
-		//Phi and theta are exchanged in Three.js in relation to the usual notation
+	/** Set fix coordinate from angle in radians
+	 * @param {number} rad - angle in radians that will set the fix coordinate */		
+	fixFromRad (rad) {
+		this._fix = Math.round(rad*this.maxSteps/(2.0*Math.PI));
+		this.correctSteps();
+	}
+	/** Set mob coordinate from angle in radians
+	 * @param {number} rad - angle in radians that will set the mob coordinate */		
+	 mobFromRad (rad) {
+		this._mob = Math.round(rad*this.maxSteps/(2.0*Math.PI)) + this.stepAtZenith - this.step90;
+		this.correctSteps();
 	}
 	/**
 	 * Make a copy of this vector.
@@ -269,7 +314,9 @@ VecSP.Calibration = class {
 		/**@member {number} - Number of tries used by the axes optmization algorithm. */
 		this.axesTrial = 50;
 		this.maxIter = 50;
-		this.treshold = 1e-4;
+		this.maxCalibIter = 500;
+		this.maxOptimValue = (1.0 - Math.cos(1*Math.PI/1024))**0.5;
+		this.maxCalibValue = (1.0 - Math.cos(3*Math.PI/1024))**0.5;
 	}
 	/*randomAxes () {
 		let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
@@ -297,7 +344,7 @@ VecSP.Calibration = class {
 			let eq = s.eq.clone();		
 			eq.ra -= (s.date - this.t0)/3.6e6;
 			window.equatorials.push(eq.toVector3());			
-			window.steps.push(s.step.toSpherical());
+			window.steps.push(s.step);
 		}
 		window.fix = this.params.fix;
 		window.mob = this.params.mob;
@@ -306,11 +353,11 @@ VecSP.Calibration = class {
 			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
 			let N = window.steps.length;
 			let dots = 0;
-			let penal = 2.0 - Math.exp(-1.0*(p[4]-1.0)**4) - Math.exp(-1.0*(p[5]-1.0)**4);
+			let penal = 2.0 - Math.exp(-1.0*(p[4]-1.0)**4) - Math.exp(-1.0*(p[5]-1.0)**4);			
 			for (let i = 0; i < N; i++) {
-				let l = window.laser.clone();
-				l.applyAxisAngle(window.mob, window.steps[i].phi*p[5] + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].theta*p[4]);
+				let l = window.laser.clone();				
+				l.applyAxisAngle(window.mob, window.steps[i].mobToRad()*p[5] + p[3]);
+				l.applyAxisAngle(window.fix, window.steps[i].fixToRad()*p[4]);
 				l.applyEuler(localToEquatorial);
 				dots += l.dot(window.equatorials[i]);
 			}
@@ -321,14 +368,14 @@ VecSP.Calibration = class {
 		let func1 = function (p) {						
 			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
 			let N = window.steps.length;
-			let dots = 0;
+			let dots = 0;			
 			for (let i = 0; i < N; i++) {
 				let l = window.laser.clone();
-				let mob = window.mob.clone();
+				let mob = window.mob.clone();				
 				mob.applyAxisAngle(window.Y, p[4]);
 				mob.applyAxisAngle(window.Z, p[5]);
-				l.applyAxisAngle(mob, window.steps[i].phi + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].theta);
+				l.applyAxisAngle(mob, window.steps[i].mobToRad() + p[3]);
+				l.applyAxisAngle(window.fix, window.steps[i].fixToRad());
 				l.applyEuler(localToEquatorial);
 				dots += l.dot(window.equatorials[i]);
 			}
@@ -336,30 +383,28 @@ VecSP.Calibration = class {
 		}		
 		let p0;
 		let objFunc;
-		if (opt == 0) {
-			objFunc = func0;
-			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];
-		}
-		if (opt == 1) {			
-			objFunc = func1;
-			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, (0.5-Math.random())*0.3, (0.5-Math.random())*0.3];
-		}
+		if (opt == 0) objFunc = func0;
+		if (opt == 1) objFunc = func1;
 		let P;
 		let bestValue = 1000;
-		for (let i = 0; i < this.axesTrial; i++) {			
+		let i = 0;
+		do {			
 			/*let res = optimjs.minimize_Powell(optimFunction, vini);
 			if (res.fncvalue < bestValue) {
 				bestValue = res.fncvalue;
 				optAngs = res.argument;
 				console.log(bestValue);
 				console.log(optAngs);
-			}*/			
+			}*/
+			if (opt == 0) p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];			
+			if (opt == 1) p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, (0.5-Math.random())*0.3, (0.5-Math.random())*0.3];
 			let res = nelderMead(objFunc, p0);		
 			if (res.fx < bestValue) {
 				bestValue = res.fx;
 				P = res.x;
-			}
-		}		
+			}		
+		} while ((i++ < this.maxCalibIter) && (bestValue > this.maxOptimValue));
+		if (i >= this.maxIter) alert('Calibration could not converge to maxOptimValue!');		
 		console.log('bestValue: ' + bestValue);
 		console.log('optAngs:' + P);
 		this.params.localToEquatorial = new THREE.Euler(P[0], P[1], P[2]);
@@ -403,10 +448,9 @@ VecSP.Calibration = class {
 	 * @returns {VecSP.Equatorial} celestial coordinate
 	 */
 	equatorialFromStep (s, d = new Date()) {		
-		let laser = this.params.laser.clone();
-		let sph = s.toSpherical();
-		laser.applyAxisAngle(this.params.mob, sph.phi*this.params.aTheta + this.params.dTheta); //Phi and theta are exchanged in Three.js in relation to the usual notation
-		laser.applyAxisAngle(this.params.fix, sph.theta*this.params.aPhi); //Phi and theta are exchanged in Three.js in relation to the usual notation
+		let laser = this.params.laser.clone();		
+		laser.applyAxisAngle(this.params.mob, s.mobToRad()*this.params.aTheta + this.params.dTheta);
+		laser.applyAxisAngle(this.params.fix, s.fixToRad()*this.params.aPhi);
 		laser.applyEuler(this.params.localToEquatorial);
 		let eq = new VecSP.Equatorial();
 		eq.fromVector3(laser);		
@@ -419,7 +463,7 @@ VecSP.Calibration = class {
 	 * @param {Date} d - given date (actual date, if ommitted)
 	 * @returns {VecSP.Step} local coordinate
 	 */
-	stepFromEquatorial (eq0, d = new Date()) {						
+	stepFromEquatorial (eq0, d = new Date()) {
 		let eq = eq0.clone();		
 		eq.ra -= (d - this.t0)/3.6e6;
 		window.eq3 = eq.toVector3();
@@ -430,16 +474,23 @@ VecSP.Calibration = class {
 		window.dTheta = this.params.dTheta;
 		window.aTheta = this.params.aTheta;
 		window.aPhi = this.params.aPhi;
-		let regPhi = function (phi) {return (10*Math.PI+phi)%(2*Math.PI);}	
-		let regTheta = function (theta) {return (10*Math.PI+theta)%Math.PI;}	
-		let optimFunction = function (sph) {
-			let laser = window.laser.clone();			
-			laser.applyAxisAngle(window.mob, regTheta(sph[1]*window.aTheta) + window.dTheta);
-			laser.applyAxisAngle(window.fix, regPhi(sph[0]*window.aPhi));			
-			return (1.0 - laser.dot(window.eq3))**0.5;			
+		//let regPhi = function (phi) {return (10*Math.PI+phi)%(2*Math.PI);}	
+		//let regTheta = function (theta) {return (10*Math.PI+theta)%Math.PI;}	
+		//let regPhi = function (phi) {return phi;}	
+		//let regTheta = function (theta) {return theta;}	
+		let optimFunction = function (s) {
+			let laser = window.laser.clone();					
+			let penal = 0.0;
+			if (s[0] > 2*Math.PI) penal += s[0] - 2*Math.PI;
+			if (s[0] < 0.0) penal += -s[0];
+			if (s[1] > Math.PI) penal += s[1] - Math.PI;
+			if (s[1] < 0.0) penal += -s[1];
+			laser.applyAxisAngle(window.mob, s[1]*window.aTheta + window.dTheta);
+			laser.applyAxisAngle(window.fix, s[0]*window.aPhi);			
+			return (1.0 - laser.dot(window.eq3))**0.5 + penal;			
 		}
 		let optAngs;
-		let bestValue = 1000;
+		let bestValue = 1.0;
 		let i = 0;
 		do {						
 			/*let res = optimjs.minimize_Powell(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
@@ -452,17 +503,19 @@ VecSP.Calibration = class {
 				bestValue = res.fx;
 				optAngs = res.x;
 			}
-		} while ((i++ < this.maxIter) && (bestValue > this.treshold));
-		if (i >= this.maxIter) alert('stepFromEquatorial could not converge. Do not execute path!');
-		let phi = regPhi(optAngs[0]);
-		let theta = regTheta(optAngs[1]);
-		let sph = new THREE.Spherical(1.0, theta, phi);
+		} while ((i++ < this.maxIter) && (bestValue > this.maxOptimValue));
+		if (i >= this.maxIter) alert('stepFromEquatorial could not converge. Do not execute path!');		
 		let step = new VecSP.Step();		
-		step.fromSpherical(sph);
+		step.fixFromRad(optAngs[0]);
+		step.mobFromRad(optAngs[1]);
+		console.log('-------------------');
+		console.log('optAngs: ' + optAngs);
 		console.log(bestValue);
-		//console.log(sph);
-		//console.log(step);
-		console.log(this.equatorialFromStep(step));
+		console.log(step);
+		let eqFromStep = this.equatorialFromStep(step);
+		console.log(eqFromStep);
+		let angDiff = eqFromStep.toVector3().angleTo(eq0.toVector3())*180.0/Math.PI;
+		console.log('Angle to: ' + angDiff);
 		//console.log(this.axes.fix);
 		//console.log(this.axes.mob);
 		//console.log(this.axes.laser);
@@ -928,14 +981,14 @@ PathSP.makeCircle = function (Center, border, angleIncrement, lpattern, delay) {
 PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
 	let path = new PathSP.Path();
 	let v0 = eq0.toVector3();
-	let v1 = eq1.toVector3();	
+	let v1 = eq1.toVector3();
 	let a = v0.angleTo(v1);
-	let N = Math.max(1.0, Math.round(Math.abs(a/angleIncrement)));		
+	let N = Math.max(1.0, Math.round(Math.abs(a/angleIncrement)));
 	let ainc = a/N;
 	let v3 = new THREE.Vector3();
-	v3.crossVectors(v0, v1);	
-	let r = lpattern[0] + lpattern[1];	
-	let laser;	
+	v3.crossVectors(v0, v1);
+	let r = lpattern[0] + lpattern[1];
+	let laser;
 	for (let i = 0; i <= N; i++) {
 		let v = v1.clone();
 		v.applyAxisAngle(v3, i*ainc);

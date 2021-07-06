@@ -600,13 +600,15 @@ CalibW.calcCalib = function (opt) {
     let dev = CalibTemp.stats.dev.toFixed(1);
     let devStep = (CalibTemp.stats.dev*calibStars[0].step.maxSteps/360).toFixed(1);
     let min = CalibTemp.stats.min.toFixed(1);
+    let minStar = CalibTemp.stats.minStar.split('|')[0];
     let minStep = (CalibTemp.stats.min*calibStars[0].step.maxSteps/360).toFixed(1);
     let max = CalibTemp.stats.max.toFixed(1);
+    let maxStar = CalibTemp.stats.maxStar.split('|')[0];
     let maxStep = (CalibTemp.stats.max*calibStars[0].step.maxSteps/360).toFixed(1);
     $calibLog.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
-    $calibLog.innerHTML += 'Minimum angle deviation of ' + min + '° (' + minStep + ' steps).\n';
-    $calibLog.innerHTML += 'Maximum angle deviation of ' + max + '° (' + maxStep + ' steps).\n';    
-    alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
+    $calibLog.innerHTML += 'Minimum angle deviation of ' + minStar + ': ' + min + '° (' + minStep + ' steps).\n';
+    $calibLog.innerHTML += 'Maximum angle deviation of ' + maxStar + ': ' + max + '° (' + maxStep + ' steps).\n';    
+    //alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
 	}
 }
 
@@ -945,26 +947,26 @@ Sim.createSimCalib = function () {
   let simCalib = new VecSP.Calibration();
 
   //Random axes:
-  let deltaAxis = Math.PI/40;
-  let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-  let mob = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-  let laser = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-  fix.normalize();
-  mob.normalize();
-  laser.normalize();
-  simCalib.params.fix.applyAxisAngle(fix, (0.5-Math.random())*deltaAxis);
-  simCalib.params.mob.applyAxisAngle(mob, (0.5-Math.random())*deltaAxis);
-  simCalib.params.laser.applyAxisAngle(laser, (0.5-Math.random())*deltaAxis);
+  let deltaAxis = 0.0002*Math.PI/180;  
+  let X = new THREE.Vector3(1.0, 0.0, 0.0);
+  let Y = new THREE.Vector3(0.0, 1.0, 0.0);
+  let Z = new THREE.Vector3(0.0, 0.0, 1.0);
+  simCalib.params.fix.applyAxisAngle(X, (0.5-Math.random())*deltaAxis);
+  simCalib.params.fix.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);
+  simCalib.params.mob.applyAxisAngle(Y, (0.5-Math.random())*deltaAxis);
+  simCalib.params.mob.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);
+  simCalib.params.laser.applyAxisAngle(X, (0.5-Math.random())*deltaAxis);
+  simCalib.params.laser.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);  
 
   //Random linear angle corrections:
-  let delta_dTheta = Math.PI/6;  
+  let delta_dTheta = Math.PI/10;  
   let delta_aAng = 0.2;
-  simCalib.params.dTheta = (0.5-Math.random())*delta_dTheta + Math.PI/2;
+  simCalib.params.dTheta = (0.5-Math.random())*delta_dTheta;
   simCalib.params.aTheta = (0.5-Math.random())*delta_aAng + 1.0;
   simCalib.params.aPhi = (0.5-Math.random())*delta_aAng + 1.0;
 
   //Random Star Projector orientation relative to Equatorial system:
-  simCalib.params.localToEquatorial = new THREE.Euler(Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI);
+  simCalib.params.localToEquatorial = new THREE.Euler(Math.random()*2*Math.PI*0, Math.random()*2*Math.PI*0, Math.random()*2*Math.PI*0);
   let invM = new THREE.Matrix4().makeRotationFromEuler(simCalib.params.localToEquatorial).transpose();
 	simCalib.params.equatorialToLocal.setFromRotationMatrix(invM);
 
@@ -975,7 +977,7 @@ Sim.simParams = {calib: Sim.createSimCalib()};
 
 Sim.updateCalib = function (action) {    		
   
-  let deltaEq = 0.0000025; //Random error in equatorial coords in degrees
+  let deltaEq = 0.5; //Random error in equatorial coords in degrees
 
   if ($calibObjectsCombo.innerText != null) {              
       if (action == "add") {                   
@@ -983,13 +985,14 @@ Sim.updateCalib = function (action) {
         let eq = App.equatorialFromObjectData(opt);
 
         //Random measurement procedure:
-        let b = new VecSP.Equatorial(eq.ra, eq.dec + deltaEq*Math.random()*Math.PI/180.0);            
+        let b = new VecSP.Equatorial(eq.ra, eq.dec + deltaEq*Math.random());            
         let v = b.toVector3();
         let c = eq.toVector3();
         v.applyAxisAngle(c, Math.random()*2*Math.PI);
-        eq.fromVector3(v);
+        let eqMod = new VecSP.Equatorial();
+        eqMod.fromVector3(v);
 
-        let actStep = Sim.simParams.calib.stepFromEquatorial(eq);
+        let actStep = Sim.simParams.calib.stepFromEquatorial(eqMod);
         let name = App.textSelected($calibObjectsCombo);
         console.log(name.split("|")[0] + " added with fix: " + actStep.fix + ", mob: " + actStep.mob);
         if (eq) {
@@ -1010,7 +1013,7 @@ Sim.updateCalib = function (action) {
 }
 
 //Set initial window:
-App.setWindow("appCommW");
+App.setWindow("appCalibW");
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
@@ -1058,3 +1061,9 @@ HelpW.updatePointer('circleAng');
 
 //Initialize calib stars list:
 calibStars = [];
+
+//Simulate initial calibration. Atention: comment these commands for real operation
+CalibInstance = Sim.simParams.calib.clone();
+CalibTemp = Sim.simParams.calib.clone();
+
+console.log(new VecSP.Spherical(2.0, 4.0));

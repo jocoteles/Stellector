@@ -30,9 +30,9 @@
 
 #define FSCYCLE 4               //steppers full step cycle
 #define STPS360 2038            //steppers number of steps for a 360º rotation
-#define STEP_AT_ZENITH 510      //steppers step values corresponding to the Zenith direction
-#define STEP_MIN 30             //steppers step min value for eye laser safety 
-#define STEP_MAX 989            //steppers step max value for eye laser safety 
+#define STEP_AT_ZENITH 1019     //steppers step values corresponding to the Zenith direction
+#define STEP_MIN 500            //steppers step min value for eye laser safety 
+#define STEP_MAX 1540           //steppers step max value for eye laser safety 
 
 #define STPR1_GPIOS {14, 27, 26, 25}  //stepper 1 (fixed) GPIO pins
 #define STPR2_GPIOS {15,  2,  4, 16}  //stepper 2 (mobile) GPIO pins
