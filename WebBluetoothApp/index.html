@@ -142,8 +142,7 @@
           </div>
           <div style="grid-column:1/3">
             <br>
-            <button onclick="CalibW.calcCalib(0)">CALC 0</button>
-            <button onclick="CalibW.calcCalib(1)">CALC 1</button>
+            <button onclick="CalibW.calcCalib()">CALC</button>            
             <button onclick="CalibW.acceptCalib()">ACCEPT</button>
           </div>          
         </div>
@@ -220,7 +219,7 @@
             <div>Track type:</div>
             <div><select id="navTracksTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
             <div>Track selected:</div>
-            <div><select id="navTracksCombo" style="width:80%;" onchange="NavW.resetTrack()"></select></div>                        
+            <div><select id="navTracksCombo" style="width:80%;"></select></div>                        
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 3fr;">
@@ -232,12 +231,12 @@
 
           <div style="grid-column:1/3;">
             <label>Track style: </label>
-            <select id="trackPointerStyle" onchange="NavW.resetTrack()"></select>
+            <select id="trackPointerStyle"></select>
           </div>
           <div style="grid-column:1/3;">
-            <label>Date:</label><input type="date" id="trackDate" onchange="NavW.resetTrack()">
-            <label>Time:</label><input type="time" id="trackTime" onchange="NavW.resetTrack()">
-            <input type="checkbox" id="trackAtDatetime" onchange="NavW.resetTrack()"><label>track at date-time</label>
+            <label>Date:</label><input type="date" id="trackDate">
+            <label>Time:</label><input type="time" id="trackTime">
+            <input type="checkbox" id="trackAtDatetime"><label>track at date-time</label>
           </div>
           <div style="grid-column:1/3;">
             <input type="checkbox" id="trackCyclically"><label>execute cyclically</label>          

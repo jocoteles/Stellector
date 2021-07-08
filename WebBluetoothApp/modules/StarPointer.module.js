@@ -332,10 +332,9 @@ VecSP.Calibration = class {
 	}*/
 	/**
 	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
-	 * @param {VecSP.CalibStar[]} stars - array of calibration stars 
-	 * @param {number} opt - calibration option: 0 = only mob theta axis correction, 1 = mob axis and mob theta axis correction
+	 * @param {VecSP.CalibStar[]} stars - array of calibration stars
 	 */	
-    calcCalib (stars, opt = 0) {
+    calcCalib (stars) {
 		this.stars = stars;
 		this.t0 = stars[0].date;
 		window.equatorials = [];
@@ -349,7 +348,7 @@ VecSP.Calibration = class {
 		window.fix = this.params.fix;
 		window.mob = this.params.mob;
 		window.laser = this.params.laser;		
-		let func0 = function (p) {						
+		let objFunc = function (p) {						
 			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
 			let N = window.steps.length;
 			let dots = 0;
@@ -363,28 +362,7 @@ VecSP.Calibration = class {
 			}
 			return (1 - dots/N)**0.5 + penal;
 		}
-		window.Y = new THREE.Vector3(0, 1, 0);
-		window.Z = new THREE.Vector3(0, 0, 1);
-		let func1 = function (p) {						
-			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
-			let N = window.steps.length;
-			let dots = 0;			
-			for (let i = 0; i < N; i++) {
-				let l = window.laser.clone();
-				let mob = window.mob.clone();				
-				mob.applyAxisAngle(window.Y, p[4]);
-				mob.applyAxisAngle(window.Z, p[5]);
-				l.applyAxisAngle(mob, window.steps[i].mobToRad() + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].fixToRad());
-				l.applyEuler(localToEquatorial);
-				dots += l.dot(window.equatorials[i]);
-			}
-			return (1 - dots/N)**0.5;
-		}		
-		let p0;
-		let objFunc;
-		if (opt == 0) objFunc = func0;
-		if (opt == 1) objFunc = func1;
+		let p0;				
 		let P;
 		let bestValue = 1000;
 		let i = 0;
@@ -396,8 +374,7 @@ VecSP.Calibration = class {
 				console.log(bestValue);
 				console.log(optAngs);
 			}*/
-			if (opt == 0) p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];			
-			if (opt == 1) p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, (0.5-Math.random())*0.3, (0.5-Math.random())*0.3];
+			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];						
 			let res = nelderMead(objFunc, p0);		
 			if (res.fx < bestValue) {
 				bestValue = res.fx;
@@ -408,17 +385,9 @@ VecSP.Calibration = class {
 		console.log('bestValue: ' + bestValue);
 		console.log('optAngs:' + P);
 		this.params.localToEquatorial = new THREE.Euler(P[0], P[1], P[2]);
-		this.params.dTheta = P[3];
-		if (opt == 0) {
-			this.params.aPhi = P[4];
-			this.params.aTheta = P[5];
-		}
-		if (opt == 1) {
-			this.params.aPhi = 1.0;
-			this.params.aTheta = 1.0;			
-			this.params.mob.applyAxisAngle(window.Y, P[4]);
-			this.params.mob.applyAxisAngle(window.Z, P[5]);
-		}
+		this.params.dTheta = P[3];		
+		this.params.aPhi = P[4];
+		this.params.aTheta = P[5];
 		let invM = new THREE.Matrix4().makeRotationFromEuler(this.params.localToEquatorial).transpose();
 		this.params.equatorialToLocal.setFromRotationMatrix(invM);
 

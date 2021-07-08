@@ -589,10 +589,10 @@ CalibW.updateCalib = async function (action) {
     }
 }
 
-CalibW.calcCalib = function (opt) {
+CalibW.calcCalib = function () {
 	if (calibStars.length < 2) alert("You must add at least two calibration stars.");
 	else {    
-    CalibTemp.calcCalib(calibStars, opt)
+    CalibTemp.calcCalib(calibStars)
     $calibLog.innerHTML += '-------------------------------------\n';
     $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
     for (let s of CalibTemp.stars) $calibLog.innerHTML += s.text + '\n';
@@ -853,9 +853,9 @@ NavW.goTrack = async function (opt) {
       await BleInstance.goPath(commPath, $trackCyclically.checked);
     }
     else {      
+      trackPath.step += Number(opt);
       trackPath.step = (trackPath.paths.length + trackPath.step)%trackPath.paths.length;
-      let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	    
-      trackPath.step += Number(opt);      
+      let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	                
       await BleInstance.goPath(commPath, $trackCyclically.checked);    
     }
   }
@@ -1038,6 +1038,13 @@ for (let i in itemsElements) {
   item["typeCombo"].selectedIndex = 0;
   App.changeObjectsType(item["typeCombo"]);
 }
+
+//Reset track events:
+$navTracksCombo.addEventListener('change', NavW.resetTrack());
+$trackPointerStyle.addEventListener('change', NavW.resetTrack());
+$trackDate.addEventListener('change', NavW.resetTrack());
+$trackTime.addEventListener('change', NavW.resetTrack());
+$trackAtDatetime.addEventListener('change', NavW.resetTrack());
 
 //Set initial step size:
 Controller.updateStepSize();
