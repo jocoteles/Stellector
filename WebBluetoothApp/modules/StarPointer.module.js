@@ -563,14 +563,15 @@ CommSP.CommPath = class {
 		this.clipped = false;
 		this.composePath();
 	}
-	/**Parse a segment to be added to a parsed path.
-	 * @param {PathSP.Segment} Segment - Segmentto be parsed. 	 
+	/**
+	 * Parse a segment to be added to a parsed path.
+	 * @param {PathSP.Segment} Segment - Segment to be parsed. 	 
 	 * @returns {number[]} Array with decBase size representing the parsed segment.
 	 */
 	parseSegment (Segment) {		
 		//Encoding to this._encBase:		
 		let step = Segment.eq;
-		if (Segment.eq.constructor.name == "VecSP.Equatorial") step = this.calib.stepFromEquatorial(Segment.eq);		
+		if (Segment.eq instanceof VecSP.Equatorial) step = this.calib.stepFromEquatorial(Segment.eq);		
 		//console.log(Segment.eq);
 		//console.log(step);
 		/*if (step.fix < ESP32.STEP_MIN || step.fix > ESP32.STEP_MAX || step.mob < ESP32.STEP_MIN || step.mob > ESP32.STEP_MAX) {

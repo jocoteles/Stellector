@@ -217,8 +217,7 @@ let stepSize;
 let itemsNames = {};
 let itemsData = {};
 
-let trackPath = {'paths': [], 'fullPath': new PathSP.Path()};
-let trackStep = -1;
+let trackPath = {'paths': [], 'fullPath': new PathSP.Path(), 'step': 0};
 
 
 /*let pointerConfig = {
@@ -706,7 +705,7 @@ NavW.readCoords = async function () {
 }
 
 NavW.showCoords = function () {  
-  let opt = App.valueSelected($navObjectsCombo);    
+  let opt = App.valueSelected($navObjectsCombo);      
   CoordNavW = App.equatorialFromObjectData(opt);
   $raF.value = CoordNavW.ra.toFixed(4);
   $decF.value = CoordNavW.dec.toFixed(4);  
@@ -787,28 +786,27 @@ NavW.goStar = async function (timeOpt) {
   $objTime.value = App.localTimeString(date);
   CoordNavW = App.equatorialFromObjectData(opt, date);
   
-  //await NavW.goObjectStyle(style);
+  await NavW.goObjectStyle(style);
 
   //Simulation:
-  let theorEqVec = CoordNavW.toVector3();
+  /*let theorEqVec = CoordNavW.toVector3();
   optimStep = CalibInstance.stepFromEquatorial(theorEqVec);
   optimStepVec = optimStep.toVector3();
   console.log('--------------------------------------');
   console.log("Nominal: Ra " + CoordNavW.ra + ", Dec: " + CoordNavW.dec);
   console.log("Optimiz: Fix " + optimStep.fix + ", Mob: " + optimStep.mob);
-  console.log("Angle deviation: " + String(theorEqVec.angleTo(optimStepVec)*Math.PI/180));
+  console.log("Angle deviation: " + String(theorEqVec.angleTo(optimStepVec)*Math.PI/180));*/
 }
 
-NavW.goTrack = async function (opt) {
-  let coords = true;
-  if (trackStep < 0) {    
+NavW.goTrack = async function (opt) {  
+  if (trackPath.paths.length == 0) {    
     let track = App.valueSelected($navTracksCombo).split("|");
     let trackType = track[0];
     let trackId = track[1];
     let date;
     if ($trackAtDatetime.checked) date = new Date($trackDate.value+'T'+$trackTime.value);
     else date = new Date();    
-    coords = App.getCoordinates(trackType, trackId);        
+    let coords = App.getCoordinates(trackType, trackId);        
     let trackArray = [];
     if (coords) {      
       let circle = App.valueSelected($trackPointerStyle).includes('circle');
@@ -831,10 +829,12 @@ NavW.goTrack = async function (opt) {
         let ra1 = App.ra180to24(coords[i+1][0]) + dt;        
         let dec1 = coords[i+1][1];
         let eq0 = new VecSP.Equatorial(ra0, dec0);
-        let eq1 = new VecSP.Equatorial(ra1, dec1);
-        let circlePath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);
-        circlePath.path[circlePath.size-1].laser = 0;
-        if (circle) trackArray = trackArray.concat([circlePath]);        
+        let eq1 = new VecSP.Equatorial(ra1, dec1);        
+        if (circle) {
+          let circlePath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);
+          circlePath.path[circlePath.size-1].laser = 0;
+          trackArray = trackArray.concat([circlePath]);        
+        }
         if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);
       }      
       if (circle) {
@@ -847,25 +847,24 @@ NavW.goTrack = async function (opt) {
       for (let p of trackArray) trackPath.fullPath.addPath(p);
     } else alert("Track coordinates not found.");    
   }
-  if (coords) {
+  if (trackPath.paths.length > 0) {
     if (opt == 'fullTrack') {
       let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	      
       await BleInstance.goPath(commPath, $trackCyclically.checked);
-      NavW.resetTrack();
     }
-    else {
-      trackStep += Number(opt);
-      trackStep = (trackPath.paths.length + trackStep)%trackPath.paths.length;
-      let commPath = new CommSP.CommPath(trackPath.paths[trackStep], CalibInstance);	    
+    else {      
+      trackPath.step = (trackPath.paths.length + trackPath.step)%trackPath.paths.length;
+      let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	    
+      trackPath.step += Number(opt);      
       await BleInstance.goPath(commPath, $trackCyclically.checked);    
     }
   }
 }
 
 NavW.resetTrack = function () {
-  trackPath.segments = [];
-  trackPath.fullPath = new PathSP.Path();
-  trackStep = -1;
+  trackPath.paths = [];
+  trackPath.fullPath = new PathSP.Path();  
+  trackPath.step = 0;
 }
 
 /**
@@ -1061,6 +1060,7 @@ HelpW.updatePointer('circleAng');
 
 //Initialize calib stars list:
 calibStars = [];
+
 
 //Simulate initial calibration. Atention: comment these commands for real operation
 CalibInstance = Sim.simParams.calib.clone();
