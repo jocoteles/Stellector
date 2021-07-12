@@ -829,13 +829,13 @@ NavW.goTrack = async function (opt) {
         let ra1 = App.ra180to24(coords[i+1][0]) + dt;        
         let dec1 = coords[i+1][1];
         let eq0 = new VecSP.Equatorial(ra0, dec0);
-        let eq1 = new VecSP.Equatorial(ra1, dec1);        
+        let eq1 = new VecSP.Equatorial(ra1, dec1);            
         if (circle) {
           let circlePath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);
           circlePath.path[circlePath.size-1].laser = 0;
           trackArray = trackArray.concat([circlePath]);        
         }
-        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);
+        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);        
       }      
       if (circle) {
         let ra = App.ra180to24(coords[n][0]) + dt;
@@ -1012,7 +1012,7 @@ Sim.updateCalib = function (action) {
 }
 
 //Set initial window:
-App.setWindow("appCalibW");
+App.setWindow("appCommW");
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
@@ -1070,7 +1070,5 @@ calibStars = [];
 
 
 //Simulate initial calibration. Atention: comment these commands for real operation
-CalibInstance = Sim.simParams.calib.clone();
-CalibTemp = Sim.simParams.calib.clone();
-
-console.log(new VecSP.Spherical(2.0, 4.0));
+//CalibInstance = Sim.simParams.calib.clone();
+//CalibTemp = Sim.simParams.calib.clone();

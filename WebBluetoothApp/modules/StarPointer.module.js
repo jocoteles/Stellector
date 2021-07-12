@@ -477,14 +477,14 @@ VecSP.Calibration = class {
 		let step = new VecSP.Step();		
 		step.fixFromRad(optAngs[0]);
 		step.mobFromRad(optAngs[1]);
-		console.log('-------------------');
-		console.log('optAngs: ' + optAngs);
-		console.log(bestValue);
-		console.log(step);
-		let eqFromStep = this.equatorialFromStep(step);
-		console.log(eqFromStep);
-		let angDiff = eqFromStep.toVector3().angleTo(eq0.toVector3())*180.0/Math.PI;
-		console.log('Angle to: ' + angDiff);
+		//console.log('-------------------');
+		//console.log('optAngs: ' + optAngs);
+		//console.log(bestValue);
+		//console.log(step);
+		//let eqFromStep = this.equatorialFromStep(step);
+		//console.log(eqFromStep);
+		//let angDiff = eqFromStep.toVector3().angleTo(eq0.toVector3())*180.0/Math.PI;
+		//console.log('Angle to: ' + angDiff);
 		//console.log(this.axes.fix);
 		//console.log(this.axes.mob);
 		//console.log(this.axes.laser);
@@ -956,11 +956,11 @@ PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
 	let N = Math.max(1.0, Math.round(Math.abs(a/angleIncrement)));
 	let ainc = a/N;
 	let v3 = new THREE.Vector3();
-	v3.crossVectors(v0, v1);
+	v3.crossVectors(v0, v1).normalize();
 	let r = lpattern[0] + lpattern[1];
-	let laser;
+	let laser;	
 	for (let i = 0; i <= N; i++) {
-		let v = v1.clone();
+		let v = v0.clone();
 		v.applyAxisAngle(v3, i*ainc);
 		laser = 0;
 		if ((i%r) < lpattern[0]) laser = 1;
