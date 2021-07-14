@@ -41,20 +41,22 @@
 #define RESET_PATH_OPT 1       //option to start a new path reading
 #define EXEC_PATH_OPT 2        //option to execute the path
 #define CYCLIC_PATH_OPT  3     //option to execute the path cyclicaly
-#define LASER_SWITCH_OPT 4     //option to switch the laser
-#define LASER_CHECK_OPT 5      //option to check the laser status
-#define SET_ZENITH_OPT 6       //option to make actSteps equal to STEP_AT_ZENITH
-#define READ_ACT_STEPS_OPT 7   //option to read the steppers actual steps
-#define RESET_READ_OPT 8       //option to make the read steppers procedure ready
+#define REVERSE_PATH_OPT  4    //option to execute the path cyclicaly in reverse order alternately
+#define LASER_SWITCH_OPT 5     //option to switch the laser
+#define LASER_CHECK_OPT 6      //option to check the laser status
+#define SET_ZENITH_OPT 7       //option to make actSteps equal to STEP_AT_ZENITH
+#define READ_ACT_STEPS_OPT 8   //option to read the steppers actual steps
+#define RESET_READ_OPT 9       //option to make the read steppers procedure ready
 
-#define RESET_PATH_ST 9       //status to start a new path reading
-#define EXEC_PATH_ST 10       //status to execute the path
-#define CYCLIC_PATH_ST 11     //status to execute the path cyclicaly
-#define LASER_ON_ST 12        //status if laser is on
-#define LASER_OFF_ST 13       //status if laser is off
-#define LASER_SWITCH_ST 14    //status to switch laser state
-#define SET_ZENITH_ST 15      //status to make actSteps equal to STEP_AT_ZENITH
-#define READ_ACT_STEPS_ST 16  //status to read the steppers actual steps
+#define RESET_PATH_ST 10      //status to start a new path reading
+#define EXEC_PATH_ST 11       //status to execute the path
+#define CYCLIC_PATH_ST 12     //status to execute the path cyclicaly
+#define REVERSE_PATH_ST 13    //status to execute the path cyclicaly in reverse order alternately
+#define LASER_ON_ST 14        //status if laser is on
+#define LASER_OFF_ST 15       //status if laser is off
+#define LASER_SWITCH_ST 16    //status to switch laser state
+#define SET_ZENITH_ST 17      //status to make actSteps equal to STEP_AT_ZENITH
+#define READ_ACT_STEPS_ST 18  //status to read the steppers actual steps
 
 #define TIME_STEPPERS_OFF 15000       //time delay to turn off steppers when idle in miliseconds.
 #define TIME_LASER_OFF 60000          //time delay to turn off laser when idle in miliseconds.
@@ -99,6 +101,8 @@ uint16_t pathSize = 0;
 const uint8_t pathBase[PATHBASE_SIZE] = PATHBASE;   //number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 const uint8_t commBase[COMMBASE_SIZE] = COMMBASE;   //number of bits of the base used to communicate the path segments
 bool cyclicPathF = false;
+bool reversePathF = false;
+bool reverseStateF = false;
 bool execPathF = false;
 bool navigationF = false;
 bool laserSwitchF = false;
@@ -160,7 +164,9 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     if (vals.length() == 1) {
       option = vals[0];      
       execPathF = false;
-      cyclicPathF = false;      
+      cyclicPathF = false;
+      reversePathF = false;
+      reverseStateF = false;      
       switch (option) {
         case RESET_PATH_OPT:
           delay(200);
@@ -175,6 +181,11 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           execPathF = true;
           cyclicPathF = true;
           sendStatus(CYCLIC_PATH_ST);
+          break;
+        case REVERSE_PATH_OPT:
+          execPathF = true;
+          reversePathF = true;          
+          sendStatus(REVERSE_PATH_ST);
           break;                
         case LASER_SWITCH_OPT:        
           laserSwitchF = true;
@@ -277,21 +288,23 @@ void execPath() {
   uint16_t N, ph, th, phA, thA;
   int dph, dth;
   float fph, fth;
-  uint16_t j;
+  uint16_t j, k;  
 
   phA = actStep[0];
   thA = actStep[1];  
   
-  for (j = 0; j < pathSize; j++) {
-    ph = phiP[j];
-    th = thetaP[j];    
+  for (j = 0; j < pathSize; j++) {        
+    if (reverseStateF) k = pathSize - 1 - j;
+    else k = j;          
+    ph = phiP[k];
+    th = thetaP[k];    
     dph = ph - phA;
     dth = th - thA;            
     N = max(max(abs(dph), abs(dth)), 1);
     fph = float(dph)/N;
     fth = float(dth)/N;
     /*Serial.println("-------------------------------------");
-    Serial.print("j: ");Serial.println(j);
+    Serial.print("k: ");Serial.println(k);
     Serial.print("phA: ");Serial.println(phA);
     Serial.print("thA: ");Serial.println(thA);
     Serial.print("ph: ");Serial.println(ph);
@@ -301,12 +314,12 @@ void execPath() {
       th = thA + round(i*fth);            
       stepperFix(ph);
       stepperMob(th);      
-      delayMicroseconds(delayP[j]*DELAY_FACTOR);
+      delayMicroseconds(delayP[k]*DELAY_FACTOR);
     }
-    laser(laserP[j]);      
+    laser(laserP[k]);      
     phA = ph;
     thA = th;
-  }
+  }  
 }
 
 void sendActSteps() {
@@ -389,7 +402,8 @@ void loop() {
   if (execPathF) { //Path execution        
     if (checkPathBoundaries()) do {
       execPath();      
-    } while (cyclicPathF);
+      if (reversePathF) reverseStateF = !reverseStateF;
+    } while (cyclicPathF || reversePathF);
     steppersOff();
     execPathF = false;    
   }

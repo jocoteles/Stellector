@@ -21,20 +21,22 @@ let ESP32 = {
 	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
 	EXEC_PATH_OPT: 2,        	//option to execute the path
-	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly	
-	LASER_SWITCH_OPT: 4,       	//option to turn on the laser
-	LASER_CHECK_OPT: 5,    		//option to check the laser	state
-	SET_ZENITH_OPT: 6,       	//option to make actSteps equal to STEP_AT_ZENITH
-	READ_ACT_STEPS_OPT: 7,		//option to read the steppers actual steps
-	RESET_READ_OPT: 8,	        //option to make the read steppers procedure ready
-	RESET_PATH_ST: 9,			//status to start a new path reading
-	EXEC_PATH_ST: 10,			//status to execute the path
-	CYCLIC_PATH_ST: 11,			//status to execute the path cyclicaly	
-	LASER_ON_ST: 12,			//status to turn on the laser
-	LASER_OFF_ST: 13,			//status to turn off the laser
-	LASER_SWITCH_ST: 14,	    //status to switch laser state
-	SET_ZENITH_ST: 15,			//status to make actSteps equal to STEP_AT_ZENITH
-	READ_ACT_STEPS_ST: 16,		//status to read the steppers actual steps
+	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly
+	REVERSE_PATH_OPT: 4,	    //option to execute the path cyclicaly in reverse order alternately	
+	LASER_SWITCH_OPT: 5,       	//option to turn on the laser
+	LASER_CHECK_OPT: 6,    		//option to check the laser	state
+	SET_ZENITH_OPT: 7,       	//option to make actSteps equal to STEP_AT_ZENITH
+	READ_ACT_STEPS_OPT: 8,		//option to read the steppers actual steps
+	RESET_READ_OPT: 9,	        //option to make the read steppers procedure ready
+	RESET_PATH_ST: 10,			//status to start a new path reading
+	EXEC_PATH_ST: 11,			//status to execute the path
+	CYCLIC_PATH_ST: 12,			//status to execute the path cyclicaly	
+	REVERSE_PATH_ST: 13,	    //status to execute the path cyclicaly in reverse order alternately
+	LASER_ON_ST: 14,			//status to turn on the laser
+	LASER_OFF_ST: 15,			//status to turn off the laser
+	LASER_SWITCH_ST: 16,	    //status to switch laser state
+	SET_ZENITH_ST: 17,			//status to make actSteps equal to STEP_AT_ZENITH
+	READ_ACT_STEPS_ST: 18,		//status to read the steppers actual steps
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -726,44 +728,12 @@ CommSP.Bluetooth = class {
 			this.logDOM.innerHTML += this.time() + 'Step size of (' + (fix-127) + ',' + (mob-127) + ') sent to (fixed,mobile) steppers on Server.\n';
 			return true;
 		} catch {return this.disconnectMsg();}
-	}
-	/**Execute a parsed step on steppers in the ESP32 server.
-	 * @param {VecSP.Step} Step - Step to be executed by the ESP32 server steppers.	 
-	 */
-	 async goStep (Step) {  
-		//console.log(Path);
-	    try {			
-			let path = Path.parsedPath;			
-			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
-			else {
-				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
-				await this.sendOption(this.OPT.RESET_PATH_OPT);
-				let j = 0;
-				let pathChunk;
-				for (let i = 0; i < path.length; i++) {
-					j = i % this.maxChunk;
-					if (j == 0) {      
-						if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
-						else pathChunk = new Uint8Array(path.length - i);
-					}
-					pathChunk[j] = path[i];
-					if ((j == this.maxChunk - 1) || (i == path.length -1)) {
-						await this.pathC.writeValue(pathChunk);
-					}
-				}
-				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-				if (cyclicOpt) await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
-				else await this.sendOption(this.OPT.EXEC_PATH_OPT);
-				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
-				return true;
-			}
-		} catch (error) {return this.disconnectMsg(error);}
-	}
+	}	
 	/**Execute a parsedPath on steppers in the ESP32 server.
 	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
-	 * @param {boolean} cyclicOpt - If false, Path is executed once, else it is excuted cyclicaly until stop signal.
+	 * @param {string} cyclicOpt - 'single': path is executed once; 'forward': path is excuted cyclically forward until stop signal; 'alternate': path is excuted cyclically alternate until stop signal.
 	 */
-	async goPath (Path, cyclicOpt = false) {  
+	async goPath (Path, cyclicOpt = 'single') {  
 		//console.log(Path);
 	    try {			
 			let path = Path.parsedPath;			
@@ -785,8 +755,17 @@ CommSP.Bluetooth = class {
 					}
 				}
 				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-				if (cyclicOpt) await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
-				else await this.sendOption(this.OPT.EXEC_PATH_OPT);
+				switch (cyclicOpt) {
+					case 'single':
+						await this.sendOption(this.OPT.EXEC_PATH_OPT);
+						break;
+					case 'forward':
+						await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
+						break;
+					case 'alternate':
+						await this.sendOption(this.OPT.REVERSE_PATH_OPT);
+						break;
+				}				
 				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
 				return true;
 			}

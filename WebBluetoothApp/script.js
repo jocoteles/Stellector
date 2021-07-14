@@ -5,7 +5,6 @@
 import {VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
 import './libs/orb.v2.min.js';
 
-
 /* --------------------
   Frontend constants */
 
@@ -63,7 +62,9 @@ const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
 const $navObjectsCombo = document.getElementById("navObjectsCombo");
 const $navTracksCombo = document.getElementById("navTracksCombo");
 const $trackAtDatetime = document.getElementById("trackAtDatetime");
-const $trackCyclically = document.getElementById("trackCyclically");
+const $speechLanguage = document.getElementById("speechLanguage");
+const $speechRate = document.getElementById("speechRate");
+const $speechPitch = document.getElementById("speechPitch");
 
 const stepSizeInputDatalistParams =  
 {
@@ -515,6 +516,11 @@ App.textSelected = function (element) {
   return element.options[element.selectedIndex].text;                
 }
 
+App.getRadioValue = function (elementName) {
+  let elems = document.getElementsByName(elementName);  
+  for(let elem of elems) if (elem.checked) return elem.value;
+}
+
 App.setInputRangeDatalist = function (params) {
   params.input.min = params.min;
   params.input.max = params.max;
@@ -651,14 +657,14 @@ NavW.goObjectStyle = async function (style) {
     case "point":
       let seg = new PathSP.Segment(CoordNavW, 1, 0);
 	    path.addSegment(seg);            	    
-      cyclicOpt = false;
+      cyclicOpt = 'single';
       break;
     case "bpoint":
       let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
       let seg1 = new PathSP.Segment(CoordNavW, 1, pointerStyles.bpoint.interval);
       path.addSegment(seg0);
       path.addSegment(seg1);
-      cyclicOpt = true;
+      cyclicOpt = 'forward';
       break;
     case "circle":
       let ap = 0.5*$circleApR.value*Math.PI/180;      
@@ -668,7 +674,7 @@ NavW.goObjectStyle = async function (style) {
       let lp = [cp, 4-cp];    
       let circle = new PathSP.makeCircle(CoordNavW, ap, inc, lp, delay);
 	    path.addPath(circle);
-      cyclicOpt = true;
+      cyclicOpt = 'forward';
       break;
   }
   let commPath = new CommSP.CommPath(path, CalibInstance);	
@@ -687,9 +693,8 @@ NavW.goSteps = async function () {
   let seg = new PathSP.Segment(step, 1, 0);
   let path = new PathSP.Path();
   path.addSegment(seg);
-  let commPath = new CommSP.CommPath(path, CalibInstance);	
-  let cyclicOpt = false;
-  await BleInstance.goPath(commPath, cyclicOpt);  
+  let commPath = new CommSP.CommPath(path, CalibInstance);	  
+  await BleInstance.goPath(commPath);  
 }
 
 NavW.readCoords = async function () {
@@ -848,15 +853,17 @@ NavW.goTrack = async function (opt) {
     } else alert("Track coordinates not found.");    
   }
   if (trackPath.paths.length > 0) {
+    let trackCyclically = App.getRadioValue('trackCyclicallyRadio');
+    //console.log(trackCyclically);
     if (opt == 'fullTrack') {
       let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	      
-      await BleInstance.goPath(commPath, $trackCyclically.checked);
+      await BleInstance.goPath(commPath, trackCyclically);
     }
     else {      
       trackPath.step += Number(opt);
       trackPath.step = (trackPath.paths.length + trackPath.step)%trackPath.paths.length;
       let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	                
-      await BleInstance.goPath(commPath, $trackCyclically.checked);    
+      await BleInstance.goPath(commPath, 'forward');    
     }
   }
 }
@@ -932,8 +939,75 @@ window.TourW = {};
 TourW.goCircle = async function () {
   let path = PathSP.makeCircle(CoordNavW, Math.PI/40, Math.PI/10, [1,0], 50);
   let commPath = new CommSP.CommPath(path, CalibInstance);
-  await BleInstance.goPath(commPath, true);
+  await BleInstance.goPath(commPath, 'forward');
 }
+
+
+/**
+ * A namespace for speech synthesis.
+ * @namespace
+ */
+window.Speech = {};
+
+Speech.synth = window.speechSynthesis;
+Speech.voices = [];
+
+Speech.populateVoiceList = function () {  
+  Speech.voices = Speech.synth.getVoices().sort((a, b) => {
+    const aname = a.name.toUpperCase(), bname = b.name.toUpperCase();
+    if ( aname < bname ) return -1;
+    else if ( aname == bname ) return 0;
+    else return +1;
+  });  
+  for(let i = 0; i < Speech.voices.length ; i++) {
+    let option = document.createElement('option');
+    option.textContent = Speech.voices[i].name + ' (' + Speech.voices[i].lang + ')';
+    
+    if(Speech.voices[i].default) {
+      option.textContent += ' -- DEFAULT';
+    }
+
+    option.setAttribute('data-lang', Speech.voices[i].lang);
+    option.setAttribute('data-name', Speech.voices[i].name);
+    $speechLanguage.appendChild(option);
+  }  
+}
+
+Speech.speak = function () {
+  if (Speech.synth.speaking) {
+      console.error('speechSynthesis.speaking');
+      return;
+  }
+  let inputTxt = 'Andromeda';
+  if (inputTxt !== '') {
+    let utterThis = new window.SpeechSynthesisUtterance(inputTxt);
+    utterThis.onend = function (event) {
+        console.log('SpeechSynthesisUtterance.onend');
+    }
+    utterThis.onerror = function (event) {
+        console.error('SpeechSynthesisUtterance.onerror');
+    }
+    let selectedOption = $speechLanguage.selectedOptions[0].getAttribute('data-name');
+    for(let i = 0; i < Speech.voices.length ; i++) {
+      if(Speech.voices[i].name === selectedOption) {
+        utterThis.voice = Speech.voices[i];
+        break;
+      }
+    }
+    utterThis.pitch = $speechPitch.value;
+    utterThis.rate = $speechRate.value;
+    Speech.synth.speak(utterThis);
+  }
+}
+
+Speech.populateVoiceList();
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+  window.speechSynthesis.onvoiceschanged = Speech.populateVoiceList;
+}
+
+
+
+
 
 
 /**
