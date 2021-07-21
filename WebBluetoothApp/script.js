@@ -65,6 +65,10 @@ const $trackAtDatetime = document.getElementById("trackAtDatetime");
 const $speechLanguage = document.getElementById("speechLanguage");
 const $speechRate = document.getElementById("speechRate");
 const $speechPitch = document.getElementById("speechPitch");
+const $speakStarName = document.getElementById("speakStarName");
+const $speakBayer = document.getElementById("speakBayer");
+const $speakConstellation = document.getElementById("speakConstellation");
+const $speakHipparcos = document.getElementById("speakHipparcos");
 
 const stepSizeInputDatalistParams =  
 {
@@ -218,7 +222,7 @@ let stepSize;
 let itemsNames = {};
 let itemsData = {};
 
-let trackPath = {'paths': [], 'fullPath': new PathSP.Path(), 'step': 0};
+let trackPath = {'paths': [], 'coords':[], 'fullPath': new PathSP.Path(), 'step': 0};
 
 
 /*let pointerConfig = {
@@ -461,7 +465,11 @@ App.loadItemsDataNames = function () {
   itemsData["clines"] = clinesData;
   itemsData["cbounds"] = cboundsData;
   itemsData["asterisms"] = asterismsData;
+
+  console.log(itemsNames["constellation"]);  
 }
+
+
 
 App.filterCombo = function (filterElement, itemElement, minLength) {        
   let type = App.valueSelected(itemElement["typeCombo"]);    
@@ -812,7 +820,7 @@ NavW.goTrack = async function (opt) {
     if ($trackAtDatetime.checked) date = new Date($trackDate.value+'T'+$trackTime.value);
     else date = new Date();    
     let coords = App.getCoordinates(trackType, trackId);        
-    let trackArray = [];
+    let trackArray = [];    
     if (coords) {      
       let circle = App.valueSelected($trackPointerStyle).includes('circle');
       let solid = App.valueSelected($trackPointerStyle).includes('solid');
@@ -840,7 +848,7 @@ NavW.goTrack = async function (opt) {
           circlePath.path[circlePath.size-1].laser = 0;
           trackArray = trackArray.concat([circlePath]);        
         }
-        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);        
+        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);       
       }      
       if (circle) {
         let ra = App.ra180to24(coords[n][0]) + dt;
@@ -848,13 +856,13 @@ NavW.goTrack = async function (opt) {
         let eq = new VecSP.Equatorial(ra, dec);
         trackArray = trackArray.concat([PathSP.makeCircle(eq, cap, cinc, clp, cdelay)]);        
       }
-      trackPath.paths = trackArray;      
+      trackPath.paths = trackArray;     
+      trackPath.coords = coords;      
       for (let p of trackArray) trackPath.fullPath.addPath(p);
     } else alert("Track coordinates not found.");    
   }
   if (trackPath.paths.length > 0) {
-    let trackCyclically = App.getRadioValue('trackCyclicallyRadio');
-    //console.log(trackCyclically);
+    let trackCyclically = App.getRadioValue('trackCyclicallyRadio');    
     if (opt == 'fullTrack') {
       let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	      
       await BleInstance.goPath(commPath, trackCyclically);
@@ -863,15 +871,18 @@ NavW.goTrack = async function (opt) {
       trackPath.step += Number(opt);
       trackPath.step = (trackPath.paths.length + trackPath.step)%trackPath.paths.length;
       let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	                
-      await BleInstance.goPath(commPath, 'forward');    
+      //await BleInstance.goPath(commPath, 'forward');  
+      Speech.speakStar(trackPath.coords[trackPath.step]);      
     }
   }
 }
 
 NavW.resetTrack = function () {
   trackPath.paths = [];
+  trackPath.coords = [];
   trackPath.fullPath = new PathSP.Path();  
   trackPath.step = 0;
+  console.log('resetou');
 }
 
 /**
@@ -973,30 +984,53 @@ Speech.populateVoiceList = function () {
   }  
 }
 
-Speech.speak = function () {
-  if (Speech.synth.speaking) {
-      console.error('speechSynthesis.speaking');
-      return;
-  }
-  let inputTxt = 'Andromeda';
-  if (inputTxt !== '') {
-    let utterThis = new window.SpeechSynthesisUtterance(inputTxt);
-    utterThis.onend = function (event) {
-        console.log('SpeechSynthesisUtterance.onend');
+Speech.speakStar = function (coord) {
+  if ($speakStarName.checked || $speakBayer.checked || $speakConstellation.checked || $speakHipparcos.checked) {
+    if (Speech.synth.speaking) {
+        console.error('speechSynthesis.speaking');
+        return;
     }
-    utterThis.onerror = function (event) {
-        console.error('SpeechSynthesisUtterance.onerror');
-    }
-    let selectedOption = $speechLanguage.selectedOptions[0].getAttribute('data-name');
-    for(let i = 0; i < Speech.voices.length ; i++) {
-      if(Speech.voices[i].name === selectedOption) {
-        utterThis.voice = Speech.voices[i];
+    let text = "";
+    let snames = {};
+    for (let features of itemsData.star.features)
+      if (features.geometry.coordinates[0] == coord[0] && features.geometry.coordinates[1] == coord[1]) {      
+        snames = itemsNames.star[features.id];
+        if ($speakStarName.checked && snames.name != "") text = snames.name + ". ";
+        if ($speakBayer.checked && snames.bayer != "") text += snames.bayer + ". ";
+        if ($speakConstellation.checked && snames.c != "") {          
+          let cons  = itemsNames.constellation;
+          for (let x in cons) {                        
+            let cname = cons[x].id.toLowerCase();
+            let sname = snames.c.toLowerCase();            
+            if (cname.includes(sname)) {
+              text += cons[x].name + ". ";
+              break;
+            }
+          }          
+        }
+        if ($speakHipparcos.checked && snames.id != "") text += "Hiparcos " + snames.id + ". ";        
         break;
       }
+    
+    if (text !== '') {
+      let utterThis = new window.SpeechSynthesisUtterance(text);
+      utterThis.onend = function (event) {
+          console.log('SpeechSynthesisUtterance.onend');
+      }
+      utterThis.onerror = function (event) {
+          console.error('SpeechSynthesisUtterance.onerror');
+      }
+      let selectedOption = $speechLanguage.selectedOptions[0].getAttribute('data-name');
+      for(let i = 0; i < Speech.voices.length ; i++) {
+        if(Speech.voices[i].name === selectedOption) {
+          utterThis.voice = Speech.voices[i];
+          break;
+        }
+      }
+      utterThis.pitch = $speechPitch.value;
+      utterThis.rate = $speechRate.value;
+      Speech.synth.speak(utterThis);
     }
-    utterThis.pitch = $speechPitch.value;
-    utterThis.rate = $speechRate.value;
-    Speech.synth.speak(utterThis);
   }
 }
 
@@ -1114,11 +1148,11 @@ for (let i in itemsElements) {
 }
 
 //Reset track events:
-$navTracksCombo.addEventListener('change', NavW.resetTrack());
-$trackPointerStyle.addEventListener('change', NavW.resetTrack());
-$trackDate.addEventListener('change', NavW.resetTrack());
-$trackTime.addEventListener('change', NavW.resetTrack());
-$trackAtDatetime.addEventListener('change', NavW.resetTrack());
+$navTracksCombo.addEventListener('change', NavW.resetTrack);
+$trackPointerStyle.addEventListener('change', NavW.resetTrack);
+$trackDate.addEventListener('change', NavW.resetTrack);
+$trackTime.addEventListener('change', NavW.resetTrack);
+$trackAtDatetime.addEventListener('change', NavW.resetTrack);
 
 //Set initial step size:
 Controller.updateStepSize();

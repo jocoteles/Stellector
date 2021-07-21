@@ -357,9 +357,12 @@
           <div id="speechRateValue">1</div>
           <label for="speechPitch">Pitch</label><input type="range" id="speechPitch" min="0" max="2" value="1" step="0.1">
           <div id="speechPitchValue">1</div>
-          <select id="speechLanguage" style="grid-column:1/4;" onchange="Speech.speak()"></select>
+          <select id="speechLanguage" style="grid-column:1/4;"></select>
           <div style="grid-column:1/4;">
-            <input type="checkbox" id="speechSpeakOnStep" checked="false"><label>Speak on each step</label>
+            <input type="checkbox" id="speakStarName" checked="false"><label>Speak star name</label><br>
+            <input type="checkbox" id="speakBayer" checked="false"><label>Speak bayer</label><br>
+            <input type="checkbox" id="speakConstellation" checked="false"><label>Speak constellation</label><br>
+            <input type="checkbox" id="speakHipparcos" checked="false"><label>Speak Hipparcos</label>
           </div>          
         </div>
 
