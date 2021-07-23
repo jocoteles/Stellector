@@ -115,8 +115,7 @@
       <div class="window" id="appCalibW" style="grid-template-rows:auto;grid-template-columns:1fr;">        
                 
         <div id="appCalibStarsW" style="grid-template-rows:1fr;grid-template-columns:repeat(2, 1fr);">                                      
-          <div style="grid-column:1/3;"><button onclick="CalibW.updateCalib('add')">ADD CALIB OBJECT</button></div>
-          <div style="grid-column:1/3;"><button onclick="Sim.updateCalib('add')">ADD SIM OBJECT</button></div>
+          <div style="grid-column:1/3;"><button onclick="CalibW.updateCalib('add')">ADD CALIB OBJECT</button></div>          
           <div>
             <div>Object type:</div>
             <div><select id="calibObjectsTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
@@ -139,17 +138,31 @@
           <div>
             <button onclick="CalibW.updateCalib('remThis')">remove this</button>
             <button onclick="CalibW.updateCalib('remAll')">remove all</button>
+          </div>          
+        </div>
+
+        <button class="transitionButton" id="appCalibExecBtn" onclick="App.changeNav('appCalibExecW')">Calibration Execution</button>
+        <div id="appCalibExecW" style="grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">
+          <div style="grid-column:1/3;">
+            <input type="checkbox" id="angStretchOptim" checked="true"><label>angle stretching optimization</label><br>
+            <input type="checkbox" id="mobTiltOptim" checked="false"><label>mobile stepper axis tilt optimization</label>            
           </div>
           <div style="grid-column:1/3">
-            <br>
             <button onclick="CalibW.calcCalib()">CALC</button>            
             <button onclick="CalibW.acceptCalib()">ACCEPT</button>
           </div>          
         </div>
         
         <button class="transitionButton" id="appCalibInfoBtn" onclick="App.changeNav('appCalibInfoW')">Actual Calibration Info</button>
-        <div id="appCalibInfoW">          
-          <textarea id="calibInfo" style="width:90%" rows="10" readonly></textarea>  
+        <div id="appCalibInfoW" style="grid-template-columns:repeat(2, 1fr);">
+          <label for="angFixStretch">fix angle stretch factor:</label><input id="angFixStretch" type="text" size="9">
+          <label for="angMobStretch">mob angle stretch factor:</label><input id="angMobStretch" type="text" size="9">
+          <label>Mob axis coords:</label>
+          <div style="grid-column:2;">
+            <input type="text" id="mobX" style="width:20%;"><label for="mobX">X </label><input type="text" id="mobY" style="width:20%;"><label for="mobY">Y </label><input type="text" id="mobZ" style="width:20%;"><label for="mobZ">Z</label>
+          </div>
+          <label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng" readonly>
+          <textarea id="calibInfo" style="grid-column:1/3;width:90%;" rows="10" readonly></textarea>  
         </div>
         
         <button class="transitionButton" id="appCalibLogBtn" onclick="App.changeNav('appCalibLogW')">Calibration Log</button>

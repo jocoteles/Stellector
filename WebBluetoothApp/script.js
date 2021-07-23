@@ -59,6 +59,14 @@ const $calibListCombo = document.getElementById("calibListCombo");
 const $navObjectsTypeCombo = document.getElementById("navObjectsTypeCombo");
 const $navTracksTypeCombo = document.getElementById("navTracksTypeCombo");
 const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
+const $angFixStretch = document.getElementById("angFixStretch");
+const $angMobStretch = document.getElementById("angMobStretch");
+const $angStretchOptim = document.getElementById("angStretchOptim");
+const $mobTiltOptim = document.getElementById("mobTiltOptim");
+const $mobX = document.getElementById("mobX");
+const $mobY = document.getElementById("mobY");
+const $mobZ = document.getElementById("mobZ");
+const $mobTiltAng = document.getElementById("mobTiltAng");
 const $navObjectsCombo = document.getElementById("navObjectsCombo");
 const $navTracksCombo = document.getElementById("navTracksCombo");
 const $trackAtDatetime = document.getElementById("trackAtDatetime");
@@ -606,6 +614,11 @@ CalibW.updateCalib = async function (action) {
 CalibW.calcCalib = function () {
 	if (calibStars.length < 2) alert("You must add at least two calibration stars.");
 	else {    
+    CalibTemp.params.aPhi = Number($angFixStretch.value);
+    CalibTemp.params.aTheta = Number($angMobStretch.value);    
+    CalibTemp.params.mob = new THREE.Vector3(Number($mobX.value),Number($mobY.value),Number($mobZ.value)).normalize(); 
+    CalibTemp.params.fit.angStretching.optimize = $angStretchOptim.checked;
+    CalibTemp.params.fit.mobTilt.optimize = $mobTiltOptim.checked;
     CalibTemp.calcCalib(calibStars)
     $calibLog.innerHTML += '-------------------------------------\n';
     $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
@@ -620,7 +633,10 @@ CalibW.calcCalib = function () {
     let maxStep = (CalibTemp.stats.max*calibStars[0].step.maxSteps/360).toFixed(1);
     $calibLog.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
     $calibLog.innerHTML += 'Minimum angle deviation of ' + minStar + ': ' + min + '° (' + minStep + ' steps).\n';
-    $calibLog.innerHTML += 'Maximum angle deviation of ' + maxStar + ': ' + max + '° (' + maxStep + ' steps).\n';    
+    $calibLog.innerHTML += 'Maximum angle deviation of ' + maxStar + ': ' + max + '° (' + maxStep + ' steps).\n\n';
+    $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibTemp.params.aPhi + '\n';
+    $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibTemp.params.aTheta + '\n';
+    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibTemp.params.mob.angleTo(new THREE.Vector3(1, 0, 0))*180/Math.PI; + ' °\n';
     //alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
 	}
 }
@@ -628,6 +644,12 @@ CalibW.calcCalib = function () {
 CalibW.acceptCalib = function () {
   if (CalibTemp.stars.length > 0) {
     CalibInstance = CalibTemp.clone();
+    $angFixStretch.value = CalibInstance.params.aPhi;
+    $angMobStretch.value = CalibInstance.params.aTheta;
+    $mobX.value = CalibInstance.params.mob.x;
+    $mobY.value = CalibInstance.params.mob.y;
+    $mobZ.value = CalibInstance.params.mob.z;
+    $mobTiltAng.value = CalibInstance.params.mob.angleTo(new THREE.Vector3(1, 0, 0))*180/Math.PI;
     $calibLog.innerHTML += window.App.time() + 'New calibration accepted.\n';
     $calibInfo.innerHTML = window.App.time() + 'Actual calibration stars:\n';
     $calibInfo.innerHTML += '----------------------------------\n';

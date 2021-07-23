@@ -306,7 +306,11 @@ VecSP.Calibration = class {
 			aTheta: 1.0,
 			aPhi: 1.0,
 			localToEquatorial: new THREE.Euler(),
-			equatorialToLocal: new THREE.Euler()
+			equatorialToLocal: new THREE.Euler(),
+			fit: {
+				angStretching: {min: 0.8, max: 1.2, optimize: true},
+				mobTilt: {min: -5*Math.PI/180, max: 5*Math.PI/180, optimize: true}
+			}
 		};
 		//this.randomAxes();				
 		/**@member {Date} - First calib star date of assignment to calibration */
@@ -349,16 +353,41 @@ VecSP.Calibration = class {
 		}
 		window.fix = this.params.fix;
 		window.mob = this.params.mob;
-		window.laser = this.params.laser;		
-		let objFunc = function (p) {						
-			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])
+		window.laser = this.params.laser;
+		window.aPhi = this.params.aPhi;
+		window.aTheta = this.params.aTheta;
+		window.fit = this.params.fit;		
+		let objFunc = function (p) {									
+			let penal = 0.0;			
+			let fixStretch = window.aPhi;
+			let mobStretch = window.aTheta;
+			let mob = window.mob.clone();
+			mob.normalize();
+			if (window.fit.angStretching.optimize) {
+				if (p[4] < window.fit.angStretching.min) penal += window.fit.angStretching.min - p[4];
+				if (p[4] > window.fit.angStretching.max) penal += p[4] - window.fit.angStretching.max;
+				if (p[5] < window.fit.angStretching.min) penal += window.fit.angStretching.min - p[5];
+				if (p[5] > window.fit.angStretching.max) penal += p[5] - window.fit.angStretching.max;				
+				fixStretch = p[4];
+				mobStretch = p[5];
+			}
+			if (window.fit.mobTilt.optimize) {
+				if (p[6] < window.fit.mobTilt.min) penal += window.fit.mobTilt.min - p[6];
+				if (p[6] > window.fit.mobTilt.max) penal += p[6] - window.fit.mobTilt.max;
+				if (p[7] < window.fit.mobTilt.min) penal += window.fit.mobTilt.min - p[7];
+				if (p[7] > window.fit.mobTilt.max) penal += p[7] - window.fit.mobTilt.max;				
+				let Y = new THREE.Vector3(0, 1, 0);
+				let Z = new THREE.Vector3(0, 0, 1);		
+				mob.applyAxisAngle(Y, p[6]);
+				mob.applyAxisAngle(Z, p[7]);
+			} 
+			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])			
 			let N = window.steps.length;
 			let dots = 0;
-			let penal = 2.0 - Math.exp(-1.0*(p[4]-1.0)**4) - Math.exp(-1.0*(p[5]-1.0)**4);			
 			for (let i = 0; i < N; i++) {
 				let l = window.laser.clone();				
-				l.applyAxisAngle(window.mob, window.steps[i].mobToRad()*p[5] + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].fixToRad()*p[4]);
+				l.applyAxisAngle(mob, window.steps[i].mobToRad()*mobStretch + p[3]);
+				l.applyAxisAngle(window.fix, window.steps[i].fixToRad()*fixStretch);
 				l.applyEuler(localToEquatorial);
 				dots += l.dot(window.equatorials[i]);
 			}
@@ -376,7 +405,16 @@ VecSP.Calibration = class {
 				console.log(bestValue);
 				console.log(optAngs);
 			}*/
-			p0 = [Math.random()*2*Math.PI, Math.random()*2*Math.PI, Math.random()*2*Math.PI, (0.5-Math.random())*Math.PI/4, 0.9+0.2*Math.random(), 0.9+0.2*Math.random()];						
+			p0 = [
+				Math.random()*2*Math.PI,
+				Math.random()*2*Math.PI,
+				Math.random()*2*Math.PI,
+				Math.random()*2*Math.PI,
+				this.params.fit.angStretching.min + Math.random()*(this.params.fit.angStretching.max - this.params.fit.angStretching.min),
+				this.params.fit.angStretching.min + Math.random()*(this.params.fit.angStretching.max - this.params.fit.angStretching.min),
+				this.params.fit.mobTilt.min + Math.random()*(this.params.fit.mobTilt.max - this.params.fit.mobTilt.min),
+				this.params.fit.mobTilt.min + Math.random()*(this.params.fit.mobTilt.max - this.params.fit.mobTilt.min)
+			];						
 			let res = nelderMead(objFunc, p0);		
 			if (res.fx < bestValue) {
 				bestValue = res.fx;
@@ -387,9 +425,17 @@ VecSP.Calibration = class {
 		console.log('bestValue: ' + bestValue);
 		console.log('optAngs:' + P);
 		this.params.localToEquatorial = new THREE.Euler(P[0], P[1], P[2]);
-		this.params.dTheta = P[3];		
-		this.params.aPhi = P[4];
-		this.params.aTheta = P[5];
+		this.params.dTheta = P[3];
+		if (this.params.fit.angStretching.optimize) {
+			this.params.aPhi = P[4];
+			this.params.aTheta = P[5];
+		}
+		if (this.params.fit.mobTilt.optimize) {
+			let Y = new THREE.Vector3(0, 1, 0);
+			let Z = new THREE.Vector3(0, 0, 1);		
+			this.mob.applyAxisAngle(Y, p[6]);
+			this.mob.applyAxisAngle(Z, p[7]);
+		}				
 		let invM = new THREE.Matrix4().makeRotationFromEuler(this.params.localToEquatorial).transpose();
 		this.params.equatorialToLocal.setFromRotationMatrix(invM);
 
