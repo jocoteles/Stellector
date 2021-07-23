@@ -61,12 +61,13 @@ const $navTracksTypeCombo = document.getElementById("navTracksTypeCombo");
 const $calibObjectsCombo = document.getElementById("calibObjectsCombo");
 const $angFixStretch = document.getElementById("angFixStretch");
 const $angMobStretch = document.getElementById("angMobStretch");
-const $angStretchOptim = document.getElementById("angStretchOptim");
+const $fixStretchOptim = document.getElementById("fixStretchOptim");
+const $mobStretchOptim = document.getElementById("mobStretchOptim");
+const $laserTiltOptim = document.getElementById("laserTiltOptim");
+const $laserTiltAng = document.getElementById("laserTiltAng");
 const $mobTiltOptim = document.getElementById("mobTiltOptim");
-const $mobX = document.getElementById("mobX");
-const $mobY = document.getElementById("mobY");
-const $mobZ = document.getElementById("mobZ");
 const $mobTiltAng = document.getElementById("mobTiltAng");
+const $useParamsCalib = document.getElementById("useParamsCalib");
 const $navObjectsCombo = document.getElementById("navObjectsCombo");
 const $navTracksCombo = document.getElementById("navTracksCombo");
 const $trackAtDatetime = document.getElementById("trackAtDatetime");
@@ -614,11 +615,16 @@ CalibW.updateCalib = async function (action) {
 CalibW.calcCalib = function () {
 	if (calibStars.length < 2) alert("You must add at least two calibration stars.");
 	else {    
-    CalibTemp.params.aPhi = Number($angFixStretch.value);
-    CalibTemp.params.aTheta = Number($angMobStretch.value);    
-    CalibTemp.params.mob = new THREE.Vector3(Number($mobX.value),Number($mobY.value),Number($mobZ.value)).normalize(); 
-    CalibTemp.params.fit.angStretching.optimize = $angStretchOptim.checked;
-    CalibTemp.params.fit.mobTilt.optimize = $mobTiltOptim.checked;
+    if ($useParamsCalib) {
+      CalibTemp.fit.fixStretch.value = Number($angFixStretch.value);
+      CalibTemp.fit.mobStretch.value = Number($angMobStretch.value);
+      CalibTemp.fit.laserTilt.value = Number($laserTiltAng)*Math.PI/180;
+      CalibTemp.fit.mobTilt.value = Number($mobTiltAng)*Math.PI/180;
+    }    
+    CalibTemp.fit.fixStretch.optimize = $fixStretchOptim.checked;
+    CalibTemp.fit.mobStretch.optimize = $mobStretchOptim.checked;
+    CalibTemp.fit.laserTilt.optimize = $laserTiltOptim.checked;
+    CalibTemp.fit.mobTilt.optimize = $mobTiltOptim.checked;
     CalibTemp.calcCalib(calibStars)
     $calibLog.innerHTML += '-------------------------------------\n';
     $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
@@ -634,9 +640,10 @@ CalibW.calcCalib = function () {
     $calibLog.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
     $calibLog.innerHTML += 'Minimum angle deviation of ' + minStar + ': ' + min + '° (' + minStep + ' steps).\n';
     $calibLog.innerHTML += 'Maximum angle deviation of ' + maxStar + ': ' + max + '° (' + maxStep + ' steps).\n\n';
-    $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibTemp.params.aPhi + '\n';
-    $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibTemp.params.aTheta + '\n';
-    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibTemp.params.mob.angleTo(new THREE.Vector3(1, 0, 0))*180/Math.PI; + ' °\n';
+    $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibTemp.fit.fixStretch.value + '\n';
+    $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibTemp.fit.mobStretch.value + '\n';
+    $calibLog.innerHTML += 'Laser axis tilt angle: ' + CalibTemp.fit.laserTilt.value*180/Math.PI; + '°\n';
+    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibTemp.fit.mobTilt.value*180/Math.PI; + '°\n';
     //alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
 	}
 }
@@ -644,12 +651,10 @@ CalibW.calcCalib = function () {
 CalibW.acceptCalib = function () {
   if (CalibTemp.stars.length > 0) {
     CalibInstance = CalibTemp.clone();
-    $angFixStretch.value = CalibInstance.params.aPhi;
-    $angMobStretch.value = CalibInstance.params.aTheta;
-    $mobX.value = CalibInstance.params.mob.x;
-    $mobY.value = CalibInstance.params.mob.y;
-    $mobZ.value = CalibInstance.params.mob.z;
-    $mobTiltAng.value = CalibInstance.params.mob.angleTo(new THREE.Vector3(1, 0, 0))*180/Math.PI;
+    $angFixStretch.value = CalibInstance.fit.fixStretch.value;
+    $angMobStretch.value = CalibInstance.fit.mobStretch.value;
+    $laserTiltAng.value = CalibInstance.fit.laserTilt.value*180/Math.PI;
+    $mobTiltAng.value = CalibInstance.fit.mobTilt.value*180/Math.PI;
     $calibLog.innerHTML += window.App.time() + 'New calibration accepted.\n';
     $calibInfo.innerHTML = window.App.time() + 'Actual calibration stars:\n';
     $calibInfo.innerHTML += '----------------------------------\n';
@@ -665,7 +670,11 @@ CalibW.acceptCalib = function () {
     $calibInfo.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
     $calibInfo.innerHTML += 'Minimum angle deviation of ' + min + '° (' + minStep + ' steps).\n';
     $calibInfo.innerHTML += 'Maximum angle deviation of ' + max + '° (' + maxStep + ' steps).\n';
-    $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n';    
+    $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n\n';    
+    $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibInstance.fit.fixStretch.value + '\n';
+    $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibInstance.fit.mobStretch.value + '\n';
+    $calibLog.innerHTML += 'Laser axis tilt angle: ' + CalibInstance.fit.laserTilt.value*180/Math.PI; + '°\n';
+    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibInstance.fit.mobTilt.value*180/Math.PI; + '°\n';
   }
 }
 
@@ -1064,82 +1073,6 @@ if (window.speechSynthesis.onvoiceschanged !== undefined) {
 
 
 
-
-
-/**
- * A namespace for simulations of the optimization algorithms performance. It is not used by the client app.
- * @namespace
- */
- window.Sim = {};
-
-Sim.createSimCalib = function () {
-  let simCalib = new VecSP.Calibration();
-
-  //Random axes:
-  let deltaAxis = 0.0002*Math.PI/180;  
-  let X = new THREE.Vector3(1.0, 0.0, 0.0);
-  let Y = new THREE.Vector3(0.0, 1.0, 0.0);
-  let Z = new THREE.Vector3(0.0, 0.0, 1.0);
-  simCalib.params.fix.applyAxisAngle(X, (0.5-Math.random())*deltaAxis);
-  simCalib.params.fix.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);
-  simCalib.params.mob.applyAxisAngle(Y, (0.5-Math.random())*deltaAxis);
-  simCalib.params.mob.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);
-  simCalib.params.laser.applyAxisAngle(X, (0.5-Math.random())*deltaAxis);
-  simCalib.params.laser.applyAxisAngle(Z, (0.5-Math.random())*deltaAxis);  
-
-  //Random linear angle corrections:
-  let delta_dTheta = Math.PI/10;  
-  let delta_aAng = 0.2;
-  simCalib.params.dTheta = (0.5-Math.random())*delta_dTheta;
-  simCalib.params.aTheta = (0.5-Math.random())*delta_aAng + 1.0;
-  simCalib.params.aPhi = (0.5-Math.random())*delta_aAng + 1.0;
-
-  //Random Star Projector orientation relative to Equatorial system:
-  simCalib.params.localToEquatorial = new THREE.Euler(Math.random()*2*Math.PI*0, Math.random()*2*Math.PI*0, Math.random()*2*Math.PI*0);
-  let invM = new THREE.Matrix4().makeRotationFromEuler(simCalib.params.localToEquatorial).transpose();
-	simCalib.params.equatorialToLocal.setFromRotationMatrix(invM);
-
-  return simCalib;
-}
-
-Sim.simParams = {calib: Sim.createSimCalib()};
-
-Sim.updateCalib = function (action) {    		
-  
-  let deltaEq = 0.5; //Random error in equatorial coords in degrees
-
-  if ($calibObjectsCombo.innerText != null) {              
-      if (action == "add") {                   
-        let opt = App.valueSelected($calibObjectsCombo);                    
-        let eq = App.equatorialFromObjectData(opt);
-
-        //Random measurement procedure:
-        let b = new VecSP.Equatorial(eq.ra, eq.dec + deltaEq*Math.random());            
-        let v = b.toVector3();
-        let c = eq.toVector3();
-        v.applyAxisAngle(c, Math.random()*2*Math.PI);
-        let eqMod = new VecSP.Equatorial();
-        eqMod.fromVector3(v);
-
-        let actStep = Sim.simParams.calib.stepFromEquatorial(eqMod);
-        let name = App.textSelected($calibObjectsCombo);
-        console.log(name.split("|")[0] + " added with fix: " + actStep.fix + ", mob: " + actStep.mob);
-        if (eq) {
-          let t = new Date();
-          let s = new VecSP.CalibStar(App.textSelected($calibObjectsCombo), t, actStep, eq);
-          calibStars.push(s);              
-        }        
-      }
-
-      $calibListCombo.innerText = null;   
-      for (let i = 0; i < calibStars.length; i++) {
-          let option = document.createElement("option");
-          option.text = calibStars[i].text;
-          $calibListCombo.add(option);
-      }
-      $calibListCombo.selectedIndex = Math.max(0, calibStars.length-1);      
-  }
-}
 
 //Set initial window:
 App.setWindow("appCommW");

@@ -139,29 +139,14 @@
             <button onclick="CalibW.updateCalib('remThis')">remove this</button>
             <button onclick="CalibW.updateCalib('remAll')">remove all</button>
           </div>          
-        </div>
-
-        <button class="transitionButton" id="appCalibExecBtn" onclick="App.changeNav('appCalibExecW')">Calibration Execution</button>
-        <div id="appCalibExecW" style="grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">
-          <div style="grid-column:1/3;">
-            <input type="checkbox" id="angStretchOptim" checked="true"><label>angle stretching optimization</label><br>
-            <input type="checkbox" id="mobTiltOptim" checked="false"><label>mobile stepper axis tilt optimization</label>            
-          </div>
           <div style="grid-column:1/3">
             <button onclick="CalibW.calcCalib()">CALC</button>            
             <button onclick="CalibW.acceptCalib()">ACCEPT</button>
-          </div>          
+          </div>
         </div>
         
         <button class="transitionButton" id="appCalibInfoBtn" onclick="App.changeNav('appCalibInfoW')">Actual Calibration Info</button>
-        <div id="appCalibInfoW" style="grid-template-columns:repeat(2, 1fr);">
-          <label for="angFixStretch">fix angle stretch factor:</label><input id="angFixStretch" type="text" size="9">
-          <label for="angMobStretch">mob angle stretch factor:</label><input id="angMobStretch" type="text" size="9">
-          <label>Mob axis coords:</label>
-          <div style="grid-column:2;">
-            <input type="text" id="mobX" style="width:20%;"><label for="mobX">X </label><input type="text" id="mobY" style="width:20%;"><label for="mobY">Y </label><input type="text" id="mobZ" style="width:20%;"><label for="mobZ">Z</label>
-          </div>
-          <label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng" readonly>
+        <div id="appCalibInfoW" style="grid-template-columns:repeat(2, 1fr);">        
           <textarea id="calibInfo" style="grid-column:1/3;width:90%;" rows="10" readonly></textarea>  
         </div>
         
@@ -377,6 +362,24 @@
             <input type="checkbox" id="speakConstellation" checked="false"><label>Speak constellation</label><br>
             <input type="checkbox" id="speakHipparcos" checked="false"><label>Speak Hipparcos</label>
           </div>          
+        </div>
+
+        <button class="transitionButton" id="appHelpCalibBtn" onclick="App.changeNav('appHelpCalibW')">Calibration Config</button>
+        <div id="appHelpCalibW" style="grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">
+          <div style="grid-column:1/3;">
+            <input type="checkbox" id="fixStretchOptim" checked="true"><label>fix stretching optimization</label><br>
+            <input type="checkbox" id="mobStretchOptim" checked="true"><label>mob stretching optimization</label><br>
+            <input type="checkbox" id="laserTiltOptim" checked="false"><label>laser axis tilt optimization</label><br>
+            <input type="checkbox" id="mobTiltOptim" checked="false"><label>mob axis tilt optimization</label>
+          </div>            
+          <label for="angFixStretch">fix angle stretching:</label><input id="angFixStretch" type="text" size="9">
+          <label for="angMobStretch">mob angle stretching:</label><input id="angMobStretch" type="text" size="9">          
+          <label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng">
+          <label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng">          
+          <div style="grid-column:1/3;">
+            <input type="checkbox" id="useParamsCalib" checked="true"><label for="useParamsCalib">Use above params for calibration</label><br>
+          </div>
+                    
         </div>
 
       </div>

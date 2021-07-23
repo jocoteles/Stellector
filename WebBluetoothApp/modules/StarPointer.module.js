@@ -297,20 +297,17 @@ VecSP.Calibration = class {
     constructor() {
 		/**@member {VecSP.CalibStar[]} - Array of star objects used to perform calibration of the reference frame. */
 		this.stars = [];		
-		/**@member {THREE.Vector3[3]} - optimized vectors for the stepper fix, stepper mob and laser axes. */
-		this.params = {
-			fix: new THREE.Vector3(0.0, 1.0, 0.0),
-			mob: new THREE.Vector3(1.0, 0.0, 0.0),
-			laser: new THREE.Vector3(0.0, 1.0, 0.0),
-			dTheta: 0.0,
-			aTheta: 1.0,
-			aPhi: 1.0,
-			localToEquatorial: new THREE.Euler(),
-			equatorialToLocal: new THREE.Euler(),
-			fit: {
-				angStretching: {min: 0.8, max: 1.2, optimize: true},
-				mobTilt: {min: -5*Math.PI/180, max: 5*Math.PI/180, optimize: true}
-			}
+		/**@member {THREE.Vector3[3]} - optimized vectors for the stepper fix, stepper mob and laser axes. */		
+		this.fit = {						
+			axes: {
+				fix: new THREE.Vector3(1.0, 0.0, 0.0),
+				mob: new THREE.Vector3(0.0, 1.0, 0.0),
+				laser: new THREE.Vector3(0.0, 0.0, 1.0)
+			},
+			fixStretch: {value: 1.0, min: 0.8, max: 1.2, optimize: true},
+			mobStretch: {value: 1.0, min: 0.8, max: 1.2, optimize: true},
+			mobTilt: {value: 0.0, min: -5*Math.PI/180, max: 5*Math.PI/180, optimize: true},
+			laserTilt: {value: 0.0, min: -5*Math.PI/180, max: 5*Math.PI/180, optimize: true}
 		};
 		//this.randomAxes();				
 		/**@member {Date} - First calib star date of assignment to calibration */
@@ -323,19 +320,7 @@ VecSP.Calibration = class {
 		this.maxCalibIter = 500;
 		this.maxOptimValue = (1.0 - Math.cos(1*Math.PI/1024))**0.5;
 		this.maxCalibValue = (1.0 - Math.cos(3*Math.PI/1024))**0.5;
-	}
-	/*randomAxes () {
-		let fix = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-		let mob = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-		let laser = new THREE.Vector3(0.5-Math.random(),0.5-Math.random(),0.5-Math.random());
-		fix.normalize();
-		mob.normalize();
-		laser.normalize();
-		this.axes.fix.applyAxisAngle(fix, (0.5-Math.random())*Math.PI/2.5);
-		this.axes.mob.applyAxisAngle(mob, (0.5-Math.random())*Math.PI/2.5);
-		this.axes.laser.applyAxisAngle(laser, (0.5-Math.random())*Math.PI/2.5);
-		
-	}*/
+	}	
 	/**
 	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
 	 * @param {VecSP.CalibStar[]} stars - array of calibration stars
@@ -351,44 +336,57 @@ VecSP.Calibration = class {
 			window.equatorials.push(eq.toVector3());			
 			window.steps.push(s.step);
 		}
-		window.fix = this.params.fix;
-		window.mob = this.params.mob;
-		window.laser = this.params.laser;
-		window.aPhi = this.params.aPhi;
-		window.aTheta = this.params.aTheta;
-		window.fit = this.params.fit;		
+		window.fit = this.fit;
+		window.fix = new THREE.Vector3(1.0, 0.0, 0.0);
+		window.mob = new THREE.Vector3(0.0, 1.0, 0.0);
+		window.laser = new THREE.Vector3(0.0, 0.0, 1.0);
 		let objFunc = function (p) {									
 			let penal = 0.0;			
-			let fixStretch = window.aPhi;
-			let mobStretch = window.aTheta;
-			let mob = window.mob.clone();
-			mob.normalize();
-			if (window.fit.angStretching.optimize) {
-				if (p[4] < window.fit.angStretching.min) penal += window.fit.angStretching.min - p[4];
-				if (p[4] > window.fit.angStretching.max) penal += p[4] - window.fit.angStretching.max;
-				if (p[5] < window.fit.angStretching.min) penal += window.fit.angStretching.min - p[5];
-				if (p[5] > window.fit.angStretching.max) penal += p[5] - window.fit.angStretching.max;				
-				fixStretch = p[4];
-				mobStretch = p[5];
+			let fixS = window.fit.fixStretch.value;
+			let mobS = window.fit.mobStretch.value;
+			window.fix = new THREE.Vector3(1.0, 0.0, 0.0);
+			window.mob = new THREE.Vector3(0.0, 1.0, 0.0);
+			window.laser = new THREE.Vector3(0.0, 0.0, 1.0);
+			let Y = new THREE.Vector3(0.0, 1.0, 0.0);				
+			let Z = new THREE.Vector3(0.0, 0.0, 1.0);				
+			if (window.fit.fixStretch.optimize) {
+				if (p[0] < window.fit.fixStretch.min) penal += window.fit.fixStretch.min - p[0];
+				if (p[0] > window.fit.fixStretch.max) penal += p[0] - window.fit.fixStretch.max;				
+				fixS = p[0];				
 			}
+			if (window.fit.mobStretch.optimize) {
+				if (p[1] < window.fit.mobStretch.min) penal += window.fit.mobStretch.min - p[1];
+				if (p[1] > window.fit.mobStretch.max) penal += p[1] - window.fit.mobStretch.max;
+				mobS = p[1];				
+			}
+			if (window.fit.laserTilt.optimize) {
+				if (p[2] < window.fit.laserTilt.min) penal += window.fit.laserTilt.min - p[2];
+				if (p[2] > window.fit.laserTilt.max) penal += p[2] - window.fit.laserTilt.max;				
+				let X = new THREE.Vector3(1.0, 0.0, 0.0);				
+				window.laser.applyAxisAngle(X, p[2]);
+			}
+			window.laser.applyAxisAngle(window.mob, p[4]);
 			if (window.fit.mobTilt.optimize) {
-				if (p[6] < window.fit.mobTilt.min) penal += window.fit.mobTilt.min - p[6];
-				if (p[6] > window.fit.mobTilt.max) penal += p[6] - window.fit.mobTilt.max;
-				if (p[7] < window.fit.mobTilt.min) penal += window.fit.mobTilt.min - p[7];
-				if (p[7] > window.fit.mobTilt.max) penal += p[7] - window.fit.mobTilt.max;				
-				let Y = new THREE.Vector3(0, 1, 0);
-				let Z = new THREE.Vector3(0, 0, 1);		
-				mob.applyAxisAngle(Y, p[6]);
-				mob.applyAxisAngle(Z, p[7]);
-			} 
-			let localToEquatorial = new THREE.Euler(p[0], p[1], p[2])			
+				if (p[3] < window.fit.mobTilt.min) penal += window.fit.mobTilt.min - p[3];
+				if (p[3] > window.fit.mobTilt.max) penal += p[3] - window.fit.mobTilt.max;								
+				window.mob.applyAxisAngle(Z, p[3]);
+				window.laser.applyAxisAngle(Z, p[3]);
+			}
+			window.mob.applyAxisAngle(window.fix, p[5]);
+			window.mob.applyAxisAngle(Y, p[6]);
+			window.mob.applyAxisAngle(Z, p[7]);
+			window.laser.applyAxisAngle(window.fix, p[5]);
+			window.laser.applyAxisAngle(Y, p[6]);
+			window.laser.applyAxisAngle(Z, p[7]);
+			window.fix.applyAxisAngle(Y, p[6]);
+			window.fix.applyAxisAngle(Z, p[7]);
+			
 			let N = window.steps.length;
 			let dots = 0;
 			for (let i = 0; i < N; i++) {
 				let l = window.laser.clone();				
-				l.applyAxisAngle(mob, window.steps[i].mobToRad()*mobStretch + p[3]);
-				l.applyAxisAngle(window.fix, window.steps[i].fixToRad()*fixStretch);
-				l.applyEuler(localToEquatorial);
+				l.applyAxisAngle(window.mob, window.steps[i].mobToRad()*mobS);
+				l.applyAxisAngle(window.fix, window.steps[i].fixToRad()*fixS);				
 				dots += l.dot(window.equatorials[i]);
 			}
 			return (1 - dots/N)**0.5 + penal;
@@ -398,22 +396,15 @@ VecSP.Calibration = class {
 		let bestValue = 1000;
 		let i = 0;
 		do {			
-			/*let res = optimjs.minimize_Powell(optimFunction, vini);
-			if (res.fncvalue < bestValue) {
-				bestValue = res.fncvalue;
-				optAngs = res.argument;
-				console.log(bestValue);
-				console.log(optAngs);
-			}*/
 			p0 = [
+				this.fit.fixStretch.min + Math.random()*(this.fit.fixStretch.max - this.fit.fixStretch.min),
+				this.fit.mobStretch.min + Math.random()*(this.fit.mobStretch.max - this.fit.mobStretch.min),
+				this.fit.laserTilt.min + Math.random()*(this.fit.laserTilt.max - this.fit.laserTilt.min),
+				this.fit.mobTilt.min + Math.random()*(this.fit.mobTilt.max - this.fit.mobTilt.min),				
 				Math.random()*2*Math.PI,
 				Math.random()*2*Math.PI,
-				Math.random()*2*Math.PI,
-				Math.random()*2*Math.PI,
-				this.params.fit.angStretching.min + Math.random()*(this.params.fit.angStretching.max - this.params.fit.angStretching.min),
-				this.params.fit.angStretching.min + Math.random()*(this.params.fit.angStretching.max - this.params.fit.angStretching.min),
-				this.params.fit.mobTilt.min + Math.random()*(this.params.fit.mobTilt.max - this.params.fit.mobTilt.min),
-				this.params.fit.mobTilt.min + Math.random()*(this.params.fit.mobTilt.max - this.params.fit.mobTilt.min)
+				Math.random()*Math.PI,
+				Math.random()*2*Math.PI
 			];						
 			let res = nelderMead(objFunc, p0);		
 			if (res.fx < bestValue) {
@@ -421,23 +412,12 @@ VecSP.Calibration = class {
 				P = res.x;
 			}		
 		} while ((i++ < this.maxCalibIter) && (bestValue > this.maxOptimValue));
-		if (i >= this.maxIter) alert('Calibration could not converge to maxOptimValue!');		
-		console.log('bestValue: ' + bestValue);
-		console.log('optAngs:' + P);
-		this.params.localToEquatorial = new THREE.Euler(P[0], P[1], P[2]);
-		this.params.dTheta = P[3];
-		if (this.params.fit.angStretching.optimize) {
-			this.params.aPhi = P[4];
-			this.params.aTheta = P[5];
-		}
-		if (this.params.fit.mobTilt.optimize) {
-			let Y = new THREE.Vector3(0, 1, 0);
-			let Z = new THREE.Vector3(0, 0, 1);		
-			this.mob.applyAxisAngle(Y, p[6]);
-			this.mob.applyAxisAngle(Z, p[7]);
-		}				
-		let invM = new THREE.Matrix4().makeRotationFromEuler(this.params.localToEquatorial).transpose();
-		this.params.equatorialToLocal.setFromRotationMatrix(invM);
+		if (i >= this.maxIter) alert('Calibration could not converge to maxOptimValue!');				
+		
+		objFunc(P); // actualizes window.fix, window.mob and window.laser with optimized parameters P
+		this.fit.axes.fix = window.fix.clone();
+		this.fit.axes.mob = window.mob.clone();
+		this.fit.axes.laser = window.laser.clone();
 
 		this.stats.dev = 0;
 		this.stats.min = 1e3;
@@ -465,10 +445,9 @@ VecSP.Calibration = class {
 	 * @returns {VecSP.Equatorial} celestial coordinate
 	 */
 	equatorialFromStep (s, d = new Date()) {		
-		let laser = this.params.laser.clone();		
-		laser.applyAxisAngle(this.params.mob, s.mobToRad()*this.params.aTheta + this.params.dTheta);
-		laser.applyAxisAngle(this.params.fix, s.fixToRad()*this.params.aPhi);
-		laser.applyEuler(this.params.localToEquatorial);
+		let laser = this.fit.axes.laser.clone();		
+		laser.applyAxisAngle(this.fit.axes.mob, s.mobToRad()*this.fit.mobStretch.value);
+		laser.applyAxisAngle(this.fit.axes.fix, s.fixToRad()*this.fit.fixStretch.value);		
 		let eq = new VecSP.Equatorial();
 		eq.fromVector3(laser);		
 		eq.ra += (d - this.t0)/3.6e6;
@@ -481,20 +460,13 @@ VecSP.Calibration = class {
 	 * @returns {VecSP.Step} local coordinate
 	 */
 	stepFromEquatorial (eq0, d = new Date()) {
-		let eq = eq0.clone();		
-		eq.ra -= (d - this.t0)/3.6e6;
-		window.eq3 = eq.toVector3();
-		window.eq3.applyEuler(this.params.equatorialToLocal);
-		window.fix = this.params.fix.clone();
-		window.mob = this.params.mob.clone();
-		window.laser = this.params.laser.clone();	
-		window.dTheta = this.params.dTheta;
-		window.aTheta = this.params.aTheta;
-		window.aPhi = this.params.aPhi;
-		//let regPhi = function (phi) {return (10*Math.PI+phi)%(2*Math.PI);}	
-		//let regTheta = function (theta) {return (10*Math.PI+theta)%Math.PI;}	
-		//let regPhi = function (phi) {return phi;}	
-		//let regTheta = function (theta) {return theta;}	
+		window.eq = eq0.clone();		
+		window.eq.ra -= (d - this.t0)/3.6e6;		
+		window.fix = this.fit.axes.fix;
+		window.mob = this.fit.axes.mob;
+		window.laser = this.fit.axes.laser;
+		window.fixStretch = this.fit.fixStretch.value;
+		window.mobStretch = this.fit.mobStretch.value;			
 		let optimFunction = function (s) {
 			let laser = window.laser.clone();					
 			let penal = 0.0;
@@ -502,19 +474,14 @@ VecSP.Calibration = class {
 			if (s[0] < 0.0) penal += -s[0];
 			if (s[1] > Math.PI) penal += s[1] - Math.PI;
 			if (s[1] < 0.0) penal += -s[1];
-			laser.applyAxisAngle(window.mob, s[1]*window.aTheta + window.dTheta);
-			laser.applyAxisAngle(window.fix, s[0]*window.aPhi);			
-			return (1.0 - laser.dot(window.eq3))**0.5 + penal;			
+			laser.applyAxisAngle(window.mob, s[1]*window.mobStretch);
+			laser.applyAxisAngle(window.fix, s[0]*window.fixStretch);			
+			return (1.0 - laser.dot(window.eq))**0.5 + penal;			
 		}
 		let optAngs;
 		let bestValue = 1.0;
 		let i = 0;
-		do {						
-			/*let res = optimjs.minimize_Powell(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
-			if (res.fncvalue < bestValue) {
-				bestValue = res.fncvalue;
-				optAngs = res.argument;
-			}*/
+		do {
 			let res = nelderMead(optimFunction, [Math.random()*2*Math.PI, Math.random()*Math.PI]);		
 			if (res.fx < bestValue) {
 				bestValue = res.fx;
@@ -525,17 +492,6 @@ VecSP.Calibration = class {
 		let step = new VecSP.Step();		
 		step.fixFromRad(optAngs[0]);
 		step.mobFromRad(optAngs[1]);
-		//console.log('-------------------');
-		//console.log('optAngs: ' + optAngs);
-		//console.log(bestValue);
-		//console.log(step);
-		//let eqFromStep = this.equatorialFromStep(step);
-		//console.log(eqFromStep);
-		//let angDiff = eqFromStep.toVector3().angleTo(eq0.toVector3())*180.0/Math.PI;
-		//console.log('Angle to: ' + angDiff);
-		//console.log(this.axes.fix);
-		//console.log(this.axes.mob);
-		//console.log(this.axes.laser);
 		return step;
 	}
 	/**
@@ -545,7 +501,7 @@ VecSP.Calibration = class {
 	clone () {
 		let Calib = new VecSP.Calibration();
 		Calib.stars = this.stars;		
-		for (let x in this.params) Calib.params[x] = this.params[x];				
+		for (let x in this.fit) Calib.fit[x] = this.fit[x];				
 		Calib.t0 = this.t0;		
 		for (let x in this.stats) Calib.stats[x] = this.stats[x];
 		Calib.axesTrial = this.axesTrial;
