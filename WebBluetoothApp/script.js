@@ -8,6 +8,7 @@ import './libs/orb.v2.min.js';
 /* --------------------
   Frontend constants */
 
+const $controllerSVGcontainer = document.getElementById("controllerSVGcontainer");
 const $stepSizeR = document.getElementById("stepSizeR");
 const $stepSizeRList = document.getElementById("stepSizeRList");
 const $stepSizeT = document.getElementById("stepSizeT");
@@ -78,6 +79,11 @@ const $speakStarName = document.getElementById("speakStarName");
 const $speakBayer = document.getElementById("speakBayer");
 const $speakConstellation = document.getElementById("speakConstellation");
 const $speakHipparcos = document.getElementById("speakHipparcos");
+const $controllerWidth = document.getElementById("controllerWidth");
+const $controllerWidthValue = document.getElementById("controllerWidthValue");
+
+const colorMenuSelected = "#339333";
+const colorMenuUnselected = "#893838";
 
 const stepSizeInputDatalistParams =  
 {
@@ -257,17 +263,21 @@ const eclipticDivisions = 30;
 window.App = {};
 
 /** Set the actual window choosen by the app menu. */
-App.setWindow = function (windowId) {
-	let windows = document.getElementsByClassName("window");
-	for (let w of windows) w.style.display = "none";  
-	document.getElementById(windowId).style.display = "grid";  
-  if (windowId == "appCommW") $commStatus.scrollTop = $commStatus.scrollHeight;
+App.setWindow = function (windowId, menuElem) {
+	let windows = document.getElementsByClassName("window");  
+	for (let w of windows) w.style.display = "none";
+  for (let m of document.getElementsByClassName("menuBtn")) m.style.backgroundColor = colorMenuUnselected;
+  menuElem.style.backgroundColor = colorMenuSelected;
+	document.getElementById(windowId).style.display = "block";  
+  if (windowId == "appCommW") $commStatus.scrollTop = $commStatus.scrollHeight;  
+  if (windowId == "appCommW" || windowId == "appConfigW") document.getElementById("appControllerDiv").style.display = "none";
+  else document.getElementById("appControllerDiv").style.display = "block";
 }
 
 App.changeNav = function (id) {
   let elem = document.getElementById(id);
-  if (window.getComputedStyle(elem).getPropertyValue('display') == "grid") elem.style.display = "none";
-  else elem.style.display = "grid";
+  if (window.getComputedStyle(elem).getPropertyValue('display') == "block") elem.style.display = "none";        
+  else elem.style.display = "block";    
 }
 
 /**Return actual time in the format: hours minutes seconds. */
@@ -473,9 +483,7 @@ App.loadItemsDataNames = function () {
   itemsData["constellation"] = consData;
   itemsData["clines"] = clinesData;
   itemsData["cbounds"] = cboundsData;
-  itemsData["asterisms"] = asterismsData;
-
-  console.log(itemsNames["constellation"]);  
+  itemsData["asterisms"] = asterismsData;  
 }
 
 
@@ -581,8 +589,7 @@ CalibW.updateCalib = async function (action) {
     if ($calibObjectsCombo.innerText != null) {              
         if (action == "add") {           
           if (await BleInstance.readActSteps()) {
-            let opt = App.valueSelected($calibObjectsCombo);            
-            console.log(opt);
+            let opt = App.valueSelected($calibObjectsCombo);                        
             //let track = App.valueSelected($navTracksCombo).split("|");
             //let trackType = track[0];
             //let trackId = track[1];
@@ -624,7 +631,7 @@ CalibW.calcCalib = function () {
     CalibTemp.fit.fixStretch.optimize = $fixStretchOptim.checked;
     CalibTemp.fit.mobStretch.optimize = $mobStretchOptim.checked;
     CalibTemp.fit.laserTilt.optimize = $laserTiltOptim.checked;
-    CalibTemp.fit.mobTilt.optimize = $mobTiltOptim.checked;
+    CalibTemp.fit.mobTilt.optimize = $mobTiltOptim.checked;    
     CalibTemp.calcCalib(calibStars)
     $calibLog.innerHTML += '-------------------------------------\n';
     $calibLog.innerHTML += window.App.time() + 'New calibration performed with stars:\n';
@@ -665,16 +672,18 @@ CalibW.acceptCalib = function () {
     let minStep = (CalibInstance.stats.min*calibStars[0].step.maxSteps/360).toFixed(1);
     let max = CalibInstance.stats.max.toFixed(1);
     let maxStep = (CalibInstance.stats.max*calibStars[0].step.maxSteps/360).toFixed(1);
-    $calibInfo.innerHTML += 'Calibration parameters:\n';
+    $calibInfo.innerHTML += '\nStars angle deviations:\n';
     $calibInfo.innerHTML += '-----------------------\n';
-    $calibInfo.innerHTML += 'Average angle deviation: ' + dev + '° (' + devStep + ' steps).\n';
-    $calibInfo.innerHTML += 'Minimum angle deviation of ' + min + '° (' + minStep + ' steps).\n';
-    $calibInfo.innerHTML += 'Maximum angle deviation of ' + max + '° (' + maxStep + ' steps).\n';
-    $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n\n';    
-    $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibInstance.fit.fixStretch.value + '\n';
-    $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibInstance.fit.mobStretch.value + '\n';
-    $calibLog.innerHTML += 'Laser axis tilt angle: ' + CalibInstance.fit.laserTilt.value*180/Math.PI; + '°\n';
-    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibInstance.fit.mobTilt.value*180/Math.PI; + '°\n';
+    $calibInfo.innerHTML += '-> Avg: ' + dev + '° (' + devStep + ' steps).\n';
+    $calibInfo.innerHTML += '-> Min: ' + min + '° (' + minStep + ' steps).\n';
+    $calibInfo.innerHTML += '-> Max: ' + max + '° (' + maxStep + ' steps).\n';
+    $calibInfo.innerHTML += '\nFitting paramenters:\n';
+    $calibInfo.innerHTML += '-----------------------\n';
+    $calibInfo.innerHTML += '-> Fix strech: ' + CalibInstance.fit.fixStretch.value + '\n';
+    $calibInfo.innerHTML += '-> Mob strech: ' + CalibInstance.fit.mobStretch.value + '\n';
+    $calibInfo.innerHTML += '-> Laser tilt: ' + CalibInstance.fit.laserTilt.value*180/Math.PI; + '° \n';
+    $calibInfo.innerHTML += '-> Mob tilt: ' + CalibInstance.fit.mobTilt.value*180/Math.PI; + '° \n\n';
+    $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n\n';        
   }
 }
 
@@ -912,8 +921,7 @@ NavW.resetTrack = function () {
   trackPath.paths = [];
   trackPath.coords = [];
   trackPath.fullPath = new PathSP.Path();  
-  trackPath.step = 0;
-  console.log('resetou');
+  trackPath.step = 0;  
 }
 
 /**
@@ -934,12 +942,12 @@ CommW.startComm = function () {
 
 
 /**
- * A namespace for the Help Window functions in the client app.
+ * A namespace for the Config Window functions in the client app.
  * @namespace
  */
-window.HelpW = {};
+window.ConfigW = {};
 
-HelpW.updatePointer = function (option) {
+ConfigW.updatePointer = function (option) {
   switch (option) {
     case 'lineSpeed':
       $lineSpeedT.innerHTML = $lineSpeedR.value;
@@ -965,9 +973,14 @@ HelpW.updatePointer = function (option) {
   }
 }
 
-HelpW.checkStatus = async function () {
+ConfigW.checkStatus = async function () {
   await BleInstance.checkStatus();
   document.getElementById("statusLog").innerHTML = String(BleInstance.serverStatus);
+}
+
+ConfigW.updateControllerWidth = function () {
+  $controllerWidthValue.innerHTML = $controllerWidth.value + "%";
+  $controllerSVGcontainer.style.width = $controllerWidthValue.innerHTML;
 }
 
 
@@ -1072,10 +1085,8 @@ if (window.speechSynthesis.onvoiceschanged !== undefined) {
 
 
 
-
-
 //Set initial window:
-App.setWindow("appCommW");
+App.setWindow("appCalibW", document.getElementById("calibM"));
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
@@ -1119,13 +1130,16 @@ $trackDate.value = App.localDateString(new Date());
 $trackTime.value = App.localTimeString(new Date());
 
 //Set pointer config initial options:
-HelpW.updatePointer('lineSpeed');
-HelpW.updatePointer('circleSpeed');
-HelpW.updatePointer('lineOn');
-HelpW.updatePointer('lineAng');
-HelpW.updatePointer('circleOn');
-HelpW.updatePointer('circleAp');
-HelpW.updatePointer('circleAng');
+ConfigW.updatePointer('lineSpeed');
+ConfigW.updatePointer('circleSpeed');
+ConfigW.updatePointer('lineOn');
+ConfigW.updatePointer('lineAng');
+ConfigW.updatePointer('circleOn');
+ConfigW.updatePointer('circleAp');
+ConfigW.updatePointer('circleAng');
+
+//Set initial controller width:
+ConfigW.updateControllerWidth();
 
 
 //Initialize calib stars list:

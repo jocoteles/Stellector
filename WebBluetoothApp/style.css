@@ -1,8 +1,23 @@
 /* CSS files add styling rules to your content */
 
 body {
-  font-family: "Lato", sans-serif;
-  text-align: center;  
+  font-family: "Calibri", sans-serif;
+  text-align: center;
+  background-color: rgb(80, 80, 80);  
+}
+
+select {
+  margin-bottom: 0.5em;
+}
+
+button {
+  background-color: #339333;
+  border-radius: 5px;
+  border: solid thin black;
+}
+
+td {
+  text-align: left;
 }
 
 #appW {  
@@ -10,82 +25,100 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;    
+}  
+
+#controllerSVGcontainer {
+  margin-top: 5%;
+  margin-bottom: 5%;
+  margin-left: auto;
+  margin-right: auto;    
 }
-  #appMenuW {
-    display: grid;
-  }
 
-  #appController {
-    display: grid;
-  }
+#startCommBtn {
+  height: 4em;
+  margin: 10% 20%; 
+}
 
-  #appCalibW {
-    display: grid;                
-  }
-    #appCalibStarsW {
-      display: grid;
-    }
-    #appCalibListW {
-      display: grid;
-    }
-    #appCalibInfoW {
-      display: none;
-    }
-    #appCalibLogW {
-      display: none;
-    }
+.tab {  
+  background-color: #999;
+  border: solid thin black;
+  border-top: none;
+  padding: 2%;
+  border-radius: 0 0 0.5em 0.5em;
+}
 
-  #appNavW {
-    display: grid;    
-    padding-top: 10%;        
-  }
-    #appNavControlW {
-      display: grid;      
-    }
-    #appNavCoordW {
-      display: grid;
-    }
-    #appNavStarsW {
-      display: grid;      
-    }
-    #appNavTracksW {
-      display: grid;
-    }    
-    #appNavCalibW {
-      display: grid;      
-    }
+.frame {
+  border: solid thin black;  
+  padding: 2%;
+  margin: 1%;  
+}
 
-  #appCommW {
-    display: grid;
-    grid-row: 2;
-    padding-top: 10%;      
-  }
-  
-  #appHelpW {
-    display: grid;                
-  }
+.filterIn {
+  width: 80%;
+}
 
-.transitionButton {
-  display: block;
-  width: 100%;
+.filterLabel {
+  text-align: right;
+}
+
+.execBtn {
+  margin: 2%;
+  padding: 0.5em;
+}
+
+.rightBtn {  
+  padding: 0.75em;
+  width: 7em;
+  border-radius: 0% 50% 50% 0%;
+  margin-left: 0%;
+}
+
+.leftBtn {
+  padding: 0.75em;
+  width: 7em;
+  border-radius: 50% 0% 0% 50%;
+  margin-right: 0%;
+}
+
+.transitionButton {  
+  width: 100%;  
+  border: solid thin black;
+  background-color: #DDD;
+  border-radius: 0px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 0.5em 0.5em 0 0;
 }
 
 
 .menuBtn {
   justify-content: center;
   align-items: center;    
-  background-color: lightblue;
+  background-color: #339333;
   cursor: pointer;  
   padding: 5%;
-  margin: 10%;  
+  margin: 10%;
+  border-radius: 10px;
+  color: black;
+  border: solid thin black;
 }
 
-.direcBtn {
-  display: flex;
-  justify-content: center;
-  align-items: center;    
-  background-color: #f3d0d6;
-  cursor: pointer;  
-  padding: 5%;
-  margin: 5%;  
+.inputCoord {
+  width: 50%;
+}
+
+input[type=number],input[type=text]{
+  border: none;
+  border-bottom: solid thin black;
 } 
+
+
+#trackDate {
+  width: 125px;
+}
+
+#stepSizeR {
+  width: 80%;
+}
