@@ -34,11 +34,11 @@
   <body>
   
     <div id="appW" style="display:grid; grid-template-rows:2em 1fr;">
-      <div id="appMenuW" style="display:grid; grid-row:1; grid-template-columns:repeat(5,1fr);">
+      <div id="appMenuW" style="display:grid; grid-row:1; grid-template-columns:repeat(5,1fr);">        
+        <div class="menuBtn" id="commM" onclick="App.setWindow('appCommW', this)">Comm</div>
+        <div class="menuBtn" id="calibM" onclick="App.setWindow('appCalibW', this)">Calib</div> 
         <div class="menuBtn" id="navM" onclick="App.setWindow('appNavW', this)">Nav</div>
-        <div class="menuBtn" id="findM" onclick="App.setWindow('appFindW', this)">Find</div>
-        <div class="menuBtn" id="calibM" onclick="App.setWindow('appCalibW', this)">Calib</div>
-        <div class="menuBtn" id="comM" onclick="App.setWindow('appCommW', this)">Comm</div>
+        <div class="menuBtn" id="findM" onclick="App.setWindow('appFindW', this)">Find</div>       
         <div class="menuBtn" id="configM" onclick="App.setWindow('appConfigW', this)">Config</div>
       </div>
 
@@ -47,10 +47,10 @@
         <div class="tab" id="appController">        
           <div id="controllerSVGcontainer">
             <svg viewBox="0 0 120 120" >
-              <polygon id="d12" оnclick="Controller.sendStepSize(this.id)" points="60,60 24,24 48,0 72,0 96,24" style="fill:#2F872F;stroke:black;"  />
-              <polygon id="d10" оnclick="Controller.sendStepSize(this.id)" points="60,60 24,96 48,120 72,120 96,96" style="fill:#2F872F;stroke:black;"/>
-              <polygon id="d01" оnclick="Controller.sendStepSize(this.id)" points="60,60 24,96 0,72 0,48 24,24" style="fill:#893838;stroke:black;"/>
-              <polygon id="d21" оnclick="Controller.sendStepSize(this.id)" points="60,60 96,24 120,48 120,72 96,96" style="fill:#893838;stroke:black;"/>
+              <polygon id="d12" onclick="Controller.sendStepSize(this.id)" points="60,60 24,24 48,0 72,0 96,24" style="fill:#2F872F;stroke:black;"/>
+              <polygon id="d10" onclick="Controller.sendStepSize(this.id)" points="60,60 24,96 48,120 72,120 96,96" style="fill:#2F872F;stroke:black;"/>
+              <polygon id="d01" onclick="Controller.sendStepSize(this.id)" points="60,60 24,96 0,72 0,48 24,24" style="fill:#893838;stroke:black;"/>
+              <polygon id="d21" onclick="Controller.sendStepSize(this.id)" points="60,60 96,24 120,48 120,72 96,96" style="fill:#893838;stroke:black;"/>
             </svg>
           </div>
           <div style="display:grid; grid-template-columns:3fr 1fr;">
@@ -64,10 +64,18 @@
         </div>
       </div>
       
+      <div class="window" id="appCommW">
+        <div class="tab" style="margin-top:1em;border-radius:0.5em;">
+        <button id="startCommBtn" onclick="CommW.startComm()">Start or Restart communication</button>
+        <label>Communication Log</label>
+        <textarea id="commStatus" style="width:100%;padding:0%;" rows="10" readonly></textarea>        
+        </div>
+      </div>
+
       <div class="window" id="appCalibW">                
         
         <button class="transitionButton" id="appCalibListBtn" onclick="App.changeNav('appCalibListW')">Calibration Setup</button>
-        <div class="tab" id="appCalibListW" style="grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">          
+        <div class="tab" id="appCalibListW" style="display:none; grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">          
             <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
               <div style="grid-column:1/3;"><button class="execBtn" onclick="CalibW.updateCalib('add')">ADD CALIB OBJECT</button></div>                      
               <div style="display:grid; grid-column:1;">
@@ -86,7 +94,7 @@
           </div>
           <div class="frame" style="display:grid; grid-template-columns: 1.2fr 1fr 1fr;">
             <label style="grid-column:1/4;margin-bottom:0.3em;">Calibration List</label>
-            <select style="grid-column:1;" id="calibListCombo" style="width:80%;"></select>            
+            <div style="grid-column:1;"><select id="calibListCombo" style="width:80%;"></select></div>
             <button style="grid-column:2;margin:0.3em;" onclick="CalibW.updateCalib('remThis')">remove this</button>
             <button style="grid-column:3;margin:0.3em;" onclick="CalibW.updateCalib('remAll')">remove all</button>            
           </div>          
@@ -97,12 +105,12 @@
         </div>
         
         <button class="transitionButton" id="appCalibInfoBtn" onclick="App.changeNav('appCalibInfoW')">Actual Calibration Info</button>
-        <div class="tab" id="appCalibInfoW">        
+        <div class="tab" id="appCalibInfoW" style="display:none;">        
           <textarea id="calibInfo" style="width:100%;padding:0%;" rows="10" readonly></textarea>  
         </div>
         
         <button class="transitionButton" id="appCalibLogBtn" onclick="App.changeNav('appCalibLogW')">Calibration Log</button>
-        <div class="tab" id="appCalibLogW">          
+        <div class="tab" id="appCalibLogW" style="display:none;">          
           <textarea id="calibLog" style="width:100%;padding:0%;" rows="10" readonly></textarea>  
         </div>
 
@@ -111,15 +119,15 @@
       <div class="window" id="appNavW">        
         
         <button class="transitionButton" id="appNavStarsBtn" onclick="App.changeNav('appNavStarsW')">Sky Objects</button>
-        <div class="tab" id="appNavStarsW">
+        <div class="tab" id="appNavStarsW" style="display:none;">
           
           <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
             <div style="display:grid; grid-column:1;">
               <div>Object type:</div>
               <div><select id="navObjectsTypeCombo" style="width:80%;" onchange="App.changeObjectsType(this)"></select></div>                        
               <div>Object selected:</div>
-              <div><select id="navObjectsCombo" style="width:80%;"></select></div>            
-              <div><button onclick="NavW.showCoords()">show Coords</button></div>
+              <div><select id="navObjectsCombo" style="width:80%;"></select></div>  
+              <button style="padding:1em; margin:0 2.5em 0 2.5em;" class="execBtn" onclick="NavW.goStar('now')">go Now</button>                        
             </div>
 
             <div style="display:grid; grid-column:2; grid-template-columns:1fr 3fr;">
@@ -133,14 +141,9 @@
               <div class="filterLabel">Desig:</div><div><input class="filterIn" id="desigNfilter" type="text"></div>
               <div class="filterLabel">M:</div><div><input class="filterIn" id="mNfilter" type="text"></div>
               <div class="filterLabel">NGC:</div><div><input class="filterIn" id="ngcNfilter" type="text"></div>
-            </div>
-
-            <div style="grid-column:1/3; margin-top:1%;">
-              <label>Pointer style: </label>
-              <select id="objectPointerStyle"></select>
-              <button class="execBtn" onclick="NavW.goStar('now')">go Now</button>
-            </div>
-
+              <button style="grid-column:1/3; margin-top:0.5em; padding:0.1em;" onclick="NavW.showCoords()">show Coordinates</button>
+            </div>            
+            
           </div>
                               
           <div class="frame">
@@ -157,15 +160,20 @@
               <tr>
                 <td style="text-align:right;"><button class="leftBtn" onclick="NavW.goStar('-1')">step Past</button></td>
                 <td style="text-align:left;"><button class="rightBtn" onclick="NavW.goStar('+1')">step Future</button></td>                      
-                <td><button style="text-align:center;" class="execBtn" onclick="NavW.goStar('date')">goDateTime</button></td>
+                <td><button style="text-align:center;" class="execBtn" onclick="NavW.goStar('date')">go DateTime</button></td>
               </tr>            
             </table>
+          </div>
+
+          <div>
+            <label>Pointer style: </label>
+            <select id="objectPointerStyle"></select>            
           </div>
           
         </div>        
 
         <button class="transitionButton" id="appNavSTracksBtn" onclick="App.changeNav('appNavTracksW')">Sky Tracks</button>
-        <div class="tab" id="appNavTracksW">
+        <div class="tab" id="appNavTracksW" style="display:none;">
           <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
             <div style="display:grid; grid-column:1;">
               <div>Track type:</div>
@@ -209,7 +217,7 @@
         </div>
 
         <button class="transitionButton" id="appNavCoordBtn" onclick="App.changeNav('appNavCoordW')">Coordinates</button>      
-        <div class="tab" id="appNavCoordW">     
+        <div class="tab" id="appNavCoordW" style="display:none;">     
           <div class="frame">
             <table style="width:100%;">
               <tr>
@@ -234,6 +242,10 @@
                 <td style="text-align:center;"><button class="execBtn" onclick="NavW.readCoords()">read Coords</button></td>
               </tr>
             </table>            
+            <div style="margin-top: 0.5em;">
+              <label>Pointer style: </label>
+              <select id="coordsPointerStyle"></select>
+            </div>                    
           </div>     
           <div class="frame" style="display:grid; grid-template-columns:2fr 1fr;">
             <table style="width:100%; grid-column:1;">
@@ -247,27 +259,18 @@
               </tr>
             </table>
             <button style="grid-column:2;" onclick="NavW.goSteps()">go Steps</button>
-          </div>                    
-          <div>
-            <label>Pointer style: </label>
-            <select id="coordsPointerStyle"></select>
-          </div>                    
+          </div>                              
         </div>        
 
-      </div>
+      </div>      
 
-      <div class="window" id="appCommW">
-        <div class="tab" style="margin-top:1em;border-radius:0.5em;">
-        <button id="startCommBtn" onclick="CommW.startComm()">Start or Restart communication</button>
-        <label>Communication Log</label>
-        <textarea id="commStatus" style="width:100%;padding:0%;" rows="10" readonly></textarea>        
-        </div>
+      <div class="window" id="appFindW">
       </div>
 
       <div class="window" id="appConfigW">
 
         <button class="transitionButton" id="appConfigPointerBtn" onclick="App.changeNav('appConfigPointerW')">Pointer Config</button>
-        <div class="tab" id="appConfigPointerW">          
+        <div class="tab" id="appConfigPointerW" style="display:none;">          
           <div>
             <label>Line speed </label>
             <input id="lineSpeedR" type="range" onchange="ConfigW.updatePointer('lineSpeed')" list="lineSpeedRList">            
@@ -300,6 +303,7 @@
           <div>
             <label>Circle aperture </label>
             <input id="circleApR" type="range" min="0.5" max="45" step="0.5" value = "2.0" onchange="ConfigW.updatePointer('circleAp')">            
+            <datalist id="circleApRList"></datalist>            
             <label id="circleApT"></label>
           </div>          
           <div>
@@ -310,7 +314,7 @@
         </div>
 
         <button class="transitionButton" id="appConfigSpeechBtn" onclick="App.changeNav('appConfigSpeechW')">Speech Config</button>
-        <div class="tab" id="appConfigSpeechW">
+        <div class="tab" id="appConfigSpeechW" style="display:none;">
           <div>
             <label for="speechRate">Rate</label>
             <input type="range" id="speechRate" min="0.5" max="2" value="1" step="0.1">
@@ -331,7 +335,7 @@
         </div>
 
         <button class="transitionButton" id="appConfigCalibBtn" onclick="App.changeNav('appConfigCalibW')">Calibration Config</button>
-        <div class="tab" id="appConfigCalibW">
+        <div class="tab" id="appConfigCalibW" style="display:none;">
           <div>
             <input type="checkbox" id="fixStretchOptim" checked="true"><label>fix stretching optimization</label><br>
             <input type="checkbox" id="mobStretchOptim" checked="true"><label>mob stretching optimization</label><br>
@@ -340,8 +344,7 @@
             <div class="frame">
               <div style="margin-bottom:0.3em;"><label for="angFixStretch">fix angle stretching: </label><input id="angFixStretch" type="text" size="9"></div>
               <div style="margin-bottom:0.3em;"><label for="angMobStretch">mob angle stretching: </label><input id="angMobStretch" type="text" size="9"></div>
-              <div style="margin-bottom:0.3em;"><label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng" size="9"></div>
-              <div style="margin-bottom:0.3em;"><label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng" size="9"></div>
+              <div style="margin-bottom:0.3em;"><label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng" size="9"></div>              
               <div style="margin-bottom:0.3em;"><label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng" size="9"></div>            
               <input type="checkbox" id="useParamsCalib" checked="true"><label for="useParamsCalib">Use above params for calibration</label>
             </div>          
@@ -349,7 +352,7 @@
         </div>
 
         <button class="transitionButton" id="appConfigControllerBtn" onclick="App.changeNav('appConfigControllerW')">Controller Config</button>
-        <div class="tab" id="appConfigControllerW" style="grid-template-columns:1fr 2fr 1fr;">
+        <div class="tab" id="appConfigControllerW" style="display:none; grid-template-columns:1fr 2fr 1fr;">
           <label for="controllerWidth">Width</label><input type="range" id="controllerWidth" onchange="ConfigW.updateControllerWidth()" min="50" max="100" value="75" step="5"><label id="controllerWidthValue">50</label>
         </div>
       </div>

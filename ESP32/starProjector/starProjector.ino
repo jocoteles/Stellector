@@ -309,14 +309,15 @@ void execPath() {
     Serial.print("thA: ");Serial.println(thA);
     Serial.print("ph: ");Serial.println(ph);
     Serial.print("th: ");Serial.println(th);*/
+    laser(laserP[k]);
     for (uint16_t i = 1; i <= N; i++) {
       ph = phA + round(i*fph);
       th = thA + round(i*fth);            
       stepperFix(ph);
-      stepperMob(th);      
-      delayMicroseconds(delayP[k]*DELAY_FACTOR);
-    }
-    laser(laserP[k]);      
+      stepperMob(th);            
+      delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
+    }          
+    delayMicroseconds(delayP[k]*DELAY_FACTOR);
     phA = ph;
     thA = th;
   }  

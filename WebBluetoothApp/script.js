@@ -27,10 +27,10 @@ const $circleOnR = document.getElementById("circleOnR");
 const $circleOnRList = document.getElementById("circleOnRList");
 const $circleOnT = document.getElementById("circleOnT");
 const $circleApR = document.getElementById("circleApR");
+const $circleApRList = document.getElementById("circleApRList");
 const $circleApT = document.getElementById("circleApT");
 const $circleAngR = document.getElementById("circleAngR");
 const $circleAngT = document.getElementById("circleAngT");
-const $precisePoint = document.getElementById("precisePoint");
 const $commStatus = document.getElementById("commStatus");
 const $calibLog = document.getElementById("calibLog");
 const $calibInfo = document.getElementById("calibInfo");
@@ -85,6 +85,8 @@ const $controllerWidthValue = document.getElementById("controllerWidthValue");
 const colorMenuSelected = "#339333";
 const colorMenuUnselected = "#893838";
 
+const startingLangName = 'pt-BR';
+
 const stepSizeInputDatalistParams =  
 {
   'min': 0,
@@ -97,9 +99,10 @@ const stepSizeInputDatalistParams =
 const lineSpeedInputDatalistParams =
 {
   'min': 1,
-  'max': 7,
+  'max': 6,
   'step': 1,
-  'init': 4,
+  'init': 3,
+  'delaylist' : [500, 400, 300, 200, 100, 0],   // times 100 us
   'input': $lineSpeedR,
   'datalist': $lineSpeedRList
 };
@@ -115,9 +118,10 @@ const lineOnInputDatalistParams =
 const circleSpeedInputDatalistParams =
 {
   'min': 1,
-  'max': 7,
+  'max': 6,
   'step': 1,
-  'init': 4,
+  'init': 3,
+  'delaylist' : [500, 400, 300, 200, 100, 0],   // times 100 us
   'input': $circleSpeedR,
   'datalist': $circleSpeedRList
 };
@@ -129,6 +133,15 @@ const circleOnInputDatalistParams =
   'init': 100,
   'input': $circleOnR,
   'datalist': $circleOnRList
+};
+const circleApertureInputDatalistParams =
+{
+  'min': 0.5,
+  'max': 160,
+  'step': 0.5,
+  'init': 2.0,
+  'input': $circleApR,
+  'datalist': $circleApRList
 };
 
 const objectsLabels =
@@ -229,15 +242,15 @@ const filterComboMinLength = 0;
 let BleInstance = new CommSP.Bluetooth($commStatus);
 let CalibInstance = new VecSP.Calibration();
 let CalibTemp = new VecSP.Calibration();
-let CoordNavW = new VecSP.Equatorial(0, 0);
 
-let calibStars;
-let stepSize;
+let calibStars = [];
+let stepSize = 1;
 
 let itemsNames = {};
 let itemsData = {};
 
-let trackPath = {'paths': [], 'coords':[], 'fullPath': new PathSP.Path(), 'step': 0};
+//let trackPath = {'paths': [], 'coords':[], 'fullPath': new PathSP.Path(), 'step': 0};
+let trackCoords = {'coords':[], 'indexes': [], 'step': 0};
 
 
 /*let pointerConfig = {
@@ -433,7 +446,7 @@ App.loadItemsDataNames = function () {
     obj["geometry"]["coordinates"] = obj["properties"]["display"]; //replace coordinates with display (optional)    
   }
   
-  function coordinatesMakeLinear (data) {  
+  /*function coordinatesMakeLinear (data) {  
     for (let i = 0; i < data["features"].length; i++) {
       let cn = [];
       let carray = data["features"][i]["geometry"]["coordinates"]; 
@@ -444,7 +457,7 @@ App.loadItemsDataNames = function () {
   }
   coordinatesMakeLinear(clinesData);
   coordinatesMakeLinear(cboundsData);
-  coordinatesMakeLinear(asterismsData);
+  coordinatesMakeLinear(asterismsData);*/
 
   for (let obj of asterismsData["features"]) {            
     let id = obj["id"];
@@ -563,7 +576,7 @@ App.setInputRangeDatalist = function (params) {
  */
 window.Controller = {};
 
-Controller.sendStepSize = async function (ssId) {
+Controller.sendStepSize = async function (ssId) {    
 	let m = parseInt($stepSizeT.innerHTML);	    
 	await BleInstance.goStepSize(m, ssId);  	
 }
@@ -625,8 +638,8 @@ CalibW.calcCalib = function () {
     if ($useParamsCalib) {
       CalibTemp.fit.fixStretch.value = Number($angFixStretch.value);
       CalibTemp.fit.mobStretch.value = Number($angMobStretch.value);
-      CalibTemp.fit.laserTilt.value = Number($laserTiltAng)*Math.PI/180;
-      CalibTemp.fit.mobTilt.value = Number($mobTiltAng)*Math.PI/180;
+      CalibTemp.fit.laserTilt.value = Number($laserTiltAng.value)*Math.PI/180;
+      CalibTemp.fit.mobTilt.value = Number($mobTiltAng.value)*Math.PI/180;
     }    
     CalibTemp.fit.fixStretch.optimize = $fixStretchOptim.checked;
     CalibTemp.fit.mobStretch.optimize = $mobStretchOptim.checked;
@@ -649,9 +662,9 @@ CalibW.calcCalib = function () {
     $calibLog.innerHTML += 'Maximum angle deviation of ' + maxStar + ': ' + max + '° (' + maxStep + ' steps).\n\n';
     $calibLog.innerHTML += 'Fix angle strech factor: ' + CalibTemp.fit.fixStretch.value + '\n';
     $calibLog.innerHTML += 'Mob angle strech factor: ' + CalibTemp.fit.mobStretch.value + '\n';
-    $calibLog.innerHTML += 'Laser axis tilt angle: ' + CalibTemp.fit.laserTilt.value*180/Math.PI; + '°\n';
-    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibTemp.fit.mobTilt.value*180/Math.PI; + '°\n';
-    //alert("Calibration with " + String(calibStars.length) + " stars resulted in an average angle deviation of + dev + '° (' + devStep + ' steps). Press ACCEPT button to accept this calibration.");    
+    $calibLog.innerHTML += 'Laser axis tilt angle: ' + CalibTemp.fit.laserTilt.value*180/Math.PI + '°\n';
+    $calibLog.innerHTML += 'Mob axis tilt angle: ' + CalibTemp.fit.mobTilt.value*180/Math.PI + '°\n';
+    alert("Calibration calculated. Press ACCEPT button to accept this calibration.");    
 	}
 }
 
@@ -681,8 +694,8 @@ CalibW.acceptCalib = function () {
     $calibInfo.innerHTML += '-----------------------\n';
     $calibInfo.innerHTML += '-> Fix strech: ' + CalibInstance.fit.fixStretch.value + '\n';
     $calibInfo.innerHTML += '-> Mob strech: ' + CalibInstance.fit.mobStretch.value + '\n';
-    $calibInfo.innerHTML += '-> Laser tilt: ' + CalibInstance.fit.laserTilt.value*180/Math.PI; + '° \n';
-    $calibInfo.innerHTML += '-> Mob tilt: ' + CalibInstance.fit.mobTilt.value*180/Math.PI; + '° \n\n';
+    $calibInfo.innerHTML += '-> Laser tilt: ' + CalibInstance.fit.laserTilt.value*180/Math.PI + '°\n';
+    $calibInfo.innerHTML += '-> Mob tilt: ' + CalibInstance.fit.mobTilt.value*180/Math.PI + '°\n';
     $calibInfo.innerHTML += 'Reference date: ' + CalibInstance.stars[0].date + '\n\n';        
   }
 }
@@ -698,18 +711,19 @@ NavW.setZenith = async function () {
 	await BleInstance.setZenith();
 }
 
-NavW.goObjectStyle = async function (style) {
+NavW.goObjectStyle = async function (style, eqCoord) {
   let path = new PathSP.Path();
-  let cyclicOpt;
+  let cyclicOpt, delay;
   switch (style) {
     case "point":
-      let seg = new PathSP.Segment(CoordNavW, 1, 0);
+      let seg = new PathSP.Segment(eqCoord, 1, 0);
 	    path.addSegment(seg);            	    
       cyclicOpt = 'single';
       break;
     case "bpoint":
-      let seg0 = new PathSP.Segment(CoordNavW, 0, pointerStyles.bpoint.interval);
-      let seg1 = new PathSP.Segment(CoordNavW, 1, pointerStyles.bpoint.interval);
+      delay = lineSpeedInputDatalistParams.delaylist[Number($lineSpeedR.value)-1];
+      let seg0 = new PathSP.Segment(eqCoord, 0, delay);
+      let seg1 = new PathSP.Segment(eqCoord, 1, delay);
       path.addSegment(seg0);
       path.addSegment(seg1);
       cyclicOpt = 'forward';
@@ -717,10 +731,10 @@ NavW.goObjectStyle = async function (style) {
     case "circle":
       let ap = 0.5*$circleApR.value*Math.PI/180;      
       let inc = $circleAngR.value*Math.PI/180;  
-      let delay = Number($circleSpeedR.value)*100;      
+      delay = circleSpeedInputDatalistParams.delaylist[Number($circleSpeedR.value)-1];      
       let cp = Math.round(Number($circleOnR.value)/25);
       let lp = [cp, 4-cp];    
-      let circle = new PathSP.makeCircle(CoordNavW, ap, inc, lp, delay);
+      let circle = new PathSP.makeCircle(eqCoord, ap, inc, lp, delay);
 	    path.addPath(circle);
       cyclicOpt = 'forward';
       break;
@@ -730,10 +744,11 @@ NavW.goObjectStyle = async function (style) {
 }
 
 NavW.goEquatorial = async function () {	
-  CoordNavW.ra = Number($raF.value);
-  CoordNavW.dec = Number($decF.value);
+  let eqCoord = new VecSP.Equatorial();
+  eqCoord.ra = Number($raF.value);
+  eqCoord.dec = Number($decF.value);
   let style = $coordsPointerStyle.value;
-  await NavW.goObjectStyle(style);
+  await NavW.goObjectStyle(style, eqCoord);
 }
 
 NavW.goSteps = async function () {	
@@ -746,25 +761,26 @@ NavW.goSteps = async function () {
 }
 
 NavW.readCoords = async function () {
-  if (await BleInstance.readActSteps()) {				
-	  	CoordNavW = CalibInstance.equatorialFromStep(BleInstance.actStep);
-      $fixI.value = BleInstance.actStep.fix;
-      $mobI.value = BleInstance.actStep.mob;
-      $raF.value = CoordNavW.ra.toFixed(4); 
-      $decF.value = CoordNavW.dec.toFixed(4);           
-	  	NavW.updateCoordSys($raF);
-      NavW.updateCoordSys($decF);
+  if (await BleInstance.readActSteps()) {		
+    let eqCoord = new VecSP.Equatorial();		
+    eqCoord = CalibInstance.equatorialFromStep(BleInstance.actStep);
+    $fixI.value = BleInstance.actStep.fix;
+    $mobI.value = BleInstance.actStep.mob;
+    $raF.value = eqCoord.ra.toFixed(4); 
+    $decF.value = eqCoord.dec.toFixed(4);           
+    NavW.updateCoordSys($raF);
+    NavW.updateCoordSys($decF);
   }
 }
 
 NavW.showCoords = function () {  
   let opt = App.valueSelected($navObjectsCombo);      
-  CoordNavW = App.equatorialFromObjectData(opt);
-  $raF.value = CoordNavW.ra.toFixed(4);
-  $decF.value = CoordNavW.dec.toFixed(4);  
+  let eqCoord = App.equatorialFromObjectData(opt);
+  $raF.value = eqCoord.ra.toFixed(4);
+  $decF.value = eqCoord.dec.toFixed(4);  
   NavW.updateCoordSys($raF);
   NavW.updateCoordSys($decF);
-  let step = CalibInstance.stepFromEquatorial(CoordNavW);
+  let step = CalibInstance.stepFromEquatorial(eqCoord);
   $fixI.value = step.fix;
   $mobI.value = step.mob;
 }
@@ -808,7 +824,7 @@ NavW.timeStepCheck = function ($elem) {
   let max = Number($elem.max);    
   if (value < min) value = min;
   if (value > max) value = max;
-  $elem.value = Math.round(value);    
+  $elem.value = Math.trunc(value);
 }
 
 /*NavW.timeTest = function ($elem) {
@@ -837,91 +853,85 @@ NavW.goStar = async function (timeOpt) {
   }
   $objDate.value = App.localDateString(date);
   $objTime.value = App.localTimeString(date);
-  CoordNavW = App.equatorialFromObjectData(opt, date);
+  let eqCoord = App.equatorialFromObjectData(opt, date);
   
-  await NavW.goObjectStyle(style);
-
-  //Simulation:
-  /*let theorEqVec = CoordNavW.toVector3();
-  optimStep = CalibInstance.stepFromEquatorial(theorEqVec);
-  optimStepVec = optimStep.toVector3();
-  console.log('--------------------------------------');
-  console.log("Nominal: Ra " + CoordNavW.ra + ", Dec: " + CoordNavW.dec);
-  console.log("Optimiz: Fix " + optimStep.fix + ", Mob: " + optimStep.mob);
-  console.log("Angle deviation: " + String(theorEqVec.angleTo(optimStepVec)*Math.PI/180));*/
+  await NavW.goObjectStyle(style, eqCoord); 
 }
 
-NavW.goTrack = async function (opt) {  
-  if (trackPath.paths.length == 0) {    
-    let track = App.valueSelected($navTracksCombo).split("|");
-    let trackType = track[0];
-    let trackId = track[1];
+NavW.goTrack = async function (opt) { 
+  if (trackCoords.coords) {
+    let circle = App.valueSelected($trackPointerStyle).includes('circle');
+    let solid = App.valueSelected($trackPointerStyle).includes('solid');
+    let dashed = App.valueSelected($trackPointerStyle).includes('dashed');          
+    let ldelay = lineSpeedInputDatalistParams.delaylist[Number($lineSpeedR.value)-1];
+    let cdelay = circleSpeedInputDatalistParams.delaylist[Number($circleSpeedR.value)-1];      
+    let lp = Math.round(Number($lineOnR.value)/25);      
+    let llp = solid ? [1, 0] : [lp, 4-lp];
+    let cp = Math.round(Number($circleOnR.value)/25);
+    let clp = [cp, 4-cp];
+    let linc = $lineAngR.value*Math.PI/180;
+    let cinc = $circleAngR.value*Math.PI/180;
+    let cap = $circleApR.value*Math.PI/180;
     let date;
     if ($trackAtDatetime.checked) date = new Date($trackDate.value+'T'+$trackTime.value);
     else date = new Date();    
-    let coords = App.getCoordinates(trackType, trackId);        
-    let trackArray = [];    
-    if (coords) {      
-      let circle = App.valueSelected($trackPointerStyle).includes('circle');
-      let solid = App.valueSelected($trackPointerStyle).includes('solid');
-      let dashed = App.valueSelected($trackPointerStyle).includes('dashed');      
-      let ldelay = Number($lineSpeedR.value)*100;
-      let cdelay = Number($circleSpeedR.value)*100;
-      let lp = Math.round(Number($lineOnR.value)/25);      
-      let llp = solid ? [1, 0] : [lp, 4-lp];
-      let cp = Math.round(Number($circleOnR.value)/25);
-      let clp = [cp, 4-cp];
-      let linc = $lineAngR.value*Math.PI/180;
-      let cinc = $circleAngR.value*Math.PI/180;
-      let cap = $circleApR.value*Math.PI/180;
-      let dt = (date - new Date())*24/sideralDay;
-      let n = coords.length-1;      
-      for (let i = 0; i < n; i++) {
-        let ra0 = App.ra180to24(coords[i][0]) + dt;
-        let dec0 = coords[i][1];
-        let ra1 = App.ra180to24(coords[i+1][0]) + dt;        
-        let dec1 = coords[i+1][1];
-        let eq0 = new VecSP.Equatorial(ra0, dec0);
-        let eq1 = new VecSP.Equatorial(ra1, dec1);            
-        if (circle) {
-          let circlePath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);
-          circlePath.path[circlePath.size-1].laser = 0;
-          trackArray = trackArray.concat([circlePath]);        
-        }
-        if (solid || dashed) trackArray = trackArray.concat([PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay)]);       
-      }      
-      if (circle) {
-        let ra = App.ra180to24(coords[n][0]) + dt;
-        let dec = coords[n][1];
-        let eq = new VecSP.Equatorial(ra, dec);
-        trackArray = trackArray.concat([PathSP.makeCircle(eq, cap, cinc, clp, cdelay)]);        
-      }
-      trackPath.paths = trackArray;     
-      trackPath.coords = coords;      
-      for (let p of trackArray) trackPath.fullPath.addPath(p);
-    } else alert("Track coordinates not found.");    
-  }
-  if (trackPath.paths.length > 0) {
-    let trackCyclically = App.getRadioValue('trackCyclicallyRadio');    
+    let dt = (date - new Date())*24/sideralDay;
+    let ra0, dec0, ra1, dec1, eq0, eq1;
     if (opt == 'fullTrack') {
-      let commPath = new CommSP.CommPath(trackPath.fullPath, CalibInstance);	      
-      await BleInstance.goPath(commPath, trackCyclically);
+      let trackPath = new PathSP.Path();
+      for (let coord of trackCoords.coords) {        
+        ra0 = App.ra180to24(coord[0][0]) + dt;
+        dec0 = coord[0][1];
+        eq0 = new VecSP.Equatorial(ra0, dec0);                
+        if (circle) trackPath.addPath(new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay));
+        for (let i = 0; i < coord.length-1; i++) {
+          ra0 = App.ra180to24(coord[i][0]) + dt;
+          dec0 = coord[i][1];
+          ra1 = App.ra180to24(coord[i+1][0]) + dt;        
+          dec1 = coord[i+1][1];
+          eq0 = new VecSP.Equatorial(ra0, dec0);
+          eq1 = new VecSP.Equatorial(ra1, dec1);            
+          if (solid || dashed) trackPath.addPath(new PathSP.makeGeodesic(eq0, eq1, linc, llp, ldelay));            
+          if (circle) trackPath.addPath(new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay));            
+        }
+      }
+      let commPath = new CommSP.CommPath(trackPath, CalibInstance);	  
+      let trackCyclicallyOpt = App.getRadioValue('trackCyclicallyRadio');          
+      await BleInstance.goPath(commPath, trackCyclicallyOpt);        
     }
     else {      
-      trackPath.step += Number(opt);
-      trackPath.step = (trackPath.paths.length + trackPath.step)%trackPath.paths.length;
-      let commPath = new CommSP.CommPath(trackPath.paths[trackPath.step], CalibInstance);	                
-      //await BleInstance.goPath(commPath, 'forward');  
-      Speech.speakStar(trackPath.coords[trackPath.step]);      
-    }
+      trackCoords.step += Number(opt);
+      trackCoords.step = (trackCoords.indexes.length + trackCoords.step)%trackCoords.indexes.length;
+      let index = trackCoords.indexes[trackCoords.step];
+      let coord = trackCoords.coords[index[0]][index[1]];            
+      ra0 = App.ra180to24(coord[0]) + dt;
+      dec0 = coord[1];      
+      eq0 = new VecSP.Equatorial(ra0, dec0);
+      let trackPath;
+      if (circle) trackPath = new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay);                  
+      else {
+        let seg = new PathSP.Segment(eq0, 1, 0);
+        trackPath = new PathSP.Path();
+        trackPath.addSegment(seg);
+      }
+      let commPath = new CommSP.CommPath(trackPath, CalibInstance);	                
+      await BleInstance.goPath(commPath, 'forward');        
+      Speech.speakStar(coord);      
+    }    
   }
+  else alert("Track coordinates not found.");      
 }
 
 NavW.resetTrack = function () {
-  trackPath.paths = [];
-  trackPath.coords = [];
-  trackPath.fullPath = new PathSP.Path();  
-  trackPath.step = 0;  
+  let track = App.valueSelected($navTracksCombo).split("|");
+  let trackType = track[0];
+  let trackId = track[1];    
+  trackCoords.coords = App.getCoordinates(trackType, trackId);
+  trackCoords.step = 0;
+  trackCoords.indexes = [];    
+  for (let i = 0; i < trackCoords.coords.length; i++)
+    for (let j = 0; j < trackCoords.coords[i].length; j++) 
+      trackCoords.indexes = trackCoords.indexes.concat([[i, j]]);  
 }
 
 /**
@@ -986,19 +996,6 @@ ConfigW.updateControllerWidth = function () {
 
 
 /**
- * A namespace for the Tour Window functions in the client app.
- * @namespace
- */
-window.TourW = {};
-
-TourW.goCircle = async function () {
-  let path = PathSP.makeCircle(CoordNavW, Math.PI/40, Math.PI/10, [1,0], 50);
-  let commPath = new CommSP.CommPath(path, CalibInstance);
-  await BleInstance.goPath(commPath, 'forward');
-}
-
-
-/**
  * A namespace for speech synthesis.
  * @namespace
  */
@@ -1023,13 +1020,17 @@ Speech.populateVoiceList = function () {
     }
 
     option.setAttribute('data-lang', Speech.voices[i].lang);
-    option.setAttribute('data-name', Speech.voices[i].name);
-    $speechLanguage.appendChild(option);
+    option.setAttribute('data-name', Speech.voices[i].name);    
+    $speechLanguage.appendChild(option);    
+    if (startingLangName) {
+      if (Speech.voices[i].lang == startingLangName) option.selected = 'selected';
+    }
+    else if (Speech.voices[i].default) option.selected = 'selected';
   }  
 }
 
 Speech.speakStar = function (coord) {
-  if ($speakStarName.checked || $speakBayer.checked || $speakConstellation.checked || $speakHipparcos.checked) {
+  if ($speakStarName.checked || $speakBayer.checked || $speakConstellation.checked || $speakHipparcos.checked) {    
     if (Speech.synth.speaking) {
         console.error('speechSynthesis.speaking');
         return;
@@ -1078,7 +1079,7 @@ Speech.speakStar = function (coord) {
   }
 }
 
-Speech.populateVoiceList();
+Speech.populateVoiceList('pt-BR');
 if (window.speechSynthesis.onvoiceschanged !== undefined) {
   window.speechSynthesis.onvoiceschanged = Speech.populateVoiceList;
 }
@@ -1086,7 +1087,7 @@ if (window.speechSynthesis.onvoiceschanged !== undefined) {
 
 
 //Set initial window:
-App.setWindow("appCalibW", document.getElementById("calibM"));
+App.setWindow("appCommW", document.getElementById("commM"));
 
 //Set input datalist parameters:
 App.setInputRangeDatalist(stepSizeInputDatalistParams);
@@ -1094,6 +1095,7 @@ App.setInputRangeDatalist(lineSpeedInputDatalistParams);
 App.setInputRangeDatalist(lineOnInputDatalistParams);
 App.setInputRangeDatalist(circleSpeedInputDatalistParams);
 App.setInputRangeDatalist(circleOnInputDatalistParams);
+App.setInputRangeDatalist(circleApertureInputDatalistParams);
 
 //Load sky objects data and names:
 App.loadItemsDataNames();
@@ -1109,12 +1111,13 @@ for (let i in itemsElements) {
   App.createComboOptions(item["typeCombo"], item["options"]);  
   App.setFiltersEvents(item, filterComboMinLength);
   //Set initial navigation type option:  
-  item["typeCombo"].selectedIndex = 0;
+  item["typeCombo"].selectedIndex = 1;
   App.changeObjectsType(item["typeCombo"]);
 }
 
 //Reset track events:
 $navTracksCombo.addEventListener('change', NavW.resetTrack);
+$navTracksCombo.addEventListener('click', NavW.resetTrack);
 $trackPointerStyle.addEventListener('change', NavW.resetTrack);
 $trackDate.addEventListener('change', NavW.resetTrack);
 $trackTime.addEventListener('change', NavW.resetTrack);
@@ -1141,11 +1144,7 @@ ConfigW.updatePointer('circleAng');
 //Set initial controller width:
 ConfigW.updateControllerWidth();
 
+//Set inital trackCoords:
+NavW.resetTrack();
 
-//Initialize calib stars list:
-calibStars = [];
-
-
-//Simulate initial calibration. Atention: comment these commands for real operation
-//CalibInstance = Sim.simParams.calib.clone();
-//CalibTemp = Sim.simParams.calib.clone();
+//setTimeout(function(){ App.selectOptionByText($speechLanguage); }, 1000);

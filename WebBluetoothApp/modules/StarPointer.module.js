@@ -319,6 +319,7 @@ VecSP.Calibration = class {
 		this.maxCalibIter = 500;
 		this.maxOptimValue = (1.0 - Math.cos(1*Math.PI/1024))**0.5;
 		this.maxCalibOptimumValue = (1.0 - Math.cos(1*Math.PI/1024))**0.5;
+		this.sideralDay = 86164090.5; //[ms]
 	}	
 	/**
 	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
@@ -331,7 +332,7 @@ VecSP.Calibration = class {
 		window.steps = [];
 		for (let s of this.stars) {
 			let eq = s.eq.clone();		
-			eq.ra -= (s.date - this.t0)/3.6e6;
+			eq.ra -= (s.date - this.t0)*24/this.sideralDay;
 			window.equatorials.push(eq.toVector3());			
 			window.steps.push(s.step);
 		}
