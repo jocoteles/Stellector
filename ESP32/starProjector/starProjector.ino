@@ -1,3 +1,5 @@
+#include <HCSR04.h>
+
 /*
     Star Projector ESP32 interface
     João Teles, jocoteles@gmail.com
@@ -11,7 +13,7 @@
     segment: is a stepper step range, which is linearly followed by the stepper.
     path: the full array(s) of segments of a given steppers path execution.
 
-    GY-511 MPU6050 sensor SCL, SDA connected, respectively, to the defaults GPIO 22, 21.
+    GY-521 MPU6050 sensor SCL, SDA connected, respectively, to the defaults GPIO 22, 21.
 */
 
 #include <Wire.h>
@@ -19,6 +21,7 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
+//#include <hcsr04.h>
 
 #define PATH_MAX_SIZE 3000      //maximum size of the steppers segments array
 #define PATHBASE_SIZE 4         //size of the path data chunk decodification
@@ -37,6 +40,8 @@
 #define STPR1_GPIOS {14, 27, 26, 25}  //stepper 1 (fixed) GPIO pins
 #define STPR2_GPIOS {15,  2,  4, 16}  //stepper 2 (mobile) GPIO pins
 #define LASER_GPIO 13                 //laser GPIO pin
+#define ULTRA_TRIG_GPIO 32            //ultrassonic hc-sr04 sensor trigger pin
+#define ULTRA_ECHO_GPIO 33            //ultrassonic hc-sr04 sensor echo pin
 
 #define RESET_PATH_OPT 1       //option to start a new path reading
 #define EXEC_PATH_OPT 2        //option to execute the path
@@ -60,6 +65,11 @@
 
 #define TIME_STEPPERS_OFF 15000       //time delay to turn off steppers when idle in miliseconds.
 #define TIME_LASER_OFF 60000          //time delay to turn off laser when idle in miliseconds.
+
+//Ultrassonic setup:
+//------------------
+//HCSR04 hcsr04(ULTRA_TRIG_GPIO, ULTRA_ECHO_GPIO, 20, 4000);
+UltraSonicDistanceSensor distanceSensor(ULTRA_TRIG_GPIO, ULTRA_ECHO_GPIO);
 
 //BLE variables:
 //--------------
@@ -348,7 +358,7 @@ void sendStatus(uint8_t st) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200);  
 
   Wire.begin();
   Wire.beginTransmission(MPU_addr);
@@ -436,5 +446,9 @@ void loop() {
     laser(false);
     laserTime = millis();
   }
+
+  delay(2000);
+  double distance = distanceSensor.measureDistanceCm();
+  Serial.println(distance);
 
 }
