@@ -102,7 +102,7 @@ const lineSpeedInputDatalistParams =
   'max': 6,
   'step': 1,
   'init': 3,
-  'delaylist' : [500, 400, 300, 200, 100, 0],   // times 100 us
+  'delaylist' : [500, 400, 300, 200, 100, 0],   // multiples of 100 us
   'input': $lineSpeedR,
   'datalist': $lineSpeedRList
 };
@@ -121,7 +121,7 @@ const circleSpeedInputDatalistParams =
   'max': 6,
   'step': 1,
   'init': 3,
-  'delaylist' : [500, 400, 300, 200, 100, 0],   // times 100 us
+  'delaylist' : [500, 400, 300, 200, 100, 0],   // multiples of 100 us
   'input': $circleSpeedR,
   'datalist': $circleSpeedRList
 };

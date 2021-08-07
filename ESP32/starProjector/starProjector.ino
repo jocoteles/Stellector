@@ -1,5 +1,3 @@
-#include <HCSR04.h>
-
 /*
     Star Projector ESP32 interface
     João Teles, jocoteles@gmail.com
@@ -13,15 +11,17 @@
     segment: is a stepper step range, which is linearly followed by the stepper.
     path: the full array(s) of segments of a given steppers path execution.
 
-    GY-521 MPU6050 sensor SCL, SDA connected, respectively, to the defaults GPIO 22, 21.
+    GY-521 MPU6050 and GY-511 lsm303dlhc sensors SCL, SDA connected, respectively, to the defaults GPIO 22, 21.
 */
 
-#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_LSM303_Accel.h>
+#include <Adafruit_LSM303DLH_Mag.h>
+#include <HCSR04.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
-//#include <hcsr04.h>
 
 #define PATH_MAX_SIZE 3000      //maximum size of the steppers segments array
 #define PATHBASE_SIZE 4         //size of the path data chunk decodification
@@ -71,9 +71,18 @@
 //HCSR04 hcsr04(ULTRA_TRIG_GPIO, ULTRA_ECHO_GPIO, 20, 4000);
 UltraSonicDistanceSensor distanceSensor(ULTRA_TRIG_GPIO, ULTRA_ECHO_GPIO);
 
+//Laser accelerometer and thermometer:
+//------------------------------------
+Adafruit_MPU6050 gy521;
+
+/* Assign a unique ID to this sensor at the same time */
+//Base accelerometer and magnetometer for level measurement:
+Adafruit_LSM303_Accel_Unified gy511accel = Adafruit_LSM303_Accel_Unified(12345);
+Adafruit_LSM303DLH_Mag_Unified gy511mag = Adafruit_LSM303DLH_Mag_Unified(56789);
+
 //BLE variables:
 //--------------
-#define DEVICE_NAME          "StarProjector"
+#define DEVICE_NAME          "Stellector"
 #define MAIN_S_UUID          "b75dac84-0213-4580-9213-c17f932a719c"  //The single service for all device's characteristics
 #define PATH_C_UUID          "6309b82c-ff09-4957-a51b-b63aefd95b39"  //characteristic for the path array
 #define POS_MEASURE_C_UUID   "34331e8c-74bd-4219-aab0-5909aeea3c4e"  //characteristic for measuring the steppers position
@@ -86,8 +95,6 @@ BLEServer *server;
 BLEService *mainS;
 BLECharacteristic *pathC, *posMeasureC, *statusC;
 BLEAdvertising *advertising = BLEDevice::getAdvertising();
-
-const int MPU_addr = 0x68;  // I2C address of the MPU-6050 sensor
 
 //Steppers variables:
 //-------------------
@@ -360,11 +367,27 @@ void sendStatus(uint8_t st) {
 void setup() {
   Serial.begin(115200);  
 
-  Wire.begin();
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x6B);  // PWR_MGMT_1 register
-  Wire.write(0);     // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
+  //GY521 sensor setup:
+  if (!gy521.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) delay(10);
+  }  
+  gy521.setAccelerometerRange(MPU6050_RANGE_2_G);  
+  gy521.setFilterBandwidth(MPU6050_BAND_5_HZ);
+
+  //GY511 accelerometer sensor setup:
+  if (!gy511accel.begin()) {    
+    Serial.println("Failed to find LSM303 accel chip");
+    while (1) delay(10);
+  }
+  gy511accel.setRange(LSM303_RANGE_2G);
+  gy511accel.setMode(LSM303_MODE_NORMAL);  
+
+  //GY511 magnetometer sensor setup:
+  if (!gy511mag.begin()) {    
+    Serial.println("Failed to find LSM303 mag chip");
+    while (1) delay(10);
+  }
 
   for (int i = 0; i < 4; i++) {
     pinMode(stpr1[i], OUTPUT);
@@ -447,8 +470,57 @@ void loop() {
     laserTime = millis();
   }
 
-  delay(2000);
+  /*delay(2000);
   double distance = distanceSensor.measureDistanceCm();
-  Serial.println(distance);
+  Serial.println(distance);*/
+
+  /* Get new sensor events with the readings */
+  sensors_event_t a, g, temp;
+  gy521.getEvent(&a, &g, &temp);
+  /* Print out the values */
+  Serial.print("Acceleration X: ");
+  Serial.print(a.acceleration.x);
+  Serial.print(", Y: ");
+  Serial.print(a.acceleration.y);
+  Serial.print(", Z: ");
+  Serial.print(a.acceleration.z);
+  Serial.println(" m/s^2");
+  Serial.print("Temperature: ");
+  Serial.print(temp.temperature);
+  Serial.println(" degC");
+  Serial.println("");
+
+  /* Get a new sensor event */
+  sensors_event_t event;
+  gy511accel.getEvent(&event);
+  /* Display the results (acceleration is measured in m/s^2) */
+  Serial.print("X: ");
+  Serial.print(event.acceleration.x);
+  Serial.print("  ");
+  Serial.print("Y: ");
+  Serial.print(event.acceleration.y);
+  Serial.print("  ");
+  Serial.print("Z: ");
+  Serial.print(event.acceleration.z);
+  Serial.print("  ");
+  Serial.println("m/s^2");
+  Serial.println("");
+
+  sensors_event_t event2;
+  gy511mag.getEvent(&event2);
+  /* Display the results (magnetic vector values are in micro-Tesla (uT)) */
+  Serial.print("X: ");
+  Serial.print(event2.magnetic.x);
+  Serial.print("  ");
+  Serial.print("Y: ");
+  Serial.print(event2.magnetic.y);
+  Serial.print("  ");
+  Serial.print("Z: ");
+  Serial.print(event2.magnetic.z);
+  Serial.print("  ");
+  Serial.println("uT");
+  Serial.println("");
+  
+  delay(1000);
 
 }

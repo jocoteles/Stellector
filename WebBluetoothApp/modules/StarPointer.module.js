@@ -41,7 +41,7 @@ let ESP32 = {
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
 	STATUS_C_UUID: "46425bca-0669-4f53-81bb-2bf67a3a1141",  	//characteristic for indicating the hardware status
-	DEVICE_NAME: "StarProjector"
+	DEVICE_NAME: "Stellector"
 };
 
 
