@@ -35,7 +35,11 @@
 #define STPS360 2038            //steppers number of steps for a 360º rotation
 #define STEP_AT_ZENITH 1019     //steppers step values corresponding to the Zenith direction
 #define STEP_MIN 500            //steppers step min value for eye laser safety 
-#define STEP_MAX 1540           //steppers step max value for eye laser safety 
+#define STEP_MAX 1540           //steppers step max value for eye laser safety
+
+#define BASE_ANG_MIN 1.0        //minimum angle tolerance of the base vectors change [degrees]
+#define BASE_ANG_MAX 10.0       //maximum angle tolerance of the base normal vector to the gravity vector [degrees]
+#define ZENITH_ANG_MIN 0.25     //minimum angle deviation for zenith setting [degrees]
 
 #define STPR1_GPIOS {14, 27, 26, 25}  //stepper 1 (fixed) GPIO pins
 #define STPR2_GPIOS {15,  2,  4, 16}  //stepper 2 (mobile) GPIO pins
@@ -107,6 +111,14 @@ const int stpr1[4] = STPR1_GPIOS;   //fixed stepper GPIO pins (phi)
 const int stpr2[4] = STPR2_GPIOS;   //mobile stepper GPIO pins  (theta)
 
 uint16_t actStep[2] = {STPS360/2, STPS360/2};   //actual step values for the fixed (phi) and mobile (theta) stepper, respectively
+
+//Safety operation variables:
+//---------------------------
+float normalAng = 0.0;                //angle of the base normal vector to the gravity vector [degrees]
+float accBase[3] = {0.0, 0.0, 0.0};   //gravity acceleration vector in the gy511 base sensor
+float magBase[3] = {0.0, 0.0, 0.0};   //magnetic vector in the gy511 base sensor
+bool baseChangeF = false;
+bool baseTresholdF = false;
 
 //Path variables:
 //------------------
@@ -301,6 +313,36 @@ bool checkPathBoundaries() {
   return true;
 }
 
+void checkLevel () {
+  sensors_event_t accEvent, magEvent;
+  float ax, ay, az, mx, my, mz, cosAcc, cosMag, aNorm, mNorm;
+
+  gy511accel.getEvent(&accEvent);
+  gy511mag.getEvent(&magEvent);
+  ax = accEvent.acceleration.x;
+  ay = accEvent.acceleration.y;
+  az = accEvent.acceleration.z;
+  mx = magEvent.magnetic.x;
+  my = magEvent.magnetic.y;
+  mz = magEvent.magnetic.z;
+
+  aNorm = sqrt(ax*ax+ay*ay+az*az);
+  cosAcc = (ax*accBase[0]+ay*accBase[1]+az*accBase[2])/aNorm;
+  mNorm = sqrt(mx*mx+my*my+mz*mz);
+  cosMag = (mx*magBase[0]+my*magBase[1]+mz*magBase[2])/mNorm;
+
+  if ((cosAcc < cos(BASE_ANG_MIN*PI/180)) || (cosMag < cos(BASE_ANG_MIN*PI/180))) {
+    baseChangeF = true;
+    if ((cosAcc < cos(BASE_ANG_MAX*PI/180)) || (cosMag < cos(BASE_ANG_MAX*PI/180))) baseTresholdF = true;    
+    accBase[0] = ax/aNorm;
+    accBase[1] = ay/aNorm;
+    accBase[2] = az/aNorm;
+    magBase[0] = mx/mNorm;
+    magBase[1] = my/mNorm;
+    magBase[2] = mz/mNorm;
+  }
+}
+
 void execPath() {
   uint16_t N, ph, th, phA, thA;
   int dph, dth;
@@ -338,6 +380,30 @@ void execPath() {
     phA = ph;
     thA = th;
   }  
+}
+
+void setZenith () {
+  float ax, ay, az, tanX, tanZ;
+  uint16_t fix, mob;
+  sensors_event_t a, g, temp;  
+  float tol = tan(ZENITH_ANG_MIN*PI/180);
+  do {
+    gy521.getEvent(&a, &g, &temp);
+    ax = a.acceleration.x;
+    ay = a.acceleration.y;
+    az = a.acceleration.z;
+    if (az > 0) fix = actStep[0] + 1;
+    else fix = actStep[0] - 1;
+    if (ax > 0) mob = actStep[1] + 1;
+    else mob = actStep[1] - 1;
+    stepperFix(fix);
+    stepperMob(mob);            
+    delayMicroseconds(DELAY_MIN*DELAY_FACTOR);
+    tanX = ax/sqrt(ay*ay+az*az);
+    tanZ = az/sqrt(ay*ay+ax*ax);
+  } while ((tanX > tol) || (tanZ > tol));
+  actStep[0] = STEP_AT_ZENITH;
+  actStep[1] = STEP_AT_ZENITH;
 }
 
 void sendActSteps() {
@@ -450,8 +516,9 @@ void loop() {
   }
   
   if (setZenithF) {
-    actStep[0] = STEP_AT_ZENITH;
-    actStep[1] = STEP_AT_ZENITH;
+    //actStep[0] = STEP_AT_ZENITH;
+    //actStep[1] = STEP_AT_ZENITH;
+    setZenith();
     setZenithF = false;
   }
 
@@ -474,10 +541,8 @@ void loop() {
   double distance = distanceSensor.measureDistanceCm();
   Serial.println(distance);*/
 
-  /* Get new sensor events with the readings */
-  sensors_event_t a, g, temp;
-  gy521.getEvent(&a, &g, &temp);
-  /* Print out the values */
+  /*sensors_event_t a, g, temp;
+  gy521.getEvent(&a, &g, &temp);  
   Serial.print("Acceleration X: ");
   Serial.print(a.acceleration.x);
   Serial.print(", Y: ");
@@ -489,11 +554,9 @@ void loop() {
   Serial.print(temp.temperature);
   Serial.println(" degC");
   Serial.println("");
-
-  /* Get a new sensor event */
+  
   sensors_event_t event;
   gy511accel.getEvent(&event);
-  /* Display the results (acceleration is measured in m/s^2) */
   Serial.print("X: ");
   Serial.print(event.acceleration.x);
   Serial.print("  ");
@@ -507,8 +570,7 @@ void loop() {
   Serial.println("");
 
   sensors_event_t event2;
-  gy511mag.getEvent(&event2);
-  /* Display the results (magnetic vector values are in micro-Tesla (uT)) */
+  gy511mag.getEvent(&event2);  
   Serial.print("X: ");
   Serial.print(event2.magnetic.x);
   Serial.print("  ");
@@ -521,6 +583,6 @@ void loop() {
   Serial.println("uT");
   Serial.println("");
   
-  delay(1000);
+  delay(1000);*/
 
 }
