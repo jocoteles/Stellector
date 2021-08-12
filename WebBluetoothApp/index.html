@@ -156,11 +156,11 @@
             <div style="margin-bottom:2%;"><label>Date: </label><input type="date" id="objDate" style="width:50%;"></div>
             <div style="margin-bottom:2%;"><label>Time: </label><input type="time" id="objTime" style="width:50%;"></div>
             <input style="margin-bottom:3%;" type="checkbox" id="sideralOffset"><label>sideral offset</label>          
-            <table>
+            <table style="width:100%;">
               <tr>
                 <td style="text-align:right;"><button class="leftBtn" onclick="NavW.goStar('-1')">step Past</button></td>
                 <td style="text-align:left;"><button class="rightBtn" onclick="NavW.goStar('+1')">step Future</button></td>                      
-                <td><button style="text-align:center;" class="execBtn" onclick="NavW.goStar('date')">go DateTime</button></td>
+                <td style="text-align:center;"><button class="execBtn" onclick="NavW.goStar('date')">go DateTime</button></td>
               </tr>            
             </table>
           </div>
@@ -237,15 +237,10 @@
             </table>          
             <table style="width:100%;">
               <tr>
-                <td style="text-align:center;"><button class="execBtn" onclick="NavW.goEquatorial()">go Equatorial</button></td>
-                <td style="text-align:center;"><button class="execBtn" onclick="NavW.setZenith()">set Zenith</button></td>
-                <td style="text-align:center;"><button class="execBtn" onclick="NavW.readCoords()">read Coords</button></td>
+                <td style="text-align:center;"><label>Pointer style: </label><select id="coordsPointerStyle"></select></td>
+                <td style="text-align:center;"><button class="execBtn" onclick="NavW.goEquatorial()">go Equatorial</button></td>                
               </tr>
-            </table>            
-            <div style="margin-top: 0.5em;">
-              <label>Pointer style: </label>
-              <select id="coordsPointerStyle"></select>
-            </div>                    
+            </table>                        
           </div>     
           <div class="frame" style="display:grid; grid-template-columns:2fr 1fr;">
             <table style="width:100%; grid-column:1;">
@@ -259,7 +254,13 @@
               </tr>
             </table>
             <button style="grid-column:2;" onclick="NavW.goSteps()">go Steps</button>
-          </div>                              
+          </div> 
+          <table style="width:60%;padding:auto;margin:auto;">
+            <tr>                            
+              <td style="text-align:center;"><button class="execBtn" onclick="NavW.readCoords()">read Coords</button></td>
+              <td style="text-align:center;"><button class="execBtn" onclick="NavW.goZenith()">go Zenith</button></td>              
+            </tr>
+          </table>                                         
         </div>        
 
       </div>      
@@ -347,7 +348,8 @@
               <div style="margin-bottom:0.3em;"><label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng" size="9"></div>              
               <div style="margin-bottom:0.3em;"><label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng" size="9"></div>            
               <input type="checkbox" id="useParamsCalib" checked="true"><label for="useParamsCalib">Use above params for calibration</label>
-            </div>          
+            </div>    
+            <button class="execBtn" onclick="NavW.setZenith()">reset Zenith</button>      
           </div>                    
         </div>
 

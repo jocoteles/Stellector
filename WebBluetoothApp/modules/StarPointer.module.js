@@ -15,8 +15,7 @@ import { nelderMead } from '../libs/nelderMead.js';
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
 	STEP_AT_ZENITH: 1019,		//steppers step values corresponding to the Zenith direction
-	STEP_MIN: 500,				//steppers step min value for eye laser safety 
-	STEP_MAX: 1540,				//steppers step max value for eye laser safety 
+	HORIZON_MIN_ANG: 3.0,	    //laser minimum angle from horizon for safety operation [degrees]
 	PATHBASE: [1, 9, 11, 11],	//number of bits of the base used to represent the path segments, respectively for: laser state, step delay, phi step, theta step
 	COMMBASE: [8, 8, 8, 8],		//number of bits of the base used to communicate the path segments
 	RESET_PATH_OPT: 1,       	//option to start a new path reading
@@ -37,6 +36,9 @@ let ESP32 = {
 	LASER_SWITCH_ST: 16,	    //status to switch laser state
 	SET_ZENITH_ST: 17,			//status to make actSteps equal to STEP_AT_ZENITH
 	READ_ACT_STEPS_ST: 18,		//status to read the steppers actual steps
+	UNSAFE_MEASURE_ST: 19,		//status for sensors measurement that indicate unsafe operation condition
+	UNSAFE_MODE_ST: 20,     	//status to warn that the device is operating at unsafe mode
+	LEVEL_CHANGED_ST: 21,   	//status to indicate that the apparatus changed orientation
 	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
 	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
 	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
@@ -554,17 +556,27 @@ CommSP.CommPath = class {
 		/*if (step.fix < ESP32.STEP_MIN || step.fix > ESP32.STEP_MAX || step.mob < ESP32.STEP_MIN || step.mob > ESP32.STEP_MAX) {
 			this.clipped = true;
 			return false;
-		}*/ //Recheck this function in the future
+		}*/ //Recheck this function in the future		
+		let ph = (step.fix-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
+		let th = (step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
+		let x = cos(ph)*sin(th);
+		let y = sin(ph)*sin(th);
+		let z = cos(th);
+		let tanH = y/sqrt(x*x+z*z);
+  		if (tanH <= Math.tan(ESP32.HORIZON_MIN_ANG*Math.PI/180)) {
+			this.clipped = true;
+			return false;			
+		}
 		let data = [Segment.laser, Segment.delay, step.fix, step.mob];
-		let x = 0;
+		let x0 = 0;
 		let b = 0;
 		for (let i = 0; i < this._encBase.length; i++) {
-			x += data[i]*2**b;
+			x0 += data[i]*2**b;
 			b += this._encBase[i];
 		}
 		//Decoding to this._decBase:
 		let b0 = 0;
-		let r0 = x;
+		let r0 = x0;
 		let r = [];
 		for (let i = 0; i < this._decBase.length; i++) {
 			r.push( Math.trunc(r0 / 2**b0) % 2**this._decBase[i] );
@@ -709,12 +721,16 @@ CommSP.Bluetooth = class {
 		if (optKey) {			
 			this.logDOM.innerHTML += this.time() + 'Option ' + optKey + ' sent to Server.\n';
 			await this.pathC.writeValue(new Uint8Array([optValue]));			
-			if (await this.checkStatus()) {
+			/*if (await this.checkStatus()) {
 				let opt = this.optKeyFromValue(this.serverStatus);
 				this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
+				if (opt == 'LEVEL_CHANGED_ST') alert ('Atention! Horus changed orientation. Calibration may have been impaired.');
+				else if (opt == 'UNSAFE_MEASURE_ST') alert ('Atention! Horus leveling or distance to the ground are unsafe. Set up the equipament correctly. No commands executed.');
+				else if (opt == 'UNSAFE_MODE_ST') alert ('Atention! Horus operating in unsafe mode. Use it with caution.');
 				return this.serverStatus;
 			}
-			else return false;
+			else return false;*/
+			return await this.checkStatus();
 		}
 		else {
 		  this.logDOM.innerHTML += this.time() + 'Option ' + option + ' not recognized. Nothing sent to Server.\n';
@@ -732,6 +748,7 @@ CommSP.Bluetooth = class {
 			let mob = Math.max((parseInt(dirs[2])-1)*m + 127, 0);
 			await this.pathC.writeValue(new Uint8Array([fix, mob]));
 			this.logDOM.innerHTML += this.time() + 'Step size of (' + (fix-127) + ',' + (mob-127) + ') sent to (fixed,mobile) steppers on Server.\n';
+			await this.checkStatus();
 			return true;
 		} catch {return this.disconnectMsg();}
 	}	
@@ -805,7 +822,7 @@ CommSP.Bluetooth = class {
 	/** Read (using the server accelerometer) the steppers fix and mob coordinates in the ESP32 server.
 	 */
 	async readActSteps () {		
-	    try {
+	    try {			
 			let value;
 			await this.pathC.writeValue(new Uint8Array([this.OPT.RESET_READ_OPT]));
 			do {
@@ -818,17 +835,23 @@ CommSP.Bluetooth = class {
 			let fix = value.getUint8(0)*256 + value.getUint8(1);
 			let mob = value.getUint8(2)*256 + value.getUint8(3);
 			this.logDOM.innerHTML += this.time() + 'Actual steps readings from server: fix=' + fix + ', mob=' + mob + '\n';
-			this.actStep = new VecSP.Step(fix, mob);		
-			//console.log(value.byteLength);
-			//console.log(this.actStep);
-			return true;
+			this.actStep = new VecSP.Step(fix, mob);										
+			return true;						
 		} catch (error) {return this.disconnectMsg(error);}
 	}
 	async checkStatus () {
 		try {
 			let value = await this.statusC.readValue();		
 			this.serverStatus = value.getUint8(0);
+			//return this.serverStatus;
+			
+			let opt = this.optKeyFromValue(this.serverStatus);
+			this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
+			if (opt == 'LEVEL_CHANGED_ST') alert ('Atention! Horus changed orientation. Calibration may have been impaired.');
+			else if (opt == 'UNSAFE_MEASURE_ST') alert ('Atention! Horus leveling or distance to the ground are unsafe. Set up the equipament correctly. No commands executed.');
+			else if (opt == 'UNSAFE_MODE_ST') alert ('Atention! Horus operating in unsafe mode. Use it with caution.');
 			return this.serverStatus;
+
 		} catch {
 			return false;
 		}

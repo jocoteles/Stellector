@@ -2,7 +2,7 @@
 
 //stars6JSON equatorial coordinates are: ra - the Right Ascension (-180° to 180°) coordinate and dec - the Declination (-90º to 90º) coordinate.
 
-import {VecSP, CommSP, PathSP} from './modules/StarPointer.module.js';
+import {VecSP, CommSP, PathSP, ESP32} from './modules/StarPointer.module.js';
 import './libs/orb.v2.min.js';
 
 /* --------------------
@@ -218,7 +218,8 @@ const pointerStyleOptions =
 {
   'point': {'text': 'point'},
   'bpoint': {'text': 'blinking point', 'interval': 2500},
-  'circle': {'text': 'circle'}
+  'circle': {'text': 'circle'},
+  'alternate': {'text': 'circle alternate'}
 };
 
 const trackStyleOptions =
@@ -582,8 +583,7 @@ Controller.sendStepSize = async function (ssId) {
 }
 
 Controller.switchLaser = async function () {
-  await BleInstance.goLaser();  
-  await BleInstance.sendOption(BleInstance.OPT.LASER_CHECK_OPT);  
+  await BleInstance.goLaser();    
 }
 
 Controller.updateStepSize = function () {
@@ -728,7 +728,7 @@ NavW.goObjectStyle = async function (style, eqCoord) {
       path.addSegment(seg1);
       cyclicOpt = 'forward';
       break;
-    case "circle":
+    case "circle" || "alternate":
       let ap = 0.5*$circleApR.value*Math.PI/180;      
       let inc = $circleAngR.value*Math.PI/180;  
       delay = circleSpeedInputDatalistParams.delaylist[Number($circleSpeedR.value)-1];      
@@ -736,7 +736,8 @@ NavW.goObjectStyle = async function (style, eqCoord) {
       let lp = [cp, 4-cp];    
       let circle = new PathSP.makeCircle(eqCoord, ap, inc, lp, delay);
 	    path.addPath(circle);
-      cyclicOpt = 'forward';
+      if (style == "circle") cyclicOpt = 'forward';
+      else cyclicOpt = 'alternate';
       break;
   }
   let commPath = new CommSP.CommPath(path, CalibInstance);	
@@ -753,6 +754,15 @@ NavW.goEquatorial = async function () {
 
 NavW.goSteps = async function () {	
   let step = new VecSP.Step(Number($fixI.value), Number($mobI.value));  
+  let seg = new PathSP.Segment(step, 1, 0);
+  let path = new PathSP.Path();
+  path.addSegment(seg);
+  let commPath = new CommSP.CommPath(path, CalibInstance);	  
+  await BleInstance.goPath(commPath);  
+}
+
+NavW.goZenith = async function () {	
+  let step = new VecSP.Step(ESP32.STEP_AT_ZENITH, ESP32.STEP_AT_ZENITH);  
   let seg = new PathSP.Segment(step, 1, 0);
   let path = new PathSP.Path();
   path.addSegment(seg);
