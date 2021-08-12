@@ -95,17 +95,18 @@ Adafruit_LSM303DLH_Mag_Unified gy511mag = Adafruit_LSM303DLH_Mag_Unified(56789);
 //BLE variables:
 //--------------
 #define DEVICE_NAME          "Stellector"
-#define MAIN_S_UUID          "b75dac84-0213-4580-9213-c17f932a719c"  //The single service for all device's characteristics
-#define PATH_C_UUID          "6309b82c-ff09-4957-a51b-b63aefd95b39"  //characteristic for the path array
-#define POS_MEASURE_C_UUID   "34331e8c-74bd-4219-aab0-5909aeea3c4e"  //characteristic for measuring the steppers position
-#define STATUS_C_UUID        "46425bca-0669-4f53-81bb-2bf67a3a1141"  //characteristic for indicating the hardware status
+#define MAIN_S_UUID          "643790f9-355d-435b-b407-43ebf47a86b4"  //The single service for all device's characteristics
+#define PATH_C_UUID          "f467e4e9-e2bc-422f-b8a3-aaaf6f92b999"  //characteristic for the path array
+#define POS_MEASURE_C_UUID   "6f23d28a-a3cb-4c5f-9d08-63fda0806966"  //characteristic for measuring the steppers position
+#define STATUS_C_UUID        "4af8de6b-1f13-4dfb-b08e-0a4a97a983d5"  //characteristic for indicating the hardware status
+#define CHECK_STATUS_C_UUID  "f7b0afdf-b51e-4ba7-9513-48fb15497f22"  //characteristic for measuring the hardware status
 // UUIDs generated at: https://www.uuidgenerator.net/ (for changes, all uuids must be generated at the same generator run)
 
-#define mainSnumHandles  8 // = 2*(n+1), where n is the maximum number of characteristics for the mainS service (default n = 7)
+#define mainSnumHandles  10 // = 2*(n+1), where n is the maximum number of characteristics for the mainS service (default n = 7)
 
 BLEServer *server;
 BLEService *mainS;
-BLECharacteristic *pathC, *posMeasureC, *statusC;
+BLECharacteristic *pathC, *posMeasureC, *statusC, *checkStatusC;
 BLEAdvertising *advertising = BLEDevice::getAdvertising();
 
 //Steppers variables:
@@ -130,6 +131,15 @@ bool levelMissedF = false;
 bool safetyHeightF = false;
 bool unsafeModeF = false;
 bool unsafeModeFirstWarningF = true;
+
+//Status variables:
+//-----------------
+char laserStatus = 0;   //0: off; 1: on; 2: on path execution
+bool steppersWorkingStatus = false;
+bool unsafeModeStatus = false;
+bool safeHeightStatus = false;
+bool leveledStatus = false;
+bool tiltedStatus = false;
 
 //Path variables:
 //------------------
@@ -177,6 +187,8 @@ void checkHeight () {
   //Serial.print("Distance: ");Serial.println(distance);
   if (distance < SAFETY_HEIGTH) safetyHeightF = false;
   else safetyHeightF = true;
+  if (distance < SAFETY_HEIGTH) safeHeightStatus = false;
+  else safeHeightStatus = true;
 }
 
 void checkLevel () {
@@ -202,12 +214,15 @@ void checkLevel () {
   //Serial.println(acos(cosAcc)*180/PI,10); 
   //Serial.println(acos(cosMag)*180/PI,10);   
 
-  levelChangedF = false;
-  levelMissedF = false;
-  //if ((cosAcc < cos(LEVEL_ANG_CHANGE*PI/180)) || (cosMag < cos(LEVEL_ANG_CHANGE*PI/180))) levelChangedF = true;    
+  /*levelChangedF = false;
+  levelMissedF = false;  
   if ((acos(cosAcc) > (LEVEL_ACC_CHANGE*PI/180)) || (acos(cosMag) > (LEVEL_MAG_CHANGE*PI/180))) levelChangedF = true;    
-  //if (cosAcc < cos(LEVEL_ANG_CHANGE*PI/180)) levelChangedF = true;    
-  if ((cosZenith < cos(LEVEL_ANG_MISS*PI/180))) levelMissedF = true;        
+  if ((cosZenith < cos(LEVEL_ANG_MISS*PI/180))) levelMissedF = true;*/        
+
+  leveledStatus = true;
+  tiltedStatus = false;  
+  if ((acos(cosAcc) > (LEVEL_ACC_CHANGE*PI/180)) || (acos(cosMag) > (LEVEL_MAG_CHANGE*PI/180))) tiltedStatus = true;    
+  if ((cosZenith < cos(LEVEL_ANG_MISS*PI/180))) leveledStatus = false;        
 
   accBase[0] = ax/aNorm;
   accBase[1] = ay/aNorm;
@@ -237,14 +252,7 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
     checkLevel();    
     checkHeight();    
     unsafeModeF = digitalRead(UNSAFE_MODE_GPIO);        
-    if (!unsafeModeF) unsafeModeFirstWarningF = true;
-    if (unsafeModeF && unsafeModeFirstWarningF) {
-      sendStatus(UNSAFE_MODE_ST);
-      unsafeModeFirstWarningF = false;
-    }
-    else if ((!levelMissedF && safetyHeightF) || unsafeModeF) {
-      if (levelChangedF) sendStatus(LEVEL_CHANGED_ST);
-      else {
+    if ((leveledStatus && safeHeightStatus) || unsafeModeF) {      
         if (zenithUnsetF) {
           setZenith();
           zenithUnsetF = false;
@@ -258,43 +266,28 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           switch (option) {
             case RESET_PATH_OPT:
               delay(200);
-              pathSize = 0;
-              sendStatus(RESET_PATH_ST);
+              pathSize = 0;              
               break;
             case EXEC_PATH_OPT:
-              execPathF = true;
-              sendStatus(EXEC_PATH_ST);
+              execPathF = true;              
               break;
             case CYCLIC_PATH_OPT:
               execPathF = true;
-              cyclicPathF = true;
-              sendStatus(CYCLIC_PATH_ST);
+              cyclicPathF = true;              
               break;
             case REVERSE_PATH_OPT:
               execPathF = true;
-              reversePathF = true;          
-              sendStatus(REVERSE_PATH_ST);
+              reversePathF = true;                        
               break;                
             case LASER_SWITCH_OPT:        
-              laserSwitchF = true;
-              sendStatus(LASER_SWITCH_ST);
-              break;
-            case LASER_CHECK_OPT:
-              if (laserOnState) sendStatus(LASER_ON_ST);
-              else sendStatus(LASER_OFF_ST);
-              break;
+              laserSwitchF = true;              
+              break;            
             case SET_ZENITH_OPT:
-              setZenithF = true;
-              sendStatus(SET_ZENITH_ST);          
+              setZenithF = true;              
               break;
             case READ_ACT_STEPS_OPT:
               readActStepsF = true;                        
-              break;
-            case RESET_READ_OPT:          
-              uint8_t r[1] = {0};  
-              size_t size = 1;
-              posMeasureC->setValue(r, size);              
-              break;
+              break;            
           }
         }
         if (vals.length() == 2) { //Read step sizes for free navigation              
@@ -330,14 +323,28 @@ class ReadPathCallback: public BLECharacteristicCallbacks {
           pathSize += k;      
           delayP[0] = DELAY_MIN; //Verificar o efeito desta linha
         }
-      }
-    }
-    else {      
-      sendStatus(UNSAFE_MEASURE_ST);
-    }
+      }        
   }
 };
 
+class CheckStatusCallback: public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *pCharacteristic) {
+    std::string val = pCharacteristic->getValue();
+    uint16_t check = val[0];   
+    if (check) { 
+      checkLevel();    
+      checkHeight();    
+      unsafeModeStatus = digitalRead(UNSAFE_MODE_GPIO);
+      uint8_t s0 = laserStatus;
+      uint8_t s1 = steppersWorkingStatus;
+      uint8_t s2 = unsafeModeStatus;
+      uint8_t s3 = safeHeightStatus;
+      uint8_t s4 = leveledStatus;
+      uint8_t s5 = tiltedStatus;  
+      uint8_t status[6] = {s0, s1, s2, s3, s4, s5};  
+      size_t size = 6;
+      statusC->setValue(status, size);
+    }
 
 uint16_t * decode(uint32_t x) {
   //x decodification in the "pathBase" array
@@ -412,6 +419,7 @@ void steppersOff () {
 void laser (bool s) {
   digitalWrite(LASER_GPIO, s);
   laserOnState = s;
+  laserStatus = s;
 }
 
 void execPath() {
@@ -453,6 +461,7 @@ void setZenith () {
   float tol = tan(ZENITH_ANG_MIN*PI/180);  
   sensors_event_t s;
   i = 0;      
+  steppersWorkingStatus = 1;
   do {
     gy521Accel->getEvent(&s);
     ax = s.acceleration.x;
@@ -474,6 +483,7 @@ void setZenith () {
   } while (((tanX > tol) || (tanZ > tol)) && (i++ < MAX_ZENITH_ITER));
   actStep[0] = STEP_AT_ZENITH;
   actStep[1] = STEP_AT_ZENITH;
+  steppersWorkingStatus = 0;
 }
 
 void sendActSteps() {
@@ -532,14 +542,15 @@ void setup() {
 
   BLEDevice::init(DEVICE_NAME);
   
-  server = BLEDevice::createServer();
-  //mainS = server->createService(mainS_UUID);
+  server = BLEDevice::createServer();  
   mainS = server->createService(BLEUUID(MAIN_S_UUID), mainSnumHandles);  // In order to set numHandles parameter, MAIN_S_UUID must be converted by function BLEUUID
   pathC = mainS->createCharacteristic(PATH_C_UUID, BLECharacteristic::PROPERTY_WRITE);
   posMeasureC = mainS->createCharacteristic(POS_MEASURE_C_UUID, BLECharacteristic::PROPERTY_READ);
   statusC = mainS->createCharacteristic(STATUS_C_UUID, BLECharacteristic::PROPERTY_READ);
+  checkStatusC = mainS->createCharacteristic(CHECK_STATUS_C_UUID, BLECharacteristic::PROPERTY_WRITE);
   
   pathC->setCallbacks(new ReadPathCallback());
+  checkStatusC->setCallbacks(new CheckStatusCallback());
   
   mainS->start();
   
@@ -559,23 +570,28 @@ void setup() {
 void loop() {
   
   if (navigationF) { //Steppers free navigation movement    
+    steppersWorkingStatus = 1;    
     execPath();        
     navigationF = false;    
+    steppersWorkingStatus = 0;
   }
 
   if (execPathF) { //Path execution        
+    steppersWorkingStatus = 1;
     do {
       execPath();      
       if (reversePathF) reverseStateF = !reverseStateF;
     } while (cyclicPathF || reversePathF);
     steppersOff();
     execPathF = false;    
+    steppersWorkingStatus = 0;
   }
 
   if (laserSwitchF) {    
     laserOnState = !laserOnState;              
     laser(laserOnState);    
     laserSwitchF = false;
+    laserStatus = laserOnState;
     laserTime = millis();    
   }
   

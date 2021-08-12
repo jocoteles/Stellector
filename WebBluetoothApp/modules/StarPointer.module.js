@@ -39,10 +39,11 @@ let ESP32 = {
 	UNSAFE_MEASURE_ST: 19,		//status for sensors measurement that indicate unsafe operation condition
 	UNSAFE_MODE_ST: 20,     	//status to warn that the device is operating at unsafe mode
 	LEVEL_CHANGED_ST: 21,   	//status to indicate that the apparatus changed orientation
-	MAIN_S_UUID: "b75dac84-0213-4580-9213-c17f932a719c",  		//The single service for all device's characteristics
-	PATH_C_UUID: "6309b82c-ff09-4957-a51b-b63aefd95b39",		//characteristic for the path array
-	POS_MEASURE_C_UUID: "34331e8c-74bd-4219-aab0-5909aeea3c4e",  //characteristic for measuring the steppers position
-	STATUS_C_UUID: "46425bca-0669-4f53-81bb-2bf67a3a1141",  	//characteristic for indicating the hardware status
+	MAIN_S_UUID:          "643790f9-355d-435b-b407-43ebf47a86b4",  //The single service for all device's characteristics
+	PATH_C_UUID:          "f467e4e9-e2bc-422f-b8a3-aaaf6f92b999",  //characteristic for the path array
+	POS_MEASURE_C_UUID:   "6f23d28a-a3cb-4c5f-9d08-63fda0806966",  //characteristic for measuring the steppers position
+	STATUS_C_UUID:        "4af8de6b-1f13-4dfb-b08e-0a4a97a983d5",  //characteristic for indicating the hardware status
+	CHECK_STATUS_C_UUID:  "f7b0afdf-b51e-4ba7-9513-48fb15497f22",  //characteristic for measuring the hardware status
 	DEVICE_NAME: "Stellector"
 };
 
@@ -659,7 +660,7 @@ CommSP.Bluetooth = class {
 		this.OPT = ESP32;
 		/**@member {VecSP.Step} - the steppers fix and mob coordinates obtained from the accelerometer readings. */
 		this.actStep = new VecSP.Step(0, 0);
-		this.serverStatus = 0;		
+		this.serverStatus = {laser: 0, steppersWorking: 0, unsafeMode: 0, safeHeight: 0, leveled: 0, tilted: 0};		
 	}
 	/**Return actual time in the format: hours minutes seconds. */
 	time () {
@@ -839,9 +840,9 @@ CommSP.Bluetooth = class {
 			return true;						
 		} catch (error) {return this.disconnectMsg(error);}
 	}
-	async checkStatus () {
+	async getStatus () {
 		try {
-			let value = await this.statusC.readValue();		
+			let status = await this.statusC.readValue();		
 			this.serverStatus = value.getUint8(0);
 			//return this.serverStatus;
 			
