@@ -22,28 +22,14 @@ let ESP32 = {
 	EXEC_PATH_OPT: 2,        	//option to execute the path
 	CYCLIC_PATH_OPT: 3,     	//option to execute the path cyclicaly
 	REVERSE_PATH_OPT: 4,	    //option to execute the path cyclicaly in reverse order alternately	
-	LASER_SWITCH_OPT: 5,       	//option to turn on the laser
-	LASER_CHECK_OPT: 6,    		//option to check the laser	state
-	SET_ZENITH_OPT: 7,       	//option to make actSteps equal to STEP_AT_ZENITH
-	READ_ACT_STEPS_OPT: 8,		//option to read the steppers actual steps
-	RESET_READ_OPT: 9,	        //option to make the read steppers procedure ready
-	RESET_PATH_ST: 10,			//status to start a new path reading
-	EXEC_PATH_ST: 11,			//status to execute the path
-	CYCLIC_PATH_ST: 12,			//status to execute the path cyclicaly	
-	REVERSE_PATH_ST: 13,	    //status to execute the path cyclicaly in reverse order alternately
-	LASER_ON_ST: 14,			//status to turn on the laser
-	LASER_OFF_ST: 15,			//status to turn off the laser
-	LASER_SWITCH_ST: 16,	    //status to switch laser state
-	SET_ZENITH_ST: 17,			//status to make actSteps equal to STEP_AT_ZENITH
-	READ_ACT_STEPS_ST: 18,		//status to read the steppers actual steps
-	UNSAFE_MEASURE_ST: 19,		//status for sensors measurement that indicate unsafe operation condition
-	UNSAFE_MODE_ST: 20,     	//status to warn that the device is operating at unsafe mode
-	LEVEL_CHANGED_ST: 21,   	//status to indicate that the apparatus changed orientation
+	LASER_SWITCH_OPT: 5,       	//option to turn on the laser	
+	SET_ZENITH_OPT: 6,       	//option to make actSteps equal to STEP_AT_ZENITH
+	READ_ACT_STEPS_OPT: 7,		//option to read the steppers actual steps	
 	MAIN_S_UUID:          "643790f9-355d-435b-b407-43ebf47a86b4",  //The single service for all device's characteristics
 	PATH_C_UUID:          "f467e4e9-e2bc-422f-b8a3-aaaf6f92b999",  //characteristic for the path array
-	POS_MEASURE_C_UUID:   "6f23d28a-a3cb-4c5f-9d08-63fda0806966",  //characteristic for measuring the steppers position
-	STATUS_C_UUID:        "4af8de6b-1f13-4dfb-b08e-0a4a97a983d5",  //characteristic for indicating the hardware status
-	CHECK_STATUS_C_UUID:  "f7b0afdf-b51e-4ba7-9513-48fb15497f22",  //characteristic for measuring the hardware status
+	COMMAND_C_UUID:       "f7b0afdf-b51e-4ba7-9513-48fb15497f22",  //characteristic for command execution on server
+	STEPPERS_C_UUID:  	  "6f23d28a-a3cb-4c5f-9d08-63fda0806966",  //characteristic for measuring the steppers position
+	STATUS_C_UUID:        "4af8de6b-1f13-4dfb-b08e-0a4a97a983d5",  //characteristic for indicating the hardware status	
 	DEVICE_NAME: "Stellector"
 };
 
@@ -644,14 +630,12 @@ CommSP.Bluetooth = class {
 		this.mainS_UUID = ESP32.MAIN_S_UUID;
 		/**@member {string} - Characteristic UUID for the CommSP.parsedPath transmission.*/
 		this.pathC_UUID = ESP32.PATH_C_UUID;
+		/**@member {string} - Characteristic UUID for sending commands to server.*/
+		this.commandC_UUID = ESP32.COMMAND_C_UUID;
 		/**@member {string} - Characteristic UUID for measuring the steppers position.*/
-		this.posMeasureC_UUID = ESP32.POS_MEASURE_C_UUID;
+		this.steppersC_UUID = ESP32.STEPPERS_C_UUID;
 		/**@member {string} - Characteristic UUID for measuring ESP32 status.*/
-		this.statusC_UUID = ESP32.STATUS_C_UUID;
-		/**@member {Object} - Characteristic for the CommSP.parsedPath transmission.*/
-		this.pathC = NaN;
-		/**@member {Object} - Characteristic for measuring the steppers position.*/
-		this.posMeasureC = NaN;
+		this.statusC_UUID = ESP32.STATUS_C_UUID;		
 		/**@member {Object} - DOM element whose innerHTML attribute receives the communication logs.*/
 		this.logDOM = logDOM;
 		/**@member {number} - 1 byte array maximum size to be sent to the server. */
@@ -660,7 +644,14 @@ CommSP.Bluetooth = class {
 		this.OPT = ESP32;
 		/**@member {VecSP.Step} - the steppers fix and mob coordinates obtained from the accelerometer readings. */
 		this.actStep = new VecSP.Step(0, 0);
-		this.serverStatus = {laser: 0, steppersWorking: 0, unsafeMode: 0, safeHeight: 0, leveled: 0, tilted: 0};		
+		this.serverStatus = {
+			idle: false,
+			laserOn: false,
+			unsafeMode: false,
+			safeHeight: false,
+			leveled: false,
+			tilted: false
+		};		
 	}
 	/**Return actual time in the format: hours minutes seconds. */
 	time () {
@@ -683,8 +674,9 @@ CommSP.Bluetooth = class {
 			filters: [{ name: this.deviceName }],
 			optionalServices: [
 				this.mainS_UUID, 
-				this.pathC_UUID,    
-				this.posMeasureC_UUID,
+				this.pathC_UUID,
+				this.commandC_UUID,    
+				this.steppersC_UUID,
 				this.statusC_UUID]};
 		try {
 			this.logDOM.innerHTML = this.time() + 'Requesting StarPointer Device...\n';      
@@ -698,7 +690,8 @@ CommSP.Bluetooth = class {
 			
 			this.logDOM.innerHTML += this.time() + 'Getting GAP Characteristics...\n';
 			this.pathC = await this.mainS.getCharacteristic(this.pathC_UUID);
-			this.posMeasureC = await this.mainS.getCharacteristic(this.posMeasureC_UUID);
+			this.commandC = await this.mainS.getCharacteristic(this.commandC_UUID);
+			this.steppersC = await this.mainS.getCharacteristic(this.steppersC_UUID);
 			this.statusC = await this.mainS.getCharacteristic(this.statusC_UUID);
 			this.logDOM.innerHTML += this.time() + 'Connected to StarPointer on ESP32 Server.\n';
 			return true;    
@@ -717,21 +710,12 @@ CommSP.Bluetooth = class {
 	/** Send a this.Opt item to ESP32 Server.
 	 * @param {number} optValue - A valid this.Opt item value.
 	*/
-	async sendOption (optValue) {
+	async sendCommand (optValue) {
 		let optKey = this.optKeyFromValue(optValue);
 		if (optKey) {			
 			this.logDOM.innerHTML += this.time() + 'Option ' + optKey + ' sent to Server.\n';
-			await this.pathC.writeValue(new Uint8Array([optValue]));			
-			/*if (await this.checkStatus()) {
-				let opt = this.optKeyFromValue(this.serverStatus);
-				this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
-				if (opt == 'LEVEL_CHANGED_ST') alert ('Atention! Horus changed orientation. Calibration may have been impaired.');
-				else if (opt == 'UNSAFE_MEASURE_ST') alert ('Atention! Horus leveling or distance to the ground are unsafe. Set up the equipament correctly. No commands executed.');
-				else if (opt == 'UNSAFE_MODE_ST') alert ('Atention! Horus operating in unsafe mode. Use it with caution.');
-				return this.serverStatus;
-			}
-			else return false;*/
-			return await this.checkStatus();
+			await this.commandC.writeValue(new Uint8Array([optValue]));						
+			return true;
 		}
 		else {
 		  this.logDOM.innerHTML += this.time() + 'Option ' + option + ' not recognized. Nothing sent to Server.\n';
@@ -744,95 +728,90 @@ CommSP.Bluetooth = class {
 	 */
 	async goStepSize (stepSize, dirs) {
 		try {
-			let m = stepSize;
-			let fix = Math.max((parseInt(dirs[1])-1)*m + 127, 0);
-			let mob = Math.max((parseInt(dirs[2])-1)*m + 127, 0);
-			await this.pathC.writeValue(new Uint8Array([fix, mob]));
-			this.logDOM.innerHTML += this.time() + 'Step size of (' + (fix-127) + ',' + (mob-127) + ') sent to (fixed,mobile) steppers on Server.\n';
-			await this.checkStatus();
-			return true;
+			if (await this.getStatus()) {			
+				let fix = Math.max((parseInt(dirs[1])-1)*stepSize + 127, 0);
+				let mob = Math.max((parseInt(dirs[2])-1)*stepSize + 127, 0);
+				await this.commandC.writeValue(new Uint8Array([fix, mob]));
+				this.logDOM.innerHTML += this.time() + 'Step size of (' + (fix-127) + ',' + (mob-127) + ') sent to (fixed,mobile) steppers on Server.\n';
+				return true;
+			}
+			else return false;
 		} catch {return this.disconnectMsg();}
 	}	
 	/**Execute a parsedPath on steppers in the ESP32 server.
 	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
 	 * @param {string} cyclicOpt - 'single': path is executed once; 'forward': path is excuted cyclically forward until stop signal; 'alternate': path is excuted cyclically alternate until stop signal.
 	 */
-	async goPath (Path, cyclicOpt = 'single') {  
-		//console.log(Path);
-	    try {			
-			let path = Path.parsedPath;			
-			if (path.length == 0) alert ('Path execution ignored due to steppers elevation out of bounds.');
-			else {
-				if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
-				await this.sendOption(this.OPT.RESET_PATH_OPT);
-				let j = 0;
-				let pathChunk;
-				for (let i = 0; i < path.length; i++) {
-						j = i % this.maxChunk;
-					if (j == 0) {      
-						if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
-						else pathChunk = new Uint8Array(path.length - i);
-					}
-					pathChunk[j] = path[i];
-					if ((j == this.maxChunk - 1) || (i == path.length -1)) {
-						await this.pathC.writeValue(pathChunk);
-					}
+	async goPath (Path, cyclicOpt = 'single') {  		
+	    try {
+			if (await this.getStatus()) {			
+				let path = Path.parsedPath;			
+				if (path.length == 0) {
+					alert ('Path execution ignored due to steppers elevation out of bounds.');
+					return false;
 				}
-				this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
-				switch (cyclicOpt) {
-					case 'single':
-						await this.sendOption(this.OPT.EXEC_PATH_OPT);
-						break;
-					case 'forward':
-						await this.sendOption(this.OPT.CYCLIC_PATH_OPT);
-						break;
-					case 'alternate':
-						await this.sendOption(this.OPT.REVERSE_PATH_OPT);
-						break;
-				}				
-				this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
-				return true;
-			}
+				else {
+					if (Path.clipped) alert('Path clipped due to steppers elevation out of bounds.');
+					await this.sendCommand(this.OPT.RESET_PATH_OPT);
+					let j = 0;
+					let pathChunk;
+					for (let i = 0; i < path.length; i++) {
+							j = i % this.maxChunk;
+						if (j == 0) {      
+							if (path.length - i >= this.maxChunk) pathChunk = new Uint8Array(this.maxChunk);
+							else pathChunk = new Uint8Array(path.length - i);
+						}
+						pathChunk[j] = path[i];
+						if ((j == this.maxChunk - 1) || (i == path.length -1)) {
+							await this.pathC.writeValue(pathChunk);
+						}
+					}
+					this.logDOM.innerHTML += this.time() + 'Path with ' + Path.size + ' segments sent to Server.\n';
+					switch (cyclicOpt) {
+						case 'single':
+							await this.sendCommand(this.OPT.EXEC_PATH_OPT);
+							break;
+						case 'forward':
+							await this.sendCommand(this.OPT.CYCLIC_PATH_OPT);
+							break;
+						case 'alternate':
+							await this.sendCommand(this.OPT.REVERSE_PATH_OPT);
+							break;
+					}				
+					this.logDOM.innerHTML += this.time() + 'Path execution with Cyclic Option = ' + cyclicOpt + '.\n';
+					return true;
+				}
+			} else return false;
 		} catch (error) {return this.disconnectMsg(error);}
 	}
 	/** Switch the laser status on/off in the ESP32 server. */
 	async goLaser () {
 		try {			
-			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('LASER_SWITCH_OPT');												
-			await this.sendOption(this.OPT.LASER_SWITCH_OPT);
+			if (await this.getStatus()) {
+				console.log(this.serverStatus);
+				await this.sendCommand(this.OPT.LASER_SWITCH_OPT);
+				return true;
+			} else return false;															
 		} catch (error) {			
 			return this.disconnectMsg(error);}		
 	}
-	/** Asign the actual steppers step values to ESP32.STEP_AT_ZENITH.	 
+	/** Set actual steppers step values to ESP32.STEP_AT_ZENITH.	 
 	 */
 	async setZenith() {
 		try {			
-			//if (this.isServerIdle(await this.checkStatus())) await this.sendOption('SET_ZENITH_OPT');
-			//await this.sendOption('RESET_PATH_OPT');
-			await this.sendOption(this.OPT.SET_ZENITH_OPT);												
+			if (await this.getStatus()) {
+				await this.sendCommand(this.OPT.SET_ZENITH_OPT);												
+				return true;
+			} else return false;
 		} catch (error) {			
 			return this.disconnectMsg(error);
 		}
 	}
-		/*try {
-			await this.pathC.writeValue(new Uint8Array([this.OPT.SET_ZENITH_OPT]));
-			this.logDOM.innerHTML += this.time() + "Laser beam pointed to zenith.\n";
-			return true;
-		} catch (error) {return await this.disconnectMsg(error);}
-	}*/
-	/** Read (using the server accelerometer) the steppers fix and mob coordinates in the ESP32 server.
+	/** Read the steppers fix and mob coordinates in the ESP32 server.
 	 */
 	async readActSteps () {		
 	    try {			
-			let value;
-			await this.pathC.writeValue(new Uint8Array([this.OPT.RESET_READ_OPT]));
-			do {
-				value = await this.posMeasureC.readValue();				
-			} while (value.byteLength > 1);
-			await this.pathC.writeValue(new Uint8Array([this.OPT.READ_ACT_STEPS_OPT]));
-			do {
-				value = await this.posMeasureC.readValue();				
-			} while (value.byteLength < 4);
+			let value = await this.steppersC.readValue();							
 			let fix = value.getUint8(0)*256 + value.getUint8(1);
 			let mob = value.getUint8(2)*256 + value.getUint8(3);
 			this.logDOM.innerHTML += this.time() + 'Actual steps readings from server: fix=' + fix + ', mob=' + mob + '\n';
@@ -843,15 +822,29 @@ CommSP.Bluetooth = class {
 	async getStatus () {
 		try {
 			let status = await this.statusC.readValue();		
-			this.serverStatus = value.getUint8(0);
-			//return this.serverStatus;
+			this.serverStatus.idle = status.getUint8(0);			
+			this.serverStatus.laserOn = status.getUint8(1);
+			let unsafeMode = status.getUint8(2);
+			let safeHeight = status.getUint8(3);
+			let leveled = status.getUint8(4);
+			let tilted = status.getUint8(5);
+
+			if ((unsafeMode != this.serverStatus.unsafeMode) && unsafeMode) alert ('Atention! Horus operating in unsafe mode. Use it with caution.');	
+			if (!unsafeMode) {
+				let msg = '';
+				if (!safeHeight) msg += 'Distance to the ground is unsafe. ';
+				if (!leveled) msg += 'Horus is not leveled. ';
+				if (msg != '') alert('Atention! ' + msg + 'Set up the equipament correctly. No commands executed.');
+			}
+			if (tilted) alert ('Atention! Horus changed orientation. Calibration may have been impaired.');
+
+			this.serverStatus.unsafeMode = unsafeMode;
+			this.serverStatus.safeHeight = safeHeight;
+			this.serverStatus.leveled = leveled;
+			this.serverStatus.tilted = tilted;
 			
-			let opt = this.optKeyFromValue(this.serverStatus);
-			this.logDOM.innerHTML += this.time() + 'Option ' + opt + ' received by Server.\n';
-			if (opt == 'LEVEL_CHANGED_ST') alert ('Atention! Horus changed orientation. Calibration may have been impaired.');
-			else if (opt == 'UNSAFE_MEASURE_ST') alert ('Atention! Horus leveling or distance to the ground are unsafe. Set up the equipament correctly. No commands executed.');
-			else if (opt == 'UNSAFE_MODE_ST') alert ('Atention! Horus operating in unsafe mode. Use it with caution.');
-			return this.serverStatus;
+			if ((safeHeight && leveled) || unsafeMode) return true;
+			else return false;
 
 		} catch {
 			return false;
