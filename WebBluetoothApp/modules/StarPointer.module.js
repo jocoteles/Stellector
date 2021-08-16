@@ -5,8 +5,7 @@
  */
 
 import '../libs/three.min.js';
-import '../libs/optimization.js'
-import '../libs/lalolib-noglpk-module.min.js'
+//import '../libs/optimization.js'
 import { nelderMead } from '../libs/nelderMead.js';
 
 /**
@@ -525,10 +524,26 @@ CommSP.CommPath = class {
 		this.calib = Calib;
 		/**@member {number[]} - Parsed path obtained from this._path. */
 		this._parsedPath = [];
-		/**@member {boolean} - True if this._parsedPath is out of steppers bounds. */
+		/**@member {boolean} - True if path clipped due to be below horizon. */
 		this.clipped = false;
 		this.composePath();
 	}
+	/**
+	 * 
+	 * @param {VecSP.Step} Step - step to be checked if is above horizon. 
+	 * @returns {boolean} true if above horizon, false otherwise.
+	 */
+	isAboveHorizon (Step) {
+		let ph = (Step.fix-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
+		let th = (Step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
+		let x = cos(ph)*sin(th);
+		let y = sin(ph)*sin(th);
+		let z = cos(ph);
+		let tanH = y/sqrt(x*x+z*z);
+  		if (tanH > Math.tan(ESP32.HORIZON_MIN_ANG*Math.PI/180)) return true;
+		else return false;		
+	}
+
 	/**
 	 * Parse a segment to be added to a parsed path.
 	 * @param {PathSP.Segment} Segment - Segment to be parsed. 	 
@@ -536,24 +551,8 @@ CommSP.CommPath = class {
 	 */
 	parseSegment (Segment) {		
 		//Encoding to this._encBase:		
-		let step = Segment.eq;
-		if (Segment.eq instanceof VecSP.Equatorial) step = this.calib.stepFromEquatorial(Segment.eq);		
-		//console.log(Segment.eq);
-		//console.log(step);
-		/*if (step.fix < ESP32.STEP_MIN || step.fix > ESP32.STEP_MAX || step.mob < ESP32.STEP_MIN || step.mob > ESP32.STEP_MAX) {
-			this.clipped = true;
-			return false;
-		}*/ //Recheck this function in the future		
-		let ph = (step.fix-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
-		let th = (step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
-		let x = cos(ph)*sin(th);
-		let y = sin(ph)*sin(th);
-		let z = cos(th);
-		let tanH = y/sqrt(x*x+z*z);
-  		if (tanH <= Math.tan(ESP32.HORIZON_MIN_ANG*Math.PI/180)) {
-			this.clipped = true;
-			return false;			
-		}
+		let step = Segment.coord;
+		if (Segment.coord instanceof VecSP.Equatorial) step = this.calib.stepFromEquatorial(Segment.coord);						
 		let data = [Segment.laser, Segment.delay, step.fix, step.mob];
 		let x0 = 0;
 		let b = 0;
@@ -573,11 +572,22 @@ CommSP.CommPath = class {
 		return r;
 	}
 	/**Method for parsing this._path. */
-	composePath () {		
-		this._parsedPath = [];
-		this.clipped = false;
-		for (let i = 0; i < this._path.size; i++) {					    
-			let s = this.parseSegment(this._path.path[i]);
+	composePath () {				
+		this.clipped = false;				
+		let clipPos = 0;		
+		let clippedPath = new PathSP.Path();
+		for (let segment of this._path.path) {	//generates the clipped path and finds first clip position			
+			if (segment.coord instanceof VecSP.Equatorial) segment.coord = this.calib.stepFromEquatorial(segment.coord);	    
+			if (this.isAboveHorizon(segment.coord)) clippedPath.addSegment(segment);
+			else if (clipPos == 0) {
+				clipPos = clippedPath.size;
+				this.clipped = true;
+			}
+		}
+		this._parsedPath = [];		
+		for (let i = 0; i < clippedPath.size; i++) {
+			let Segment = clippedPath.path[(clipPos+i)%clippedPath.size];			
+			let s = this.parseSegment(Segment);
 			if (s) this._parsedPath = this._parsedPath.concat(s);
 		}
 	}
@@ -621,9 +631,10 @@ CommSP.CommPath = class {
 
 /**Class to communicate via Low Energy Bluetooth with the Star Pointer ESP32 server.
  * @param {Object} - DOM element whose innerHTML attribute receives the communication logs.
+ * @param {Object} - DOM element to indicate when in the unsafe mode.
 */
 CommSP.Bluetooth = class {
-	constructor (logDOM) {
+	constructor (logDOM, unsafeDOM) {
 		/**@member {string} - Server device name.*/
 		this.deviceName = ESP32.DEVICE_NAME;
 		/**@member {string} - The single service for all device's characteristics.*/
@@ -638,6 +649,8 @@ CommSP.Bluetooth = class {
 		this.statusC_UUID = ESP32.STATUS_C_UUID;		
 		/**@member {Object} - DOM element whose innerHTML attribute receives the communication logs.*/
 		this.logDOM = logDOM;
+		/**@member {Object} - DOM element to indicate unsafe mode operation.*/
+		this.unsafeDOM = unsafeDOM;
 		/**@member {number} - 1 byte array maximum size to be sent to the server. */
 		this.maxChunk = 512;
 		/**@member {Object} - Execution options to ESP32 server. */
@@ -694,6 +707,8 @@ CommSP.Bluetooth = class {
 			this.steppersC = await this.mainS.getCharacteristic(this.steppersC_UUID);
 			this.statusC = await this.mainS.getCharacteristic(this.statusC_UUID);
 			this.logDOM.innerHTML += this.time() + 'Connected to StarPointer on ESP32 Server.\n';
+
+			this.getStatus();
 			return true;    
 		}
 		catch(error) {
@@ -787,8 +802,7 @@ CommSP.Bluetooth = class {
 	/** Switch the laser status on/off in the ESP32 server. */
 	async goLaser () {
 		try {			
-			if (await this.getStatus()) {
-				console.log(this.serverStatus);
+			if (await this.getStatus()) {				
 				await this.sendCommand(this.OPT.LASER_SWITCH_OPT);
 				return true;
 			} else return false;															
@@ -829,6 +843,9 @@ CommSP.Bluetooth = class {
 			let leveled = status.getUint8(4);
 			let tilted = status.getUint8(5);
 
+			if (unsafeMode) this.unsafeDOM.style.display = "block";
+			else this.unsafeDOM.style.display = "none";
+
 			if ((unsafeMode != this.serverStatus.unsafeMode) && unsafeMode) alert ('Atention! Horus operating in unsafe mode. Use it with caution.');	
 			if (!unsafeMode) {
 				let msg = '';
@@ -863,12 +880,12 @@ let PathSP = {};
 PathSP.Segment = class {
     /**
      * Create a segment for the path followed by the Star Pointer composed by equatorial or steps coords, laser status and time delay between steps.
-	 * @param {VecSP.Equatorial|VecSP.Step} eq - equatorial or step coords of the path segment.
+	 * @param {VecSP.Equatorial|VecSP.Step} coord - equatorial or step coords of the path segment.
 	 * @param {number} laser - Laser state: 0 = off, 1 = on.
 	 * @param {number} delay - Time delay between steppers sucessive steps in multiples of 100 us.
      */
-	constructor (eq, laser, delay) {
-		this.eq = eq;
+	constructor (coord, laser, delay) {
+		this.coord = coord;
 		this.laser = laser;
 		this.delay = delay;
 	}

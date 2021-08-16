@@ -81,6 +81,7 @@ const $speakConstellation = document.getElementById("speakConstellation");
 const $speakHipparcos = document.getElementById("speakHipparcos");
 const $controllerWidth = document.getElementById("controllerWidth");
 const $controllerWidthValue = document.getElementById("controllerWidthValue");
+const $unsafeModeWarning = document.getElementById("unsafeModeWarning");
 
 const colorMenuSelected = "#339333";
 const colorMenuUnselected = "#893838";
@@ -240,7 +241,7 @@ const filterComboMinLength = 0;
 /* --------------------
   Global variables */
 
-let BleInstance = new CommSP.Bluetooth($commStatus);
+let BleInstance = new CommSP.Bluetooth($commStatus, $unsafeModeWarning);
 let CalibInstance = new VecSP.Calibration();
 let CalibTemp = new VecSP.Calibration();
 
@@ -707,8 +708,8 @@ CalibW.acceptCalib = function () {
  */
 window.NavW = {};
 
-NavW.setZenith = async function () {
-	await BleInstance.setZenith();
+NavW.setZenith = async function () {  
+	await BleInstance.setZenith();  
 }
 
 NavW.goObjectStyle = async function (style, eqCoord) {
@@ -728,7 +729,8 @@ NavW.goObjectStyle = async function (style, eqCoord) {
       path.addSegment(seg1);
       cyclicOpt = 'forward';
       break;
-    case "circle" || "alternate":
+    case "alternate":
+    case "circle":
       let ap = 0.5*$circleApR.value*Math.PI/180;      
       let inc = $circleAngR.value*Math.PI/180;  
       delay = circleSpeedInputDatalistParams.delaylist[Number($circleSpeedR.value)-1];      

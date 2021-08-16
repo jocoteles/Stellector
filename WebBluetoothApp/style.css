@@ -39,6 +39,17 @@ td {
   margin: 10% 20%; 
 }
 
+#unsafeModeWarning {
+  background-color: lightcoral;
+  height: 1.5em;
+  width: 95%;  
+  border-radius: 0.2em; 
+  text-align: center;
+  padding-top: 0.5em;  
+  margin: 1.0em auto 0.5em auto;
+  display: none;
+}
+
 .tab {  
   background-color: #999;
   border: solid thin black;

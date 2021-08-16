@@ -404,7 +404,7 @@ void laser (bool s) {
   laserOnStatus = s;
 }
 
-void execPath() {
+void execPath () {
   uint16_t N, ph, th, phA, thA;
   int dph, dth;
   float fph, fth;
