@@ -223,10 +223,10 @@ VecSP.Step = class {
 	}
 	/** Correct coordinates to their boundary values */
 	correctSteps () {		
-		let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
-		this._fix = (n*this.maxSteps + this._fix) % this.maxSteps;
-		let m = Math.ceil(Math.abs(this._mob)/this.maxSteps);
-		this._mob = (m*this.maxSteps + this._mob) % this.maxSteps;
+		//let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
+		//this._fix = (n*this.maxSteps + this._fix) % this.maxSteps;
+		//let m = Math.ceil(Math.abs(this._mob)/this.maxSteps);
+		//this._mob = (m*this.maxSteps + this._mob) % this.maxSteps;
 	}
 	/** Return fix coordinate in radians
 	 * @returns {number} this.fix in radians */		
@@ -536,10 +536,14 @@ CommSP.CommPath = class {
 	isAboveHorizon (Step) {
 		let ph = (Step.fix-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
 		let th = (Step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
-		let x = cos(ph)*sin(th);
-		let y = sin(ph)*sin(th);
-		let z = cos(ph);
+		//let th = (Step.mob-ESP32.STEP_AT_ZENITH+Math.trunc(ESP32.STPS360/4))*2*Math.PI/ESP32.STPS360;
+		let x = Math.cos(ph)*Math.sin(th);
+		let y = Math.sin(ph)*Math.sin(th);
+		let z = Math.cos(th);
 		let tanH = y/sqrt(x*x+z*z);
+		/* console.log(Step.fix);
+		console.log(Step.mob);
+		console.log('--------------'); */
   		if (tanH > Math.tan(ESP32.HORIZON_MIN_ANG*Math.PI/180)) return true;
 		else return false;		
 	}
@@ -573,15 +577,19 @@ CommSP.CommPath = class {
 	}
 	/**Method for parsing this._path. */
 	composePath () {				
-		this.clipped = false;				
+		/* this.clipped = false;				
 		let clipPos = 0;		
 		let clippedPath = new PathSP.Path();
 		for (let segment of this._path.path) {	//generates the clipped path and finds first clip position			
-			if (segment.coord instanceof VecSP.Equatorial) segment.coord = this.calib.stepFromEquatorial(segment.coord);	    
-			if (this.isAboveHorizon(segment.coord)) clippedPath.addSegment(segment);
-			else if (clipPos == 0) {
-				clipPos = clippedPath.size;
-				this.clipped = true;
+			if (segment.coord instanceof VecSP.Equatorial) segment.coord = this.calib.stepFromEquatorial(segment.coord);				
+			if (this.isAboveHorizon(segment.coord)) {
+				clippedPath.addSegment(segment);				
+			}
+			else {				
+				if (clipPos == 0) {
+					clipPos = clippedPath.size;
+					this.clipped = true;
+				}
 			}
 		}
 		this._parsedPath = [];		
@@ -589,6 +597,27 @@ CommSP.CommPath = class {
 			let Segment = clippedPath.path[(clipPos+i)%clippedPath.size];			
 			let s = this.parseSegment(Segment);
 			if (s) this._parsedPath = this._parsedPath.concat(s);
+		} */
+
+		this.clipped = false;
+		this._parsedPath = [];				
+		let path = this._path.path;		
+		for (let i = 0; i < path.length; i++) {
+			if (path[i].coord instanceof VecSP.Equatorial) path[i].coord = this.calib.stepFromEquatorial(path[i].coord);							
+			if (this.isAboveHorizon(path[i].coord)) {
+				//console.log(path[i].laser);
+				let seg = new PathSP.Segment(path[i].coord, path[i].laser, path[i].delay);
+				//if (i+1 < path.length)
+				if (i-1 >= 0)
+					if (!this.isAboveHorizon(path[i-1].coord)) {
+						seg.laser = 0;
+						seg.delay = 0;
+						this.clipped = true;
+					}
+				//console.log(path[i].laser);
+				//console.log('-------------');
+				this._parsedPath = this._parsedPath.concat(this.parseSegment(seg));												
+			}
 		}
 	}
 	/**Set path. */
@@ -814,7 +843,7 @@ CommSP.Bluetooth = class {
 	async setZenith() {
 		try {			
 			if (await this.getStatus()) {
-				await this.sendCommand(this.OPT.SET_ZENITH_OPT);												
+				await this.sendCommand(this.OPT.SET_ZENITH_OPT);																				
 				return true;
 			} else return false;
 		} catch (error) {			

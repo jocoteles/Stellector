@@ -354,7 +354,9 @@ App.equatorialFromObjectData = function (value, date = new Date()) {
       else if (id == "Sun") objSS = new Orb.Sun();
       else objSS = new Orb.VSOP(id);      
       let radec = objSS.radec(date);
-      if ($sideralOffset.checked) radec.ra -= (date - new Date())*24/sideralDay;      
+      //console.log(date);
+      //console.log(radec);
+      if (!$sideralOffset.checked) radec.ra -= (date - new Date())*24/sideralDay;      
       return new VecSP.Equatorial(radec.ra, radec.dec);
     }
     else {
@@ -864,7 +866,7 @@ NavW.goStar = async function (timeOpt) {
     date = new Date(year, month, day, hour, minute);        
   }
   $objDate.value = App.localDateString(date);
-  $objTime.value = App.localTimeString(date);
+  $objTime.value = App.localTimeString(date);  
   let eqCoord = App.equatorialFromObjectData(opt, date);
   
   await NavW.goObjectStyle(style, eqCoord); 
@@ -892,14 +894,14 @@ NavW.goTrack = async function (opt) {
     if (opt == 'fullTrack') {
       let trackPath = new PathSP.Path();
       for (let coord of trackCoords.coords) {        
-        ra0 = App.ra180to24(coord[0][0]) + dt;
+        ra0 = App.ra180to24(coord[0][0]) - dt;
         dec0 = coord[0][1];
         eq0 = new VecSP.Equatorial(ra0, dec0);                
         if (circle) trackPath.addPath(new PathSP.makeCircle(eq0, cap, cinc, clp, cdelay));
         for (let i = 0; i < coord.length-1; i++) {
-          ra0 = App.ra180to24(coord[i][0]) + dt;
+          ra0 = App.ra180to24(coord[i][0]) - dt;
           dec0 = coord[i][1];
-          ra1 = App.ra180to24(coord[i+1][0]) + dt;        
+          ra1 = App.ra180to24(coord[i+1][0]) - dt;        
           dec1 = coord[i+1][1];
           eq0 = new VecSP.Equatorial(ra0, dec0);
           eq1 = new VecSP.Equatorial(ra1, dec1);            
