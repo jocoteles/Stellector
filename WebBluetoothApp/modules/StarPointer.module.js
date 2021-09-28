@@ -5,7 +5,6 @@
  */
 
 import '../libs/three.min.js';
-//import '../libs/optimization.js'
 import { nelderMead } from '../libs/nelderMead.js';
 
 /**
