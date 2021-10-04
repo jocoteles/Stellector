@@ -1,7 +1,0 @@
-GY-511 LSM303 accel-compass sensor: https://learn.adafruit.com/lsm303-accelerometer-slash-compass-breakout/coding
-https://electrosome.com/interfacing-mpu-6050-gy-521-arduino-uno/
-
-multiples SDA SCL devices on ESP32: https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/
-GY-511 simple code on Arduino: https://create.arduino.cc/projecthub/Nicholas_N/how-to-use-the-accelerometer-gyroscope-gy-521-6dfc19
-
-Aplicativo completo com web-bluetooth: https://medium.com/@loginov_rocks/how-to-make-a-web-app-for-your-own-bluetooth-low-energy-device-arduino-2af8d16fdbe8

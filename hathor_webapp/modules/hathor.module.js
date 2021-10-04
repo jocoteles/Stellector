@@ -1,7 +1,7 @@
 /**
- * JS Module for the StarPointer app.
- * @module libs/StarPointer
- * @see module:libs/StarPointer.module.js
+ * JS Module for the Hathor Web App.
+ * @module modules/hathor
+ * @see module:modules/hathor.module.js
  */
 
 import '../libs/three.min.js';
