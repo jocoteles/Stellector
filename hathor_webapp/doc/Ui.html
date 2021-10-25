@@ -1,0 +1,5475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Ui - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Basic.Comm.Bluetooth.html">Bluetooth</a><ul class='methods'><li data-type='method'><a href="Basic.Comm.Bluetooth.html#disconnectMsg">disconnectMsg</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#getStatus">getStatus</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#goLaser">goLaser</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#goPath">goPath</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#goStepSize">goStepSize</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#readActSteps">readActSteps</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#sendCommand">sendCommand</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#setZenith">setZenith</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#startComm">startComm</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#time">time</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Comm.Bluetooth.html#actStep">actStep</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#commandC_UUID">commandC_UUID</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#deviceName">deviceName</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#logDOM">logDOM</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#mainS_UUID">mainS_UUID</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#maxChunk">maxChunk</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#OPT">OPT</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#pathC_UUID">pathC_UUID</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#statusC_UUID">statusC_UUID</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#steppersC_UUID">steppersC_UUID</a></li><li data-type='method'><a href="Basic.Comm.Bluetooth.html#unsafeDOM">unsafeDOM</a></li></ul></li><li><a href="Basic.Comm.CommPath.html">CommPath</a><ul class='methods'><li data-type='method'><a href="Basic.Comm.CommPath.html#composePath">composePath</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#isAboveHorizon">isAboveHorizon</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#parseSegment">parseSegment</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Comm.CommPath.html#_decBase">_decBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#_encBase">_encBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#_parsedPath">_parsedPath</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#_path">_path</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#calib">calib</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#clipped">clipped</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#decBase">decBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#decBase">decBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#encBase">encBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#encBase">encBase</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#parsedPath">parsedPath</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#path">path</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#path">path</a></li><li data-type='method'><a href="Basic.Comm.CommPath.html#size">size</a></li></ul></li><li><a href="Basic.Coord.Calibration.html">Calibration</a><ul class='methods'><li data-type='method'><a href="Basic.Coord.Calibration.html#calcCalib">calcCalib</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#clone">clone</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#equatorialFromStep">equatorialFromStep</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#stepFromEquatorial">stepFromEquatorial</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Coord.Calibration.html#axesTrial">axesTrial</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#fit">fit</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#stars">stars</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#stats">stats</a></li><li data-type='method'><a href="Basic.Coord.Calibration.html#t0">t0</a></li></ul></li><li><a href="Basic.Coord.CalibStar.html">CalibStar</a></li><li><a href="Basic.Coord.Equatorial.html">Equatorial</a><ul class='methods'><li data-type='method'><a href="Basic.Coord.Equatorial.html#clone">clone</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#correctCoords">correctCoords</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#fromSpherical">fromSpherical</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#fromVector3">fromVector3</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#toSpherical">toSpherical</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#toVector3">toVector3</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Coord.Equatorial.html#dec">dec</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#dec">dec</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#ra">ra</a></li><li data-type='method'><a href="Basic.Coord.Equatorial.html#ra">ra</a></li></ul></li><li><a href="Basic.Coord.Spherical.html">Spherical</a><ul class='methods'><li data-type='method'><a href="Basic.Coord.Spherical.html#clone">clone</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#correctCoords">correctCoords</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#fromVector3">fromVector3</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#toVector3">toVector3</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Coord.Spherical.html#phi">phi</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#phi">phi</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#theta">theta</a></li><li data-type='method'><a href="Basic.Coord.Spherical.html#theta">theta</a></li></ul></li><li><a href="Basic.Coord.Step.html">Step</a><ul class='methods'><li data-type='method'><a href="Basic.Coord.Step.html#clone">clone</a></li><li data-type='method'><a href="Basic.Coord.Step.html#correctSteps">correctSteps</a></li><li data-type='method'><a href="Basic.Coord.Step.html#fixFromRad">fixFromRad</a></li><li data-type='method'><a href="Basic.Coord.Step.html#fixToRad">fixToRad</a></li><li data-type='method'><a href="Basic.Coord.Step.html#mobFromRad">mobFromRad</a></li><li data-type='method'><a href="Basic.Coord.Step.html#mobToRad">mobToRad</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.Coord.Step.html#fix">fix</a></li><li data-type='method'><a href="Basic.Coord.Step.html#fix">fix</a></li><li data-type='method'><a href="Basic.Coord.Step.html#mob">mob</a></li><li data-type='method'><a href="Basic.Coord.Step.html#mob">mob</a></li></ul></li><li><a href="Basic.PathOp.Path.html">Path</a><ul class='methods'><li data-type='method'><a href="Basic.PathOp.Path.html#addPath">addPath</a></li><li data-type='method'><a href="Basic.PathOp.Path.html#addSegment">addSegment</a></li><li data-type='method'><a href="Basic.PathOp.Path.html#reset">reset</a></li></ul><ul class='members'><li data-type='method'><a href="Basic.PathOp.Path.html#duration">duration</a></li><li data-type='method'><a href="Basic.PathOp.Path.html#path">path</a></li><li data-type='method'><a href="Basic.PathOp.Path.html#size">size</a></li></ul></li><li><a href="Basic.PathOp.Segment.html">Segment</a></li></ul><h3>Namespaces</h3><ul><li><a href="Basic.html">Basic</a></li><li><a href="Basic.Comm.html">Comm</a></li><li><a href="Basic.Coord.html">Coord</a></li><li><a href="Basic.PathOp.html">PathOp</a><ul class='methods'><li data-type='method'><a href="Basic.PathOp.html#.makeCircle">makeCircle</a></li><li data-type='method'><a href="Basic.PathOp.html#.makeGeodesic">makeGeodesic</a></li></ul></li><li><a href="Ui.html">Ui</a><ul class='methods'><li data-type='method'><a href="Ui.html#.appTime">appTime</a></li><li data-type='method'><a href="Ui.html#.createComboOptions">createComboOptions</a></li><li data-type='method'><a href="Ui.html#.equatorialFromObjectData">equatorialFromObjectData</a></li><li data-type='method'><a href="Ui.html#.filterCombo">filterCombo</a></li><li data-type='method'><a href="Ui.html#.getCoordinates">getCoordinates</a></li><li data-type='method'><a href="Ui.html#.getRadioValue">getRadioValue</a></li><li data-type='method'><a href="Ui.html#.loadItemsDataNames">loadItemsDataNames</a></li><li data-type='method'><a href="Ui.html#.localDateString">localDateString</a></li><li data-type='method'><a href="Ui.html#.localTimeString">localTimeString</a></li><li data-type='method'><a href="Ui.html#.ra24to180">ra24to180</a></li><li data-type='method'><a href="Ui.html#.ra180to24">ra180to24</a></li><li data-type='method'><a href="Ui.html#.setFiltersEvents">setFiltersEvents</a></li><li data-type='method'><a href="Ui.html#.setInputRangeDatalist">setInputRangeDatalist</a></li><li data-type='method'><a href="Ui.html#.textSelected">textSelected</a></li><li data-type='method'><a href="Ui.html#.valueSelected">valueSelected</a></li><li data-type='method'><a href="Ui.html#.window.changeNav">window.changeNav</a></li><li data-type='method'><a href="Ui.html#.window.changeObjectsType">window.changeObjectsType</a></li><li data-type='method'><a href="Ui.html#.window.setWindow">window.setWindow</a></li></ul><ul class='members'><li data-type='method'><a href="Ui.html#.BleInstance">BleInstance</a></li><li data-type='method'><a href="Ui.html#.CalibInstance">CalibInstance</a></li><li data-type='method'><a href="Ui.html#.db">db</a></li><li data-type='method'><a href="Ui.html#.el">el</a></li><li data-type='method'><a href="Ui.html#.itemsData">itemsData</a></li><li data-type='method'><a href="Ui.html#.itemsElements">itemsElements</a></li><li data-type='method'><a href="Ui.html#.itemsNames">itemsNames</a></li><li data-type='method'><a href="Ui.html#.trackCoords">trackCoords</a></li></ul></li><li><a href="Ui.CalibW.html">CalibW</a><ul class='methods'><li data-type='method'><a href="Ui.CalibW.html#.window.cwAcceptCalib">window.cwAcceptCalib</a></li><li data-type='method'><a href="Ui.CalibW.html#.window.cwCalcCalib">window.cwCalcCalib</a></li><li data-type='method'><a href="Ui.CalibW.html#.window.cwUpdateCalib">window.cwUpdateCalib</a></li></ul><ul class='members'><li data-type='method'><a href="Ui.CalibW.html#.calibTemp">calibTemp</a></li><li data-type='method'><a href="Ui.CalibW.html#.cwStars">cwStars</a></li></ul></li><li><a href="Ui.CommW.html">CommW</a><ul class='methods'><li data-type='method'><a href="Ui.CommW.html#.window.cmStartComm">window.cmStartComm</a></li></ul></li><li><a href="Ui.ConfigW.html">ConfigW</a><ul class='methods'><li data-type='method'><a href="Ui.ConfigW.html#.populateVoiceList">populateVoiceList</a></li><li data-type='method'><a href="Ui.ConfigW.html#.speakStar">speakStar</a></li><li data-type='method'><a href="Ui.ConfigW.html#.window.updateControllerWidth">window.updateControllerWidth</a></li><li data-type='method'><a href="Ui.ConfigW.html#.window.updatePointer">window.updatePointer</a></li></ul><ul class='members'><li data-type='method'><a href="Ui.ConfigW.html#.synth">synth</a></li><li data-type='method'><a href="Ui.ConfigW.html#.voices">voices</a></li></ul></li><li><a href="Ui.Controller.html">Controller</a><ul class='methods'><li data-type='method'><a href="Ui.Controller.html#.window.sendStepSize">window.sendStepSize</a></li><li data-type='method'><a href="Ui.Controller.html#.window.switchLaser">window.switchLaser</a></li><li data-type='method'><a href="Ui.Controller.html#.window.updateStepSize">window.updateStepSize</a></li></ul></li><li><a href="Ui.NavW.html">NavW</a><ul class='methods'><li data-type='method'><a href="Ui.NavW.html#.NWgoObjectStyle">NWgoObjectStyle</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWgoEquatorial">window.NWgoEquatorial</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWgoStar">window.NWgoStar</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWgoSteps">window.NWgoSteps</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWgoTrack">window.NWgoTrack</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWgoZenith">window.NWgoZenith</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWreadCoords">window.NWreadCoords</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWresetTrack">window.NWresetTrack</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWsetZenith">window.NWsetZenith</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWshowCoords">window.NWshowCoords</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWtimeStepCheck">window.NWtimeStepCheck</a></li><li data-type='method'><a href="Ui.NavW.html#.window.NWupdateCoordSys">window.NWupdateCoordSys</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#ESP32">ESP32</a></li><li><a href="global.html#ga">ga</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">Ui</h1>
+    
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        Ui
+        </h2>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description">User interface.</div>
+        
+
+        
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1101">line 1101</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+     
+
+    
+        <h3 class="subsection-title">Namespaces</h3>
+
+        <dl>
+            <dt><a href="Ui.CalibW.html">CalibW</a></dt>
+            <dd></dd>
+        
+            <dt><a href="Ui.CommW.html">CommW</a></dt>
+            <dd></dd>
+        
+            <dt><a href="Ui.ConfigW.html">ConfigW</a></dt>
+            <dd></dd>
+        
+            <dt><a href="Ui.Controller.html">Controller</a></dt>
+            <dd></dd>
+        
+            <dt><a href="Ui.NavW.html">NavW</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".BleInstance"><span class="type-signature">(static) </span>BleInstance<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The single Bluetooth object used in the Hathor webapp.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1347">line 1347</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".CalibInstance"><span class="type-signature">(static) </span>CalibInstance<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    The accepted reference frame Calibration object.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1353">line 1353</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".db"><span class="type-signature">(static) </span>db<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    User interface parameters and data bindings.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul class="ul-type">
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5>Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>colorMenuSelected</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>colorMenuUnselected</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>startingLangName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>stepSizeInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineSpeedInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineOnInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleSpeedInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleOnInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleApertureInputDatalistParams</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objectsLabels</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>tracksLabels</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objectCalibF</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objectNavF</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackNavF</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objectsTypeOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibTypeOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>tracksTypeOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>pointerStyleOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackStyleOptions</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>filterComboMinLength</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1194">line 1194</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".el"><span class="type-signature">(static) </span>el<span class="type-signature"> :Object</span></h4>
+
+
+
+
+<div class="description">
+    User interface doom elements.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul class="ul-type">
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+    <h5>Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>controllerSVGcontainer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>stepSizeR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>stepSizeRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>stepSizeT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineSpeedR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineSpeedRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineSpeedT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineOnR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineOnRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineOnT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineAngR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lineAngT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleSpeedR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleSpeedRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleSpeedT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleOnR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleOnRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleOnT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleApR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleApRList</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleApT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleAngR</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circleAngT</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>commStatus</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibLog</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibInfo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>raH</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>raM</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>raS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>raF</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>decD</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>decM</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>decS</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>decF</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fixI</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mobI</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objDate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objTime</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackDate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackTime</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>timeStepY</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>timeStepD</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>timeStepM</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>sideralOffset</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objectPointerStyle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackPointerStyle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>coordsPointerStyle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibObjectsTypeCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibListCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>navObjectsTypeCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>navTracksTypeCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>calibObjectsCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>angFixStretch</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>angMobStretch</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fixStretchOptim</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mobStretchOptim</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>laserTiltOptim</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>laserTiltAng</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mobTiltOptim</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mobTiltAng</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>useParamsCalib</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>navObjectsCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>navTracksCombo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>trackAtDatetime</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speechLanguage</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speechRate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speechPitch</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speakStarName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speakBayer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speakConstellation</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>speakHipparcos</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>controllerWidth</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>controllerWidthValue</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>unsafeModeWarning</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1112">line 1112</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".itemsData"><span class="type-signature">(static) </span>itemsData<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Celestial objects and sets general data.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1374">line 1374</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".itemsElements"><span class="type-signature">(static) </span>itemsElements<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Combo DOM elements and their bindings associated with Celestial objects in the Navigation and Calibration windows, and Tracks in the NAvigation Window.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1336">line 1336</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".itemsNames"><span class="type-signature">(static) </span>itemsNames<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Celestial objects and sets names.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1359">line 1359</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+<h4 class="name" id=".trackCoords"><span class="type-signature">(static) </span>trackCoords<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Coordinates and data for a given sky track (e.g. constelation lines, bounds, asterisms, ecliptic, etc.).
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1388">line 1388</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+            </div>
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".appTime"><span class="type-signature">(static) </span>appTime<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Actual time in a readble format for the log text fields.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1423">line 1423</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    time in the format: hours minutes seconds.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".createComboOptions"><span class="type-signature">(static) </span>createComboOptions<span class="signature">(comboElement, options)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Create the options for a combo DOM element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>comboElement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a DOM select element.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a list of options to be included in the comboElement.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1721">line 1721</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".equatorialFromObjectData"><span class="type-signature">(static) </span>equatorialFromObjectData<span class="signature">(value, date)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Equatorial coordinates of a celestial object from a combo list dom element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">an item value from the combo list.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">chosen data when the coordinates will be computed (default = now).</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1498">line 1498</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    a Basic.Equatorial object with the equatorial coordinates of the celestial object.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".filterCombo"><span class="type-signature">(static) </span>filterCombo<span class="signature">(filterElement, itemElement, minLength)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Get the text typed in a filter DOM element and matches all celestial objects that contain the typed text corresponding to the celestial object type selected in the type combo DOM element.
+The filtered objects are showed in a celestial object combo DOM element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filterElement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a db.itemsElement.filters item.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>itemElement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a db.itemsElement item.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>minLength</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">db.filterComboMinLength.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1675">line 1675</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".getCoordinates"><span class="type-signature">(static) </span>getCoordinates<span class="signature">(itemType, itemId)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Coordinates of a specific celestial object from the data files.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>itemType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a key of itemsData object.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>itemId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the unique id for a celestial object in itemsData[itemType].features object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1484">line 1484</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    the celestial object coordinates or false if id not found.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".getRadioValue"><span class="type-signature">(static) </span>getRadioValue<span class="signature">(elementName)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Value from a radio DOM element group.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>elementName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Radio element group name.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1756">line 1756</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    the value of the checked radio option in the Radio element.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".loadItemsDataNames"><span class="type-signature">(static) </span>loadItemsDataNames<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Method for reading the celestial objects data in json files and Solar System object names and ids.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1558">line 1558</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".localDateString"><span class="type-signature">(static) </span>localDateString<span class="signature">(date)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Date value for the <input type='date'> dom element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1434">line 1434</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    local date string in the format: year-month-day.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".localTimeString"><span class="type-signature">(static) </span>localTimeString<span class="signature">(date)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Date value for the <input type='time'> dom element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1449">line 1449</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    local date string in the format: hour:minute.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".ra24to180"><span class="type-signature">(static) </span>ra24to180<span class="signature">(ra)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Convertion from (0 to 24hs units) to (-180° to 180° units)
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>ra</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">in 0 to 24hs units.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1473">line 1473</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    ra in -180° to 180° units.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".ra180to24"><span class="type-signature">(static) </span>ra180to24<span class="signature">(ra)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Convertion from (-180° to 180° units) to (0 to 24hs units).
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>ra</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">in -180° to 180° units.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1463">line 1463</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    ra in 0 to 24hs units.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".setFiltersEvents"><span class="type-signature">(static) </span>setFiltersEvents<span class="signature">(item, minLength)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Set the events keyup and click to the filter DOM element used to select a celestial object or configuration.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>item</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a db.itemsElement item</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>minLength</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">db.filterComboMinLenght.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1707">line 1707</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".setInputRangeDatalist"><span class="type-signature">(static) </span>setInputRangeDatalist<span class="signature">(params)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Sets the properties of an input range DOM element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">a db dataList object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1766">line 1766</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".textSelected"><span class="type-signature">(static) </span>textSelected<span class="signature">(element)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Text from a select DOM element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>element</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Select element.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1746">line 1746</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    the text of the selected option in the Select element.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".valueSelected"><span class="type-signature">(static) </span>valueSelected<span class="signature">(element)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Value from a select DOM element.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>element</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Select element.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1736">line 1736</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    the value of the selected option in the Select element.
+</div>
+
+
+
+    
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".window.changeNav"><span class="type-signature">(static) </span>window.changeNav<span class="signature">(id)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Open or close the selected tab in the user interface.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>id</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Id of the tab dom element</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1412">line 1412</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".window.changeObjectsType"><span class="type-signature">(static) </span>window.changeObjectsType<span class="signature">(itemElement)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Method called when Object Type combo DOM element is changed.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>itemElement</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">A combo DOM element for the celestial objects and tracks types.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1536">line 1536</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+            <div class="subsection-item">
+                
+
+    
+
+    <h4 class="name" id=".window.setWindow"><span class="type-signature">(static) </span>window.setWindow<span class="signature">(windowId, menuElem)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Sets and shows the actual window choosen by the user in the app menu.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>windowId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Id of the chosen app window dom element.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>menuElem</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Dom element representing the menu chosen.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.js.html">hathor.js</a>, <a href="hathor.js.html#line1396">line 1396</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </div>
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.6</a> on Mon Oct 25 2021 19:54:14 GMT-0300 (Brasilia Standard Time) using the Toast theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

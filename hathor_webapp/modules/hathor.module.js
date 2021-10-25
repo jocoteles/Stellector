@@ -1,14 +1,13 @@
 /**
  * JS Module for the Hathor Web App.
- * @module modules/hathor
- * @see module:modules/hathor.module.js
+ * @module
  */
 
 import '../libs/three.min.js';
 import { nelderMead } from '../libs/nelderMead.js';
 
 /**
- * @param {Object} ESP32 - constants used in the ESP32 server
+ * @param {object} ESP32 - constants used in the ESP32 server
  */
 let ESP32 = {
 	STPS360: 2038,				//steppers number of steps for a 360º rotation
@@ -34,15 +33,17 @@ let ESP32 = {
 
 
 /**
- * A namespace for the vector operations in the StarPointer app'.
+ * A namespace for the coordinates operations.
  * @namespace
  */
-let VecSP = {};
+let Coord = {};
 
-/** Class representing a unity vector in spherical coordinates (phi = 0 to 2*pi; theta = 0 to pi). */
-VecSP.Spherical = class {
+/**
+ * Class representing a unity vector in spherical coordinates (phi = 0 to 2*pi; theta = 0 to pi).
+ */
+Coord.Spherical = class {
     /**
-     * Create a spherical representation of a unity vector.
+     * Creates a spherical representation of a unity vector.
      * @param {number} phi - azimuthal angle: 0 to 2*pi.
 	 * @param {number} theta - polar angle: 0 to pi.
      */
@@ -68,8 +69,10 @@ VecSP.Spherical = class {
 	/** Get this.theta */
 	get theta () {		
 		return this._theta;
-	}
-	/** Correct coordinates to their boundary values */
+	}	
+	/**
+	 * Corrects coordinates to their boundary values.
+	 */
 	correctCoords () {
 		let pi = Math.PI;
 		let pi2 = 2.0*pi;
@@ -83,7 +86,7 @@ VecSP.Spherical = class {
 		}
 	}	
 	/**
-	 * Return the rectangular representation of this object.
+	 * Returns the rectangular representation of this object.
 	 * @returns {THREE.Vector3} rectangular representation of this object.
 	 */
 	toVector3 () {		
@@ -101,18 +104,20 @@ VecSP.Spherical = class {
 		//Phi and theta are exchanged in Three.js in relation to the usual notation
 	}	
 	/**
-	 * Make a copy of this vector.
-	 * @returns {VecSP.Spherical} copy of this vector.
+	 * Makes a copy of this vector.
+	 * @returns {Coord.Spherical} copy of this vector.
 	 */
 	clone () {
-		return new VecSP.Spherical(this.phi, this.theta);
+		return new Coord.Spherical(this.phi, this.theta);
 	}
 }
 
-/** Class representing a unity vector in equatorial coordinates with RA ranging from 0 to 24hs. */
-VecSP.Equatorial = class {
+/**
+ * Class representing a unity vector in equatorial coordinates with RA ranging from 0 to 24hs.
+ */
+Coord.Equatorial = class {
     /**
-     * Create a RA 24hs equatorial representation of a unity vector.
+     * Creates a RA 24hs equatorial representation of a unity vector.
      * @param {number} ra - the Right Ascension (0 to 24hs) coordinate.
 	 * @param {number} dec - the Declination (-90º to 90º) coordinate.
      */
@@ -139,13 +144,15 @@ VecSP.Equatorial = class {
 	get dec () {		
 		return this._dec;
 	}
-	/** Correct coordinates to their boundary values */
+	/**
+	 * Corrects coordinates to their boundary values
+	 */
 	correctCoords () {
 		let sph = this.toSpherical();
 		this.fromSpherical(sph);
 	}	
 	/**
-	 * Return the rectangular representation of this object.
+	 * Returns the rectangular representation of this object.
 	 * @returns {THREE.Vector3} rectangular representation of this object.
 	 */
 	toVector3 () {		
@@ -153,44 +160,46 @@ VecSP.Equatorial = class {
 		return sph.toVector3();		
 	}
 	/**
-	 * Return the spherical representation of this object.
-	 * @returns {VecSP.Spherical} spherical representation of this object.
+	 * Returns the spherical representation of this object.
+	 * @returns {Coord.Spherical} spherical representation of this object.
 	 */
 	 toSpherical () {
 		let phi = this._ra*Math.PI/12;
 		let theta = (90-this._dec)*Math.PI/180;				
-		return new VecSP.Spherical(phi, theta);		
+		return new Coord.Spherical(phi, theta);		
 	}
 	/**
 	 * Set this object from rectangular representation.	 
 	 * @param {THREE.Vector3} vec - rectangular representation of a vector.
 	 */
 	fromVector3 (vec) {
-		let sph = new VecSP.Spherical();
+		let sph = new Coord.Spherical();
 		sph.fromVector3(vec);
 		this.fromSpherical(sph);
 	}
 	/**
 	 * Set this object from spherical representation.	 
-	 * @param {VecSP.Spherical} vec - spherical representation of a vector.
+	 * @param {Coord.Spherical} vec - spherical representation of a vector.
 	 */
 	fromSpherical (sph) {		
 		this._ra = sph.phi*12/Math.PI;
 		this._dec = (90-sph.theta*180/Math.PI);		
 	}
 	/**
-	 * Make a copy of this vector.
-	 * @returns {VecSP.Equatorial} copy of this vector.
+	 * Makes a copy of this vector.
+	 * @returns {Coord.Equatorial} copy of this vector.
 	 */
 	clone () {
-		return new VecSP.Equatorial(this.ra, this.dec);
+		return new Coord.Equatorial(this.ra, this.dec);
 	}
 }
 
-/** Class representing a unity vector in step motor steps. */
-VecSP.Step = class {
+/**
+ * Class representing a unity vector in step motor steps.
+ */
+Coord.Step = class {
     /**
-     * Create a step motor steps representation of a unity vector.
+     * Creates a step motor steps representation of a unity vector.
      * @param {number} fix - the fixed motor step (0 to this.maxSteps) coordinate.
 	 * @param {number} mob - the mobile motor step (0 to this.maxSteps) coordinate.
      */
@@ -220,53 +229,64 @@ VecSP.Step = class {
 	get mob () {		
 		return this._mob;
 	}
-	/** Correct coordinates to their boundary values */
+	/**
+	 * Corrects coordinates to their boundary values.
+	 */
 	correctSteps () {		
-		//let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
-		//this._fix = (n*this.maxSteps + this._fix) % this.maxSteps;
-		//let m = Math.ceil(Math.abs(this._mob)/this.maxSteps);
-		//this._mob = (m*this.maxSteps + this._mob) % this.maxSteps;
-	}
-	/** Return fix coordinate in radians
-	 * @returns {number} this.fix in radians */		
+		let n = Math.ceil(Math.abs(this._fix)/this.maxSteps);
+		this._fix = (n*this.maxSteps + this._fix) % this.maxSteps;
+		let m = Math.ceil(Math.abs(this._mob)/this.maxSteps);
+		this._mob = (m*this.maxSteps + this._mob) % this.maxSteps;
+	}	
+	/**
+	 * Returns fix coordinate in radians.
+	 * @returns {number} this.fix in radians
+	 */
 	fixToRad () {
 		return this._fix*2.0*Math.PI/this.maxSteps;
-	}
-	/** Return mob coordinate in radians
-	 * @returns {number} this.mob in radians */		
+	}	
+	/**
+	 * Returns mob coordinate in radians.
+	 * @returns {number} this.mob in radians
+	 */
 	mobToRad () {
 		return (this._mob - this.stepAtZenith + this.step90)*2.0*Math.PI/this.maxSteps;
-	}
-	/** Set fix coordinate from angle in radians
-	 * @param {number} rad - angle in radians that will set the fix coordinate */		
+	}	
+	/**
+	 * Set fix coordinate from angle in radians
+	 * @param {number} rad - angle in radians that will set the fix coordinate
+	 */
 	fixFromRad (rad) {
 		this._fix = Math.round(rad*this.maxSteps/(2.0*Math.PI));
 		this.correctSteps();
-	}
-	/** Set mob coordinate from angle in radians
-	 * @param {number} rad - angle in radians that will set the mob coordinate */		
+	}	
+	/**
+	 * Set mob coordinate from angle in radians
+	 * @param {number} rad - angle in radians that will set the mob coordinate
+	 */
 	 mobFromRad (rad) {
 		this._mob = Math.round(rad*this.maxSteps/(2.0*Math.PI)) + this.stepAtZenith - this.step90;
 		this.correctSteps();
 	}
 	/**
 	 * Make a copy of this vector.
-	 * @returns {VecSP.Step} copy of this vector.
+	 * @returns {Coord.Step} copy of this vector.
 	 */
 	clone() {
-		return new VecSP.Step(this.fix, this.mob);
+		return new Coord.Step(this.fix, this.mob);
 	}	
 }
 
-
-/** Class representing a calibration star object. */
-VecSP.CalibStar = class {
+/**
+ * Class representing a calibration star object.
+ */
+Coord.CalibStar = class {
 	/**
-	 * Crate a calib star object.
+	 * Crates a calib star object.
 	 * @param {string} text - a text output with this star information	 
 	 * @param {Date} date - date when the star object was measured by the StarProjector system
-	 * @param {VecSP.Step} step - local steppers coordinates for the star object
-	 * @param {VecSP.Equatorial} eq - celestial equatorial coordinates for the star object
+	 * @param {Coord.Step} step - local steppers coordinates for the star object
+	 * @param {Coord.Equatorial} eq - celestial equatorial coordinates for the star object
 	 */
 	constructor (text = null, date = null, step = null, eq = null) {
 		this.text = text;		
@@ -276,15 +296,17 @@ VecSP.CalibStar = class {
 	}
 }
 
-/**Class to perform the calibration of the steppers local reference frame with respect to the equatorial celestial reference frame.*/
-VecSP.Calibration = class {
+/**
+ * Class to perform the calibration of the steppers local reference frame with respect to the equatorial celestial reference frame.
+ */
+Coord.Calibration = class {
 	/**
-	 *  Cretate a calibration object.  
+	 *  Cretates a calibration object.  
 	 */
     constructor() {
-		/**@member {VecSP.CalibStar[]} - Array of star objects used to perform calibration of the reference frame. */
+		/**@member {Coord.CalibStar[]} - Array of star objects used to perform calibration of the reference frame. */
 		this.stars = [];		
-		/**@member {THREE.Vector3[3]} - optimized vectors for the stepper fix, stepper mob and laser axes. */		
+		/**@member - optimized vectors for the stepper fix, stepper mob and laser axes. */		
 		this.fit = {						
 			axes: {
 				fix: new THREE.Vector3(1.0, 0.0, 0.0),
@@ -309,8 +331,8 @@ VecSP.Calibration = class {
 		this.sideralDay = 86164090.5; //[ms]
 	}	
 	/**
-	 * Find the Euler rotations that relate the local reference system to the celestial reference system.
-	 * @param {VecSP.CalibStar[]} stars - array of calibration stars
+	 * Finds the Euler rotations that relate the local reference system to the celestial reference system.
+	 * @param {Coord.CalibStar[]} stars - array of calibration stars
 	 */	
     calcCalib (stars) {
 		this.stars = stars;
@@ -429,25 +451,25 @@ VecSP.Calibration = class {
 		}
 	}
 	/**
-	 * Celestial from Local coordinates convertion on the given date.
-	 * @param {VecSP.Step} s - local coordinate
+	 * Celestial from Local coordinates convertion on the given date.	 
+	 * @param {Coord.Step} s - local coordinate
 	 * @param {Date} d - given date (actual date, if ommitted)
-	 * @returns {VecSP.Equatorial} celestial coordinate
+	 * @returns {Coord.Equatorial} celestial coordinate
 	 */
 	equatorialFromStep (s, d = new Date()) {		
 		let laser = this.fit.axes.laser.clone();		
 		laser.applyAxisAngle(this.fit.axes.mob, s.mobToRad()*this.fit.mobStretch.value);
 		laser.applyAxisAngle(this.fit.axes.fix, s.fixToRad()*this.fit.fixStretch.value);		
-		let eq = new VecSP.Equatorial();
+		let eq = new Coord.Equatorial();
 		eq.fromVector3(laser);		
 		eq.ra += (d - this.t0)/3.6e6;
 		return eq;
 	}	
 	/**
 	 * Local from Celestial coordinates convertion on the given date.
-	 * @param {VecSP.Equatorial} eq - celestial coordinate
+	 * @param {Coord.Equatorial} eq - celestial coordinate
 	 * @param {Date} d - given date (actual date, if ommitted)
-	 * @returns {VecSP.Step} local coordinate
+	 * @returns {Coord.Step} local coordinate
 	 */
 	stepFromEquatorial (eq0, d = new Date()) {
 		let eq = eq0.clone();		
@@ -480,17 +502,17 @@ VecSP.Calibration = class {
 			}
 		} while ((i++ < this.maxIter) && (bestValue > this.maxOptimValue));		
 		if (i >= this.maxIter) alert('stepFromEquatorial could not converge. Do not execute path!');		
-		let step = new VecSP.Step();		
+		let step = new Coord.Step();		
 		step.fixFromRad(optAngs[0]);
 		step.mobFromRad(optAngs[1]);
 		return step;
 	}
 	/**
-	 * Make a copy of this object.
-	 * @returns {VecSP.Calib} copy of this object.
+	 * Makes a copy of this object.
+	 * @returns {Coord.Calib} copy of this object.
 	 */
 	clone () {
-		let Calib = new VecSP.Calibration();
+		let Calib = new Coord.Calibration();
 		Calib.stars = this.stars;		
 		for (let x in this.fit) Calib.fit[x] = this.fit[x];				
 		Calib.t0 = this.t0;		
@@ -504,22 +526,25 @@ VecSP.Calibration = class {
  * A namespace for the Communication operations between the StarPointer WebApp client and the ESP32 server.
  * @namespace
  */
-let CommSP = {};
+let Comm = {};
 
-/**Class for the parsed path construction */
-CommSP.CommPath = class {
-	/**Create a parsed path to send to the ESP32 server.
-	 * @param {PathSP.Path} Path - Path to be parsed.
-	 * @param {VecSP.Calibration} Calib - calibration used to transform celestial to step coordinates
+/**
+ * Class for the parsed path construction.
+ */
+Comm.CommPath = class {
+	/**
+	 * Creates a parsed path to send to the ESP32 server.
+	 * @param {Path.Path} Path - Path to be parsed.
+	 * @param {Coord.Calibration} Calib - calibration used to transform celestial to step coordinates
 	*/
 	constructor (Path, Calib) {
 		/**@member {number[]} - Number of bits of the base used to represent the path segments, respectively for: laser state, step delay, fix step, mob step. */
 		this._encBase = ESP32.PATHBASE;
 		/**@member {number[]} - Number of bits of the base used to communicate the path segments. */
 		this._decBase = ESP32.COMMBASE;
-		/**@member {PathSP.Path} */
+		/**@member {Path.Path} */
 		this._path = Path;
-		/**@member {VecSP.Calibration} */
+		/**@member {Coord.Calibration} */
 		this.calib = Calib;
 		/**@member {number[]} - Parsed path obtained from this._path. */
 		this._parsedPath = [];
@@ -528,34 +553,31 @@ CommSP.CommPath = class {
 		this.composePath();
 	}
 	/**
-	 * 
-	 * @param {VecSP.Step} Step - step to be checked if is above horizon. 
+	 * Checks if the laser will point above the horizon for safe operation.
+	 * @method
+	 * @param {Coord.Step} Step - step to be checked if is above horizon. 
 	 * @returns {boolean} true if above horizon, false otherwise.
 	 */
 	isAboveHorizon (Step) {
 		let ph = (Step.fix-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
-		let th = (Step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;
-		//let th = (Step.mob-ESP32.STEP_AT_ZENITH+Math.trunc(ESP32.STPS360/4))*2*Math.PI/ESP32.STPS360;
+		let th = (Step.mob-ESP32.STPS360/4.0)*2*Math.PI/ESP32.STPS360;		
 		let x = Math.cos(ph)*Math.sin(th);
 		let y = Math.sin(ph)*Math.sin(th);
 		let z = Math.cos(th);
-		let tanH = y/sqrt(x*x+z*z);
-		/* console.log(Step.fix);
-		console.log(Step.mob);
-		console.log('--------------'); */
+		let tanH = y/sqrt(x*x+z*z);		
   		if (tanH > Math.tan(ESP32.HORIZON_MIN_ANG*Math.PI/180)) return true;
 		else return false;		
 	}
 
 	/**
-	 * Parse a segment to be added to a parsed path.
-	 * @param {PathSP.Segment} Segment - Segment to be parsed. 	 
+	 * Parses a segment to be added to a parsed path.
+	 * @param {Path.Segment} Segment - Segment to be parsed. 	 
 	 * @returns {number[]} Array with decBase size representing the parsed segment.
 	 */
 	parseSegment (Segment) {		
 		//Encoding to this._encBase:		
 		let step = Segment.coord;
-		if (Segment.coord instanceof VecSP.Equatorial) step = this.calib.stepFromEquatorial(Segment.coord);						
+		if (Segment.coord instanceof Coord.Equatorial) step = this.calib.stepFromEquatorial(Segment.coord);						
 		let data = [Segment.laser, Segment.delay, step.fix, step.mob];
 		let x0 = 0;
 		let b = 0;
@@ -574,38 +596,18 @@ CommSP.CommPath = class {
 		}
 		return r;
 	}
-	/**Method for parsing this._path. */
-	composePath () {				
-		/* this.clipped = false;				
-		let clipPos = 0;		
-		let clippedPath = new PathSP.Path();
-		for (let segment of this._path.path) {	//generates the clipped path and finds first clip position			
-			if (segment.coord instanceof VecSP.Equatorial) segment.coord = this.calib.stepFromEquatorial(segment.coord);				
-			if (this.isAboveHorizon(segment.coord)) {
-				clippedPath.addSegment(segment);				
-			}
-			else {				
-				if (clipPos == 0) {
-					clipPos = clippedPath.size;
-					this.clipped = true;
-				}
-			}
-		}
-		this._parsedPath = [];		
-		for (let i = 0; i < clippedPath.size; i++) {
-			let Segment = clippedPath.path[(clipPos+i)%clippedPath.size];			
-			let s = this.parseSegment(Segment);
-			if (s) this._parsedPath = this._parsedPath.concat(s);
-		} */
-
+	/**
+	 * Method for parsing this._path.
+	 */
+	composePath () {
 		this.clipped = false;
 		this._parsedPath = [];				
 		let path = this._path.path;		
 		for (let i = 0; i < path.length; i++) {
-			if (path[i].coord instanceof VecSP.Equatorial) path[i].coord = this.calib.stepFromEquatorial(path[i].coord);							
+			if (path[i].coord instanceof Coord.Equatorial) path[i].coord = this.calib.stepFromEquatorial(path[i].coord);							
 			if (this.isAboveHorizon(path[i].coord)) {
 				//console.log(path[i].laser);
-				let seg = new PathSP.Segment(path[i].coord, path[i].laser, path[i].delay);
+				let seg = new Path.Segment(path[i].coord, path[i].laser, path[i].delay);
 				//if (i+1 < path.length)
 				if (i-1 >= 0)
 					if (!this.isAboveHorizon(path[i-1].coord)) {
@@ -657,17 +659,23 @@ CommSP.CommPath = class {
 	}
 }
 
-/**Class to communicate via Low Energy Bluetooth with the Star Pointer ESP32 server.
+/**
+ * Class to communicate via Low Energy Bluetooth with the Star Pointer ESP32 server.
  * @param {Object} - DOM element whose innerHTML attribute receives the communication logs.
  * @param {Object} - DOM element to indicate when in the unsafe mode.
 */
-CommSP.Bluetooth = class {
+Comm.Bluetooth = class {
+	/**
+	 * Creates a bluetooth connection.
+	 * @param {*} logDOM - DOM element whose innerHTML attribute receives the communication logs. 
+	 * @param {*} unsafeDOM - DOM element to indicate when in the unsafe mode. 
+	 */
 	constructor (logDOM, unsafeDOM) {
 		/**@member {string} - Server device name.*/
 		this.deviceName = ESP32.DEVICE_NAME;
 		/**@member {string} - The single service for all device's characteristics.*/
 		this.mainS_UUID = ESP32.MAIN_S_UUID;
-		/**@member {string} - Characteristic UUID for the CommSP.parsedPath transmission.*/
+		/**@member {string} - Characteristic UUID for the Comm.parsedPath transmission.*/
 		this.pathC_UUID = ESP32.PATH_C_UUID;
 		/**@member {string} - Characteristic UUID for sending commands to server.*/
 		this.commandC_UUID = ESP32.COMMAND_C_UUID;
@@ -683,8 +691,8 @@ CommSP.Bluetooth = class {
 		this.maxChunk = 512;
 		/**@member {Object} - Execution options to ESP32 server. */
 		this.OPT = ESP32;
-		/**@member {VecSP.Step} - the steppers fix and mob coordinates obtained from the accelerometer readings. */
-		this.actStep = new VecSP.Step(0, 0);
+		/**@member {Coord.Step} - the steppers fix and mob coordinates obtained from the accelerometer readings. */
+		this.actStep = new Coord.Step(0, 0);
 		this.serverStatus = {
 			idle: false,
 			laserOn: false,
@@ -694,22 +702,17 @@ CommSP.Bluetooth = class {
 			tilted: false
 		};		
 	}
-	/**Return actual time in the format: hours minutes seconds. */
+	/**
+	 * Returns actual time in the format: hours minutes seconds.
+	 */
 	time () {
 		let d = new Date();
 		return d.getHours() + 'h' + d.getMinutes() + 'm' + d.getSeconds() + 's: ';
-	}
-	optKeyFromValue (value) {
-		for (let x of Object.entries(this.OPT)) if (x[1] == value) return x[0];
-		return false;
-	}
-	isServerIdle (opt) {
-		if ((opt == this.OPT.LASER_OFF_ST) || (opt == this.OPT.LASER_ON_ST)) return true;
-		else return false;
-	}
-	/**Start bluetooth communication with ESP32 server.
+	}	
+	/**
+	 * Starts bluetooth communication with ESP32 server.
 	 * @returns {boolean} connection status.
-	*/
+	 */
 	async startComm () {
 		let deviceOptions = {
 			filters: [{ name: this.deviceName }],
@@ -744,17 +747,24 @@ CommSP.Bluetooth = class {
 			return false;
 		}	
 	}
+	/**
+	 * Sends an Alert informing disconnection with server.
+	 * @param {string} errorMsg - to be displayed with the disconnected message.
+	 * @returns false
+	 */
 	disconnectMsg (errorMsg) {
 		this.logDOM.innerHTML += this.time() + errorMsg + '. StarPointer disconnected!\n';
 		alert(errorMsg + '. StarPointer disconnected! Start comm again.');
 		return false;
 	}
     
-	/** Send a this.Opt item to ESP32 Server.
+	/**
+	 * Sends a this.Opt item to ESP32 Server.
 	 * @param {number} optValue - A valid this.Opt item value.
-	*/
+	 */
 	async sendCommand (optValue) {
-		let optKey = this.optKeyFromValue(optValue);
+		let optKey = false;
+		for (let x of Object.entries(this.OPT)) if (x[1] == optValue) optKey = x[0];		
 		if (optKey) {			
 			this.logDOM.innerHTML += this.time() + 'Option ' + optKey + ' sent to Server.\n';
 			await this.commandC.writeValue(new Uint8Array([optValue]));						
@@ -765,7 +775,8 @@ CommSP.Bluetooth = class {
 		  return false;
 		}
 	}
-	/** Execute a step size on steppers in the ESP32 server.
+	/**
+	 * Executes a step size on steppers in the ESP32 server.
 	 * @param {number} stepSize - Step size between 1 and 128.
 	 * @param {string} dirs - String in the format 'xab', where x is any alphabetic character, a and b control the fixed and mobile steppers, respectively, and each one can assume the characters: '0' = move backward, '1' = stay still, and '2' = move forward.
 	 */
@@ -781,8 +792,9 @@ CommSP.Bluetooth = class {
 			else return false;
 		} catch {return this.disconnectMsg();}
 	}	
-	/**Execute a parsedPath on steppers in the ESP32 server.
-	 * @param {CommSP.CommPath} Path - Path to be executed by the ESP32 server steppers.
+	/**
+	 * Executes a parsedPath on steppers in the ESP32 server.
+	 * @param {Comm.CommPath} Path - Path to be executed by the ESP32 server steppers.
 	 * @param {string} cyclicOpt - 'single': path is executed once; 'forward': path is excuted cyclically forward until stop signal; 'alternate': path is excuted cyclically alternate until stop signal.
 	 */
 	async goPath (Path, cyclicOpt = 'single') {  		
@@ -827,7 +839,9 @@ CommSP.Bluetooth = class {
 			} else return false;
 		} catch (error) {return this.disconnectMsg(error);}
 	}
-	/** Switch the laser status on/off in the ESP32 server. */
+	/**
+	 * Switchs the laser status on/off in the ESP32 server.
+	 */
 	async goLaser () {
 		try {			
 			if (await this.getStatus()) {				
@@ -837,7 +851,8 @@ CommSP.Bluetooth = class {
 		} catch (error) {			
 			return this.disconnectMsg(error);}		
 	}
-	/** Set actual steppers step values to ESP32.STEP_AT_ZENITH.	 
+	/**
+	 * Set actual steppers step values to ESP32.STEP_AT_ZENITH.	 
 	 */
 	async setZenith() {
 		try {			
@@ -849,7 +864,8 @@ CommSP.Bluetooth = class {
 			return this.disconnectMsg(error);
 		}
 	}
-	/** Read the steppers fix and mob coordinates in the ESP32 server.
+	/**
+	 * Read the steppers fix and mob coordinates in the ESP32 server.
 	 */
 	async readActSteps () {		
 	    try {			
@@ -857,10 +873,14 @@ CommSP.Bluetooth = class {
 			let fix = value.getUint8(0)*256 + value.getUint8(1);
 			let mob = value.getUint8(2)*256 + value.getUint8(3);
 			this.logDOM.innerHTML += this.time() + 'Actual steps readings from server: fix=' + fix + ', mob=' + mob + '\n';
-			this.actStep = new VecSP.Step(fix, mob);										
+			this.actStep = new Coord.Step(fix, mob);										
 			return true;						
 		} catch (error) {return this.disconnectMsg(error);}
 	}
+	/**
+	 * Check status from server and emits alert message for safe and correct use.
+	 * @returns true if it receives status from ESP32 sever, false otherwise.
+	 */
 	async getStatus () {
 		try {
 			let status = await this.statusC.readValue();		
@@ -902,13 +922,15 @@ CommSP.Bluetooth = class {
  * A namespace for the Path operations in the StarPointer app'.
  * @namespace
  */
-let PathSP = {};
+let Path = {};
 
-/** Class for the Star Pointer Segment construction. */
-PathSP.Segment = class {
+/**
+ * Class for the Star Pointer Segment construction.
+ */
+Path.Segment = class {
     /**
-     * Create a segment for the path followed by the Star Pointer composed by equatorial or steps coords, laser status and time delay between steps.
-	 * @param {VecSP.Equatorial|VecSP.Step} coord - equatorial or step coords of the path segment.
+     * Creates a segment for the path followed by the Star Pointer composed by equatorial or steps coords, laser status and time delay between steps.
+	 * @param {Coord.Equatorial|Coord.Step} coord - equatorial or step coords of the path segment.
 	 * @param {number} laser - Laser state: 0 = off, 1 = on.
 	 * @param {number} delay - Time delay between steppers sucessive steps in multiples of 100 us.
      */
@@ -919,31 +941,39 @@ PathSP.Segment = class {
 	}
 }
 
-/**Class for the Star Pointer General Path construction. */
-PathSP.Path = class {
-    /**Create the path followed by the Star Pointer composed by equatorial or step coords, laser status and time delay between steps. */
+/**
+ * Class for the Star Pointer General Path construction.
+ */
+Path.Path = class {
+    /**
+	 * Creates the path followed by the Star Pointer composed by equatorial or step coords, laser status and time delay between steps.
+	 */
 	constructor () {
 		this.reset();
 	}
-	/**Reset PathSP.Path variables */
+	/**
+	 * Resets Path.Path variables.
+	 */
     reset () {		
-		/**@member {PathSP.Segment[]} - array of Segment objects. */
+		/**@member {Path.Segment[]} - array of Segment objects. */
 		this.path = [];
 		/**@member {number} - Path.path number of segments. */
 		this.size = 0;
 		/**@member {number} - Sum of all Path.path segments delay in 100 us unit. */
 		this.duration = 0;
 	}
-	/**Add segment object to the path.
-	 * @param {PathSP.Segment} Segment
+	/**
+	 * Add segment object to the path.
+	 * @param {Path.Segment} Segment
 	 */
 	addSegment (Segment) {
 		this.path.push(Segment);
 		this.size = this.path.length;
 		this.duration += Segment.delay;
 	}
-	/** Concatenate path.
-	 *  @param {PathSP.Path} Path
+	/** 
+	 * Concatenate path.
+	 * @param {Path.Path} Path
 	 */
 	addPath (Path) {
 		this.path = this.path.concat(Path.path);
@@ -952,20 +982,21 @@ PathSP.Path = class {
 	}
 }
 
-/** Function to generate a circular path trajectory.
-*   @param {VecSP.Equatorial} Center - celestial coordinate of circle center.
-*	@param {number|VecSP.Equatorial} border - circle angle aperture in rad or celestial coordinate of a point at the circle border.
-*	@param {number} angleIncrement - angle step for the circle discretization in rad.
-*	@param {Array} lpattern - [laser on number of steps, laser off number of steps].
-*	@param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
-*	@returns {PathSP.Path} path for the circular trajectory.
+/** 
+* Function to generate a circular path trajectory.
+* @param {Coord.Equatorial} Center - celestial coordinate of circle center.
+* @param {number|Coord.Equatorial} border - circle angle aperture in rad or celestial coordinate of a point at the circle border.
+* @param {number} angleIncrement - angle step for the circle discretization in rad.
+* @param {Array} lpattern - [laser on number of steps, laser off number of steps].
+* @param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
+* @returns {Path.Path} path for the circular trajectory.
 */
-PathSP.makeCircle = function (Center, border, angleIncrement, lpattern, delay) {
-	let path = new PathSP.Path();
+Path.makeCircle = function (Center, border, angleIncrement, lpattern, delay) {
+	let path = new Path.Path();
 	let c = Center.toVector3();
 	let b;
 	if (typeof(border.phi) == 'undefined') {
-		b = new VecSP.Equatorial(Center.ra, Center.dec+border*180/Math.PI);		
+		b = new Coord.Equatorial(Center.ra, Center.dec+border*180/Math.PI);		
 	}
 	else {
 		b = border;
@@ -979,24 +1010,25 @@ PathSP.makeCircle = function (Center, border, angleIncrement, lpattern, delay) {
 		v.applyAxisAngle(c, i*angleIncrement);
 		laser = 0;
 		if ((i%r) < lpattern[0]) laser = 1;
-		let eq = new VecSP.Equatorial();
+		let eq = new Coord.Equatorial();
 		eq.fromVector3(v);
-		let segment = new PathSP.Segment(eq, laser, delay);
+		let segment = new Path.Segment(eq, laser, delay);
 		path.addSegment(segment);
 	}
 	return path;   
 }
 
-/** Function to generate a geodesic path trajectory.
-*   @param {VecSP.Equatorial} eq0 - geodesic starting point.
-*	@param {VecSP.Equatorial} eq1 - geodesic ending point.
-*	@param {number} angleIncrement - angle step for the geodesic discretization in rad.
-*	@param {Array} lpattern - [laser on number of steps, laser off number of steps].
-*	@param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
-*	@returns {PathSP.Path} path for the geodesic trajectory.
+/**
+* Function to generate a geodesic path trajectory.
+* @param {Coord.Equatorial} eq0 - geodesic starting point.
+* @param {Coord.Equatorial} eq1 - geodesic ending point.
+* @param {number} angleIncrement - angle step for the geodesic discretization in rad.
+* @param {Array} lpattern - [laser on number of steps, laser off number of steps].
+* @param {number} delay - time delay between steppers sucessive steps in multiples of 100 us.
+* @returns {Path.Path} path for the geodesic trajectory.
 */
-PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
-	let path = new PathSP.Path();
+Path.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
+	let path = new Path.Path();
 	let v0 = eq0.toVector3();
 	let v1 = eq1.toVector3();
 	let a = v0.angleTo(v1);
@@ -1011,12 +1043,12 @@ PathSP.makeGeodesic = function (eq0, eq1, angleIncrement, lpattern, delay) {
 		v.applyAxisAngle(v3, i*ainc);
 		laser = 0;
 		if ((i%r) < lpattern[0]) laser = 1;
-		let eq = new VecSP.Equatorial();
+		let eq = new Coord.Equatorial();
 		eq.fromVector3(v);
-		let segment = new PathSP.Segment(eq, laser, delay);
+		let segment = new Path.Segment(eq, laser, delay);
 		path.addSegment(segment);
 	}
 	return path;   
 }
 
-export {ESP32, VecSP, CommSP, PathSP};
+export {ESP32, Coord, Comm, Path};

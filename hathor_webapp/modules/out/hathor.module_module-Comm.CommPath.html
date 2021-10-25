@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: CommPath</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: CommPath</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>
+            <span class="ancestors"><a href="hathor.module_module.html">.module</a><a href="hathor.module_module-Comm.html">~Comm</a>.</span>CommPath<span class="signature">(Path, Calib)</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description">Class for the parsed path construction.</div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="CommPath"><span class="type-signature"></span>new CommPath<span class="signature">(Path, Calib)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Creates a parsed path to send to the ESP32 server.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>Path</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Path.Path</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Path to be parsed.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>Calib</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Coord.Calibration</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">calibration used to transform celestial to step coordinates</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line534">line 534</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="_decBase"><span class="type-signature"></span>_decBase<span class="type-signature"> :Array.&lt;number></span></h4>
+
+
+
+
+<div class="description">
+    Number of bits of the base used to communicate the path segments.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array.&lt;number></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line544">line 544</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_encBase"><span class="type-signature"></span>_encBase<span class="type-signature"> :Array.&lt;number></span></h4>
+
+
+
+
+<div class="description">
+    Number of bits of the base used to represent the path segments, respectively for: laser state, step delay, fix step, mob step.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array.&lt;number></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line542">line 542</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_parsedPath"><span class="type-signature"></span>_parsedPath<span class="type-signature"> :Array.&lt;number></span></h4>
+
+
+
+
+<div class="description">
+    Parsed path obtained from this._path.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Array.&lt;number></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line550">line 550</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_path"><span class="type-signature"></span>_path<span class="type-signature"> :Path.Path</span></h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Path.Path</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line546">line 546</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="calib"><span class="type-signature"></span>calib<span class="type-signature"> :Coord.Calibration</span></h4>
+
+
+
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Coord.Calibration</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line548">line 548</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="clipped"><span class="type-signature"></span>clipped<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+<div class="description">
+    True if path clipped due to be below horizon.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="hathor.module.js.html">hathor.module.js</a>, <a href="hathor.module.js.html#line552">line 552</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="hathor.module_module.html">module</a></li></ul><h3>Namespaces</h3><ul><li><a href="hathor.module_module-Comm.html">Comm</a></li><li><a href="hathor.module_module-Coord.html">Coord</a></li><li><a href="hathor.module_module-Path.html">Path</a></li></ul><h3>Classes</h3><ul><li><a href="hathor.module_module-Comm.Bluetooth.html">Bluetooth</a></li><li><a href="hathor.module_module-Comm.CommPath.html">CommPath</a></li><li><a href="hathor.module_module-Coord.Calibration.html">Calibration</a></li><li><a href="hathor.module_module-Coord.CalibStar.html">CalibStar</a></li><li><a href="hathor.module_module-Coord.Equatorial.html">Equatorial</a></li><li><a href="hathor.module_module-Coord.Spherical.html">Spherical</a></li><li><a href="hathor.module_module-Coord.Step.html">Step</a></li><li><a href="hathor.module_module-Path.Path.html">Path</a></li><li><a href="hathor.module_module-Path.Segment.html">Segment</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Mon Oct 04 2021 20:22:49 GMT-0300 (Brasilia Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
