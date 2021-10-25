@@ -2,3 +2,8 @@ serverhttps.py
 test.cert.pem
 test.key.pem
 Tests
+Docs
+hathor_webapp/node_modules
+hathor_webapp/out
+hathor_webapp/package.json
+hathor_webapp/package-lock.json

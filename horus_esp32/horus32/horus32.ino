@@ -80,7 +80,7 @@ Adafruit_LSM303DLH_Mag_Unified gy511mag = Adafruit_LSM303DLH_Mag_Unified(56789);
 
 //BLE variables:
 //--------------
-#define DEVICE_NAME          "Stellector"
+#define DEVICE_NAME          "Horus"
 #define MAIN_S_UUID          "643790f9-355d-435b-b407-43ebf47a86b4"  //The single service for all device's characteristics
 #define PATH_C_UUID          "f467e4e9-e2bc-422f-b8a3-aaaf6f92b999"  //characteristic for the path array
 #define COMMAND_C_UUID       "f7b0afdf-b51e-4ba7-9513-48fb15497f22"  //characteristic for command execution on server
