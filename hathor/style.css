@@ -1,0 +1,149 @@
+/*
+Copyright 2021 João Teles de Carvalho Neto
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+body {
+  font-family: "Calibri", sans-serif;
+  text-align: center;
+  background-color: rgb(80, 80, 80);  
+}
+
+select {
+  margin-bottom: 0.5em;
+}
+
+button {
+  background-color: #339333;
+  border-radius: 5px;
+  border: solid thin black;
+}
+
+td {
+  text-align: left;
+}
+
+#appW {  
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;    
+}  
+
+#controllerSVGcontainer {
+  margin-top: 5%;
+  margin-bottom: 5%;
+  margin-left: auto;
+  margin-right: auto;    
+}
+
+#startCommBtn {
+  height: 4em;
+  margin: 10% 20%; 
+}
+
+#unsafeModeWarning {
+  background-color: lightcoral;
+  height: 1.5em;
+  width: 95%;  
+  border-radius: 0.2em; 
+  text-align: center;
+  padding-top: 0.5em;  
+  margin: 1.0em auto 0.5em auto;
+  display: none;
+}
+
+.tab {  
+  background-color: #999;
+  border: solid thin black;
+  border-top: none;
+  padding: 2%;
+  border-radius: 0 0 0.5em 0.5em;
+}
+
+.frame {
+  border: solid thin black;  
+  padding: 2%;
+  margin: 1%;  
+}
+
+.filterIn {
+  width: 80%;
+}
+
+.filterLabel {
+  text-align: right;
+}
+
+.execBtn {
+  margin: 2%;
+  padding: 0.5em;
+}
+
+.rightBtn {  
+  padding: 0.75em;
+  width: 7em;
+  border-radius: 0% 50% 50% 0%;
+  margin-left: 0%;
+}
+
+.leftBtn {
+  padding: 0.75em;
+  width: 7em;
+  border-radius: 50% 0% 0% 50%;
+  margin-right: 0%;
+}
+
+.transitionButton {  
+  width: 100%;  
+  border: solid thin black;
+  background-color: #DDD;
+  border-radius: 0px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 0.5em 0.5em 0 0;
+}
+
+
+.menuBtn {
+  justify-content: center;
+  align-items: center;    
+  background-color: #339333;
+  cursor: pointer;  
+  padding: 5%;
+  margin: 10%;
+  border-radius: 10px;
+  color: black;
+  border: solid thin black;
+}
+
+.inputCoord {
+  width: 50%;
+}
+
+input[type=number],input[type=text]{
+  border: none;
+  border-bottom: solid thin black;
+} 
+
+
+#trackDate {
+  width: 125px;
+}
+
+#stepSizeR {
+  width: 80%;
+}

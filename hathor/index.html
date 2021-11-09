@@ -1,0 +1,392 @@
+<!--
+
+Copyright 2021 João Teles de Carvalho Neto
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Hathor Stellector</title>
+
+    <link rel="manifest" href="manifest.json" />
+    <!-- ios support -->
+    <link rel="apple-touch-icon" href="icons/hathor_icon_72x72.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_96x96.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_128x128.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_144x144.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_152x152.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_192x192.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_384x384.png" />
+    <link rel="apple-touch-icon" href="icons/hathor_icon_512x512.png" />
+    <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
+    <meta name="theme-color" content="#db4938" />
+
+    <link rel="stylesheet" href="style.css"/>
+    <script src="libs/three.min.js"></script>      
+    <script src="libs/orb.v2.min.js"></script>        
+    <script src="libs/nelderMead.js" type="module" defer></script>  
+    <script src="hathor.js" type="module" defer></script>      
+    <script type="text/javascript" src="data/stars.6.js"></script>    
+    <script type="text/javascript" src="data/starnames.js"></script>    
+    <script type="text/javascript" src="data/dso.6.js"></script>    
+    <script type="text/javascript" src="data/dsonames.js"></script>    
+    <script type="text/javascript" src="data/messier.js"></script>
+    <script type="text/javascript" src="data/constellations.js"></script>
+    <script type="text/javascript" src="data/clines.js"></script>
+    <script type="text/javascript" src="data/cbounds.js"></script>
+    <script type="text/javascript" src="data/asterisms.js"></script>    
+  </head>
+
+  <body>
+  
+    <div id="appW" style="display:grid; grid-template-rows:2em 1fr;">
+      <div id="appMenuW" style="display:grid; grid-row:1; grid-template-columns:repeat(5,1fr);">        
+        <div class="menuBtn" id="commM" onclick="setWindow('appCommW', this)">Comm</div>
+        <div class="menuBtn" id="calibM" onclick="setWindow('appCalibW', this)">Calib</div> 
+        <div class="menuBtn" id="navM" onclick="setWindow('appNavW', this)">Nav</div>
+        <div class="menuBtn" id="findM" onclick="setWindow('appFindW', this)">Find</div>       
+        <div class="menuBtn" id="configM" onclick="setWindow('appConfigW', this)">Config</div>
+      </div>
+
+      <div id="unsafeModeWarning">UNSAFE MODE</div>
+
+      <div id="appControllerDiv">
+        <button class="transitionButton" id="appControllerBtn" onclick="changeNav('appController')">Controller</button>      
+        <div class="tab" id="appController">        
+          <div id="controllerSVGcontainer">
+            <svg viewBox="0 0 120 120" >
+              <polygon id="d12" onclick="sendStepSize(this.id)" points="60,60 24,24 48,0 72,0 96,24" style="fill:#2F872F;stroke:black;"/>
+              <polygon id="d10" onclick="sendStepSize(this.id)" points="60,60 24,96 48,120 72,120 96,96" style="fill:#2F872F;stroke:black;"/>
+              <polygon id="d01" onclick="sendStepSize(this.id)" points="60,60 24,96 0,72 0,48 24,24" style="fill:#893838;stroke:black;"/>
+              <polygon id="d21" onclick="sendStepSize(this.id)" points="60,60 96,24 120,48 120,72 96,96" style="fill:#893838;stroke:black;"/>
+            </svg>
+          </div>
+          <div style="display:grid; grid-template-columns:3fr 1fr;">
+            <div style="grid-column:1;">
+              <div>Step size: <label id="stepSizeT"></label></div>
+              <input id="stepSizeR" type="range" onchange="updateStepSize()" list="stepSizeRList">
+              <datalist id="stepSizeRList"></datalist>
+            </div>
+            <button style="grid-column:2;" onclick="switchLaser()">Laser Switch</button>
+          </div>      
+        </div>
+      </div>
+      
+      <div class="window" id="appCommW">
+        <div class="tab" style="margin-top:1em;border-radius:0.5em;">
+        <button id="startCommBtn" onclick="cmStartComm()">Start or Restart communication</button>
+        <label>Communication Log</label>
+        <textarea id="commStatus" style="width:100%;padding:0%;" rows="10" readonly></textarea>        
+        </div>
+      </div>
+
+      <div class="window" id="appCalibW">                
+        
+        <button class="transitionButton" id="appCalibListBtn" onclick="changeNav('appCalibListW')">Calibration Setup</button>
+        <div class="tab" id="appCalibListW" style="display:none; grid-template-rows:auto;grid-template-columns:repeat(2, 1fr);">          
+            <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
+              <div style="grid-column:1/3;"><button class="execBtn" onclick="cwUpdateCalib('add')">ADD CALIB OBJECT</button></div>                      
+              <div style="display:grid; grid-column:1;">
+                <div>Object type:</div>
+                <div><select id="calibObjectsTypeCombo" style="width:80%;" onchange="changeObjectsType(this)"></select></div>                        
+                <div>Object selected:</div>
+                <div><select id="calibObjectsCombo" style="width:80%;"></select></div>                        
+              </div>  
+              <div style="display:grid; grid-column:2; grid-template-columns:1fr 3fr;">
+                <div style="grid-column:1/3">Object filters</div>
+                <div class="filterLabel">Name:</div><div><input class="filterIn" id="nameCfilter" type="text"></div>
+                <div class="filterLabel">Cons:</div><div><input class="filterIn" id="consCfilter" type="text"></div>
+                <div class="filterLabel">HIP:</div><div><input class="filterIn" id="hipCfilter" type="text"></div>
+                <div class="filterLabel">HD:</div><div><input class="filterIn" id="hdCfilter" type="text"></div>
+              </div>
+          </div>
+          <div class="frame" style="display:grid; grid-template-columns: 1.2fr 1fr 1fr;">
+            <label style="grid-column:1/4;margin-bottom:0.3em;">Calibration List</label>
+            <div style="grid-column:1;"><select id="calibListCombo" style="width:80%;"></select></div>
+            <button style="grid-column:2;margin:0.3em;" onclick="cwUpdateCalib('remThis')">remove this</button>
+            <button style="grid-column:3;margin:0.3em;" onclick="cwUpdateCalib('remAll')">remove all</button>            
+          </div>          
+          <div>
+            <button class="execBtn" style="width:7em" onclick="cwCalcCalib()">CALC</button>            
+            <button class="execBtn" style="width:7em" onclick="cwAcceptCalib()">ACCEPT</button>
+          </div>
+        </div>
+        
+        <button class="transitionButton" id="appCalibInfoBtn" onclick="changeNav('appCalibInfoW')">Actual Calibration Info</button>
+        <div class="tab" id="appCalibInfoW" style="display:none;">        
+          <textarea id="calibInfo" style="width:100%;padding:0%;" rows="10" readonly></textarea>  
+        </div>
+        
+        <button class="transitionButton" id="appCalibLogBtn" onclick="changeNav('appCalibLogW')">Calibration Log</button>
+        <div class="tab" id="appCalibLogW" style="display:none;">          
+          <textarea id="calibLog" style="width:100%;padding:0%;" rows="10" readonly></textarea>  
+        </div>
+
+      </div>
+
+      <div class="window" id="appNavW">        
+        
+        <button class="transitionButton" id="appNavStarsBtn" onclick="changeNav('appNavStarsW')">Sky Objects</button>
+        <div class="tab" id="appNavStarsW" style="display:none;">
+          
+          <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
+            <div style="display:grid; grid-column:1;">
+              <div>Object type:</div>
+              <div><select id="navObjectsTypeCombo" style="width:80%;" onchange="changeObjectsType(this)"></select></div>                        
+              <div>Object selected:</div>
+              <div><select id="navObjectsCombo" style="width:80%;"></select></div>  
+              <button style="padding:1em; margin:0 2.5em 0 2.5em;" class="execBtn" onclick="NWgoStar('now')">go Now</button>                        
+            </div>
+
+            <div style="display:grid; grid-column:2; grid-template-columns:1fr 3fr;">
+              <div style="grid-column:1/3">Object filters</div>
+              <div class="filterLabel">Name:</div><div><input class="filterIn" id="nameNfilter" type="text"></div>
+              <div class="filterLabel">English:</div><div><input class="filterIn" id="enNfilter" type="text"></div>
+              <div class="filterLabel">Spanish:</div><div><input class="filterIn" id="esNfilter" type="text"></div>
+              <div class="filterLabel">Cons:</div><div><input class="filterIn" id="consNfilter" type="text"></div>
+              <div class="filterLabel">HIP:</div><div><input class="filterIn" id="hipNfilter" type="text"></div>
+              <div class="filterLabel">HD:</div><div><input class="filterIn" id="hdNfilter" type="text"></div>            
+              <div class="filterLabel">Desig:</div><div><input class="filterIn" id="desigNfilter" type="text"></div>
+              <div class="filterLabel">M:</div><div><input class="filterIn" id="mNfilter" type="text"></div>
+              <div class="filterLabel">NGC:</div><div><input class="filterIn" id="ngcNfilter" type="text"></div>
+              <button style="grid-column:1/3; margin-top:0.5em; padding:0.1em;" onclick="NWshowCoords()">show Coordinates</button>
+            </div>            
+            
+          </div>
+                              
+          <div class="frame">
+            <label style="display:inline-block;margin-bottom:0.5%;">Time step:</label>
+            <div style="margin-bottom:2%;">
+              <input type="number" id="timeStepY" value="0" min="0" max="10" step="1" style="width:10%;" oninput="NWtimeStepCheck(this)">years
+              <input type="number" id="timeStepD" value="0" min="0" max="365" step="1" style="width:10%;" oninput="NWtimeStepCheck(this)">days
+              <input type="number" id="timeStepM" value="5" min="0" max="1440" step="1" style="width:10%;" oninput="NWtimeStepCheck(this)">minutes
+            </div>                      
+            <div style="margin-bottom:2%;"><label>Date: </label><input type="date" id="objDate" style="width:50%;"></div>
+            <div style="margin-bottom:2%;"><label>Time: </label><input type="time" id="objTime" style="width:50%;"></div>
+            <input style="margin-bottom:3%;" type="checkbox" id="sideralOffset"><label>sideral offset</label>          
+            <table style="width:100%;">
+              <tr>
+                <td style="text-align:right;"><button class="leftBtn" onclick="NWgoStar('-1')">step Past</button></td>
+                <td style="text-align:left;"><button class="rightBtn" onclick="NWgoStar('+1')">step Future</button></td>                      
+                <td style="text-align:center;"><button class="execBtn" onclick="NWgoStar('date')">go DateTime</button></td>
+              </tr>            
+            </table>
+          </div>
+
+          <div>
+            <label>Pointer style: </label>
+            <select id="objectPointerStyle"></select>            
+          </div>
+          
+        </div>        
+
+        <button class="transitionButton" id="appNavSTracksBtn" onclick="changeNav('appNavTracksW')">Sky Tracks</button>
+        <div class="tab" id="appNavTracksW" style="display:none;">
+          <div class="frame" style="display:grid; grid-template-columns:1fr 1fr;">
+            <div style="display:grid; grid-column:1;">
+              <div>Track type:</div>
+              <div><select id="navTracksTypeCombo" style="width:80%;" onchange="changeObjectsType(this)"></select></div>                        
+              <div>Track selected:</div>
+              <div><select id="navTracksCombo" style="width:80%;"></select></div>                        
+            </div>
+
+            <div style="display:grid; grid-column:2; grid-template-columns:1fr 3fr;">
+              <div style="grid-column:1/3">Track filters</div>
+              <div class="filterLabel">Name:</div><div><input class="filterIn" id="nameTfilter" type="text"></div>
+              <div class="filterLabel">English:</div><div><input class="filterIn" id="enTfilter" type="text"></div>
+              <div class="filterLabel">Spanish:</div><div><input class="filterIn" id="esTfilter" type="text"></div>
+            </div>
+
+            <div style="grid-column:1/3;">                          
+                <button class="execBtn leftBtn" onclick="NWgoTrack('-1')">step Back</button>              
+                <button class="execBtn rightBtn" onclick="NWgoTrack('+1')">step Forw</button>                            
+            </div>
+            <div style="grid-column:1/3; display:grid; grid-template-rows:1; margin-bottom:3%;">                          
+              <div style="grid-column:1;">
+                <input type="radio" value="single" name="trackCyclicallyRadio" checked><label>single execution</label><br>
+                <input type="radio" value="forward" name="trackCyclicallyRadio"><label>cyclically forward</label><br>          
+                <input type="radio" value="alternate" name="trackCyclicallyRadio"><label>cyclically alternate</label>          
+              </div>                    
+              <button style="grid-column:2;" class="execBtn" onclick="NWgoTrack('fullTrack')">go Full Track</button>                            
+            </div>
+            <div style="grid-column:1/3;">
+              <label>Track style: </label>
+              <select id="trackPointerStyle"></select>
+            </div>
+          </div>
+
+          <div class="frame">            
+            <div style="grid-column:1/3;">
+              <div style="margin-bottom:2%;"><label>Date: </label><input type="date" id="trackDate" style="width:50%;"></div>
+              <div style="margin-bottom:2%;"><label>Time: </label><input type="time" id="trackTime" style="width:50%;"></div>              
+              <input type="checkbox" id="trackAtDatetime"><label>track at date-time</label>
+            </div>            
+          </div>
+        </div>
+
+        <button class="transitionButton" id="appNavCoordBtn" onclick="changeNav('appNavCoordW')">Coordinates</button>      
+        <div class="tab" id="appNavCoordW" style="display:none;">     
+          <div class="frame">
+            <table style="width:100%;">
+              <tr>
+                <td>R.A.:</td>            
+                <td><input class="inputCoord" type="number" id="raInputH" min="0" max="23" step="1" oninput="NWupdateCoordSys(this)"> h</td>
+                <td><input class="inputCoord" type="number" id="raInputM" min="0" max="59" step="1" oninput="NWupdateCoordSys(this)"> m</td>
+                <td><input class="inputCoord" type="number" id="raInputS" min="0" max="59" step="1" oninput="NWupdateCoordSys(this)"> s</td>
+                <td><input class="inputCoord" type="number" id="raInputF" min="0" max="23.9997" oninput="NWupdateCoordSys(this)"> h</td>
+              </tr>                    
+              <tr>
+                <td>Dec.:</td>                                    
+                <td><input class="inputCoord" type="number" id="decInputD" min="-89" max="89" step="1" oninput="NWupdateCoordSys(this)"> °</td>
+                <td><input class="inputCoord" type="number" id="decInputM" min="0" max="59" step="1" oninput="NWupdateCoordSys(this)"> '</td>
+                <td><input class="inputCoord" type="number" id="decInputS" min="0" max="59" step="1" oninput="NWupdateCoordSys(this)"> "</td>         
+                <td><input class="inputCoord" type="number" id="decInputF" min="-89.9997" max="89.9997" oninput="NWupdateCoordSys(this)"> °</td>
+              </tr>
+            </table>          
+            <table style="width:100%;">
+              <tr>
+                <td style="text-align:center;"><label>Pointer style: </label><select id="coordsPointerStyle"></select></td>
+                <td style="text-align:center;"><button class="execBtn" onclick="NWgoEquatorial()">go Equatorial</button></td>                
+              </tr>
+            </table>                        
+          </div>     
+          <div class="frame" style="display:grid; grid-template-columns:2fr 1fr;">
+            <table style="width:100%; grid-column:1;">
+              <tr>
+                <td>Fix:</td>          
+                <td><input type="number" id="fixInput" min="0" max="1023" step="1" oninput="NWupdateCoordSys(this)"> steps</td>
+              </tr>          
+              <tr>
+                <td>Mob:</td>          
+                <td><input type="number" id="mobInput" min="0" max="1023" step="1" oninput="NWupdateCoordSys(this)"> steps</td>          
+              </tr>
+            </table>
+            <button style="grid-column:2;" onclick="NWgoSteps()">go Steps</button>
+          </div> 
+          <table style="width:60%;padding:auto;margin:auto;">
+            <tr>                            
+              <td style="text-align:center;"><button class="execBtn" onclick="NWreadCoords()">read Coords</button></td>
+              <td style="text-align:center;"><button class="execBtn" onclick="NWgoZenith()">go Zenith</button></td>              
+            </tr>
+          </table>                                         
+        </div>        
+
+      </div>      
+
+      <div class="window" id="appFindW">
+      </div>
+
+      <div class="window" id="appConfigW">
+
+        <button class="transitionButton" id="appConfigPointerBtn" onclick="changeNav('appConfigPointerW')">Pointer Config</button>
+        <div class="tab" id="appConfigPointerW" style="display:none;">          
+          <div>
+            <label>Line speed </label>
+            <input id="lineSpeedR" type="range" onchange="updatePointer('lineSpeed')" list="lineSpeedRList">            
+            <datalist id="lineSpeedRList"></datalist>            
+            <label id="lineSpeedT"></label>
+          </div>          
+          <div>
+            <label>Line On state </label>
+            <input id="lineOnR" type="range" onchange="updatePointer('lineOn')" list="lineOnRList">            
+            <datalist id="lineOnRList"></datalist>            
+            <label id="lineOnT"></label>
+          </div>          
+          <div>
+            <label>Line step angle </label>
+            <input id="lineAngR" type="range" min="0.1" max="10" step="0.1" value = "0.5" onchange="updatePointer('lineAng')">            
+            <label id="lineAngT"></label>
+          </div>          
+          <div>
+            <label>Circle speed </label>
+            <input id="circleSpeedR" type="range" onchange="updatePointer('circleSpeed')" list="circleSpeedRList">            
+            <datalist id="circleSpeedRList"></datalist>            
+            <label id="circleSpeedT"></label>
+          </div>          
+          <div>
+            <label>Circle On state </label>
+            <input id="circleOnR" type="range" onchange="updatePointer('circleOn')" list="circleOnRList">            
+            <datalist id="circleOnRList"></datalist>            
+            <label id="circleOnT"></label>
+          </div>          
+          <div>
+            <label>Circle aperture </label>
+            <input id="circleApR" type="range" min="0.5" max="45" step="0.5" value = "2.0" onchange="updatePointer('circleAp')">            
+            <datalist id="circleApRList"></datalist>            
+            <label id="circleApT"></label>
+          </div>          
+          <div>
+            <label>Circle step angle </label>
+            <input id="circleAngR" type="range" min="1" max="60" step="1" value = "18" onchange="updatePointer('circleAng')">            
+            <label id="circleAngT"></label>
+          </div>
+        </div>
+
+        <button class="transitionButton" id="appConfigSpeechBtn" onclick="changeNav('appConfigSpeechW')">Speech Config</button>
+        <div class="tab" id="appConfigSpeechW" style="display:none;">
+          <div>
+            <label for="speechRate">Rate</label>
+            <input type="range" id="speechRate" min="0.5" max="2" value="1" step="0.1">
+            <label id="speechRateValue">1</label>
+          </div>
+          <div>
+            <label for="speechPitch">Pitch</label>
+            <input type="range" id="speechPitch" min="0" max="2" value="1" step="0.1">
+            <label id="speechPitchValue">1</label>
+          </div>
+          <select id="speechLanguage" style="grid-column:1/4;"></select>
+          <div style="grid-column:1/4;">
+            <input type="checkbox" id="speakStarName" checked="false"><label>Speak star name</label><br>
+            <input type="checkbox" id="speakBayer" checked="false"><label>Speak bayer</label><br>
+            <input type="checkbox" id="speakConstellation" checked="false"><label>Speak constellation</label><br>
+            <input type="checkbox" id="speakHipparcos" checked="false"><label>Speak Hipparcos</label>
+          </div>          
+        </div>
+
+        <button class="transitionButton" id="appConfigCalibBtn" onclick="changeNav('appConfigCalibW')">Calibration Config</button>
+        <div class="tab" id="appConfigCalibW" style="display:none;">
+          <div>
+            <input type="checkbox" id="fixStretchOptim" checked="true"><label>fix stretching optimization</label><br>
+            <input type="checkbox" id="mobStretchOptim" checked="true"><label>mob stretching optimization</label><br>
+            <input type="checkbox" id="laserTiltOptim" checked="false"><label>laser axis tilt optimization</label><br>
+            <input type="checkbox" id="mobTiltOptim" checked="false"><label>mob axis tilt optimization</label><br>
+            <div class="frame">
+              <div style="margin-bottom:0.3em;"><label for="angFixStretch">fix angle stretching: </label><input id="angFixStretch" type="text" size="9"></div>
+              <div style="margin-bottom:0.3em;"><label for="angMobStretch">mob angle stretching: </label><input id="angMobStretch" type="text" size="9"></div>
+              <div style="margin-bottom:0.3em;"><label for="laserTiltAng">Laser tilt angle (deg): </label><input type="text" id="laserTiltAng" size="9"></div>              
+              <div style="margin-bottom:0.3em;"><label for="mobTiltAng">Mob tilt angle (deg): </label><input type="text" id="mobTiltAng" size="9"></div>            
+              <input type="checkbox" id="useParamsCalib" checked="true"><label for="useParamsCalib">Use above params for calibration</label>
+            </div>    
+            <button class="execBtn" onclick="NWsetZenith()">reset Zenith</button>      
+          </div>                    
+        </div>
+
+        <button class="transitionButton" id="appConfigControllerBtn" onclick="changeNav('appConfigControllerW')">Controller Config</button>
+        <div class="tab" id="appConfigControllerW" style="display:none; grid-template-columns:1fr 2fr 1fr;">
+          <label for="controllerWidth">Width</label><input type="range" id="controllerWidth" onchange="updateControllerWidth()" min="50" max="100" value="75" step="5"><label id="controllerWidthValue">50</label>
+        </div>
+      </div>
+      
+    </div>
+    
+  </body>
+</html>
