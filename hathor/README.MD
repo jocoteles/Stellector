@@ -5,7 +5,7 @@ Hathor web app
 
 Below are the instructions for using the Hathor web app. [The hathor.js code documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/jocoteles/Stellector/main/hathor/out/index.html) was generated with JSDoc.
 
-To access *Hathor* web app via ClouFlare's CDN, [click here](https://rawcdn.githack.com/jocoteles/Stellector/446829e5dc1aeb43d528b2b9b58800cc3d9925e9/hathor/index.html).
+To install *Hathor* as Progressive Web App [click here](https://jocoteles.github.io/Stellector/hathor/).
 
 ## 1. Communication (*Comm*) window
 
