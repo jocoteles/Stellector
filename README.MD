@@ -68,7 +68,7 @@ We call the hardware [**Horus**](horus/), in reference to the Egyptian god of th
 
 We call the progressive web app [**Hathor**](hathor/), in refrence to the Egyptian goddess consort of *Horus*. It is reponsible for the *Horus* control.
 
-To access *Hathor* web app via ClouFlare's CDN, [click here](https://rawcdn.githack.com/jocoteles/Stellector/446829e5dc1aeb43d528b2b9b58800cc3d9925e9/hathor/index.html).
+To install *Hathor* as Progressive Web App [click here](https://jocoteles.github.io/Stellector/hathor/).
 
 The *Hathor* web app uses the following Javascript libraries:
 
