@@ -51,22 +51,24 @@ Description
 
 - A green laser pointer from which its laser module is extracted.
 - Two 28BYJ-48 step motors and two ULN2003 drivers for the laser movement.
-- A ESP32 WROVER module to interface step motor drivers, laser driver and environment sensors.
+- A ESP32 module to interface step motor drivers, laser driver and environment sensors.
 - A GY-521 accelerometer to determine the zenith orientation to fix the steppers reference.
 - A GY-511 accelerometer and a HC-SR04 ultrasonic distance sensor used to establish a safe distance and orientation of the laser with respect to the ground in order to prevent the laser light from reaching people's eyes.
 - A 10,000 mA.h LiPo power bank (Pineng model Pn-951) to power the electronics and electromechanical components.
 - A simple electronic circuit with a TIP41 transistor to drive the laser current and for power distibution among the power bank and the other electronics.
 - A 3D printed mounting that holds and interconects the mechanical and electronic structure.
-- An arduino code, named [horus32.ino](horus/horus_esp32/horus32/README.MD), that is loaded in the ESP32 board.
-- A HTML/Javascript progressive web app, named [*Hathor*](hathor/README.MD#hathor-web-app), that is loaded in a smartphone or any other portable device with Bluetooth communication.
+- An arduino code, named [horus32.ino](horus/horus_esp32/horus32/), that is loaded in the ESP32 board.
+- A HTML/Javascript progressive web app, named [*Hathor*](hathor/), that is loaded in a smartphone or any other portable device with Bluetooth communication.
 
-We call the hardware [**Horus**](horus/README.MD#horus-hardware), in reference to the Egyptian god of the sky. It is comprised by:
+We call the hardware [**Horus**](horus/), in reference to the Egyptian god of the sky. It is comprised by:
 
-1. The [mechanical structure](horus/README.MD#mechanical-structure) that holds and interconnects the step motors, electronic sensors, microcontroler and battery. It is entirely 3D printed, where the pieces were designed using Python scripting for FreeCAD. The codes are [available here](horus/horus_3d_parts).
+1. The [mechanical structure](horus/README.MD#mechanical-structure) that holds and interconnects the step motors, electronic sensors, microcontroler and battery. It is entirely 3D printed, where the pieces were designed using Python scripting for [FreeCAD](https://www.freecadweb.org/). The codes are [available here](horus/horus_3d_parts).
    
 2. The [electronics](horus/README.MD#electric-circuit-diagram) that is composed by a simple circuit for distributing energy from battery to all the other electronic components.
 
-We call the progressive web app [**Hathor**](hathor/README.MD#hathor-web-app), in refrence to the Egyptian goddess consort of *Horus*. It is reponsible for the *Horus* control.
+We call the progressive web app [**Hathor**](hathor/), in refrence to the Egyptian goddess consort of *Horus*. It is reponsible for the *Horus* control.
+
+To access *Hathor* web app via ClouFlare's CDN, [click here](https://rawcdn.githack.com/jocoteles/Stellector/446829e5dc1aeb43d528b2b9b58800cc3d9925e9/hathor/index.html).
 
 The *Hathor* web app uses the following Javascript libraries:
 

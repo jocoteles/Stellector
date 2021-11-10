@@ -3,7 +3,9 @@ Hathor web app
 
 ![title](icons/hathor_icon_96x96.png)
 
-Below are the instructions for using the Hathor web app. [The hathor.js code documentation](out/index.html) was generated with JSDoc.
+Below are the instructions for using the Hathor web app. [The hathor.js code documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/jocoteles/Stellector/main/hathor/out/index.html) was generated with JSDoc.
+
+To access *Hathor* web app via ClouFlare's CDN, [click here](https://rawcdn.githack.com/jocoteles/Stellector/446829e5dc1aeb43d528b2b9b58800cc3d9925e9/hathor/index.html).
 
 ## 1. Communication (*Comm*) window
 
@@ -35,7 +37,7 @@ This is the manual control for laser movement. It has 4 directional buttons: fix
   <b>Figure 3.</b> <em>Object Selection in Calibration Setup tab.</em>
 </p>
 
- The Object Selection in *Calibration Setup* tab has four fields to search for the desired calibration star: (i) *Name*, to search for the star's western proper name, (ii) *Cons*, for search for the western name of the constellation to which the star belongs, (iii) *HIP* for the Hipparchus code of the star and (iv) *HD* for the HD code of the star. In the case of selection by Solar System objects (basically the Moon and the planets), only the field *Name* provides identification of the object. When typing the first 3 characters of any of the four fields, the application filters all stars that fit these characters and displays them in the selection box identified by *Select object*. Finally, this tab has the *ADD CALIB OBJECT* button, which must be activated when the laser is pointing at the chosen star in the *Object selected* selection box. By clicking on this button, the selected star is added to the *Calibration List* field discussed below.
+ The Object Selection in *Calibration Setup* tab has four fields to search for the desired calibration star: (i) *Name*, to search for the star's western proper name, (ii) *Cons*, for search for the western name of the constellation to which the star belongs, (iii) *HIP* for the Hipparchus code of the star and (iv) *HD* for the HD code of the star. In the case of selection by Solar System objects (basically the Moon and the planets), only the field *Name* provides identification of the object. When typing the first 3 characters of any of the four fields, the application filters all stars that fit these characters and displays them in the selection box identified by *Object selected*. Finally, this tab has the *ADD CALIB OBJECT* button, which must be activated when the laser is pointing at the chosen star in the *Object selected* selection box. By clicking on this button, the selected star is added to the *Calibration List* field discussed below.
 
  The Calibration List field contains the list of celestial objects already chosen for calibration. To the right there are buttons *remove this* for removing a particular star from the calibration list and *remove all* for removing the entire list. After the inclusion of two or more stars in this list, it is possible to calculate the calibration of the orientation of the Horus local coordinate system, which is done by clicking on *CALC* button. The result of this calibration is displayed in the *Calibration Log* tab. If the user considers that the calibration was successful, he clicks on *ACCEPT* button, making any navigation command from then on take into account the orientation obtained from this calibration.
 
