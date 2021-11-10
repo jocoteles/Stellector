@@ -3,7 +3,7 @@ Hathor web app
 
 ![title](icons/hathor_icon_96x96.png)
 
-Below are the instructions for using the Hathor web app. [The hathor.js code documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/jocoteles/Stellector/main/hathor/out/index.html) was generated with JSDoc.
+Below are the instructions for using the Hathor web app. [The hathor.js code documentation](https://jocoteles.github.io/Stellector/hathor/out/index.html) was generated with JSDoc.
 
 To install *Hathor* as Progressive Web App [click here](https://jocoteles.github.io/Stellector/hathor/).
 
