@@ -1,4 +1,4 @@
-**Stellector** - laser aided night sky explorer
+**Stellector** - laser aided night sky explorer [![DOI](https://zenodo.org/badge/426046822.svg)](https://zenodo.org/badge/latestdoi/426046822)
 ==============
 
 > *Stellector* is a compressed name for Stellar Projector and it intends to project the dynamics and representations of the sky, using the real open sky itself as a background for its tracings.
