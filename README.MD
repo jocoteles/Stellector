@@ -80,7 +80,7 @@ The *Hathor* web app uses the following Javascript libraries:
 Further Information
 ===================
 
-A detailed explanation of the Stellector Project and its use for teaching astronomy can be found in [this article](https://arxiv.org/abs/2111.05510).
+A detailed explanation of the Stellector Project and its use for teaching astronomy can be found in [this article in portuguese](https://www.scielo.br/j/rbef/a/8ppNRrjYRLmsBDdTDcPMtXn/?lang=pt) and in [this preprint on arXiv](https://arxiv.org/abs/2111.05510).
 
 Next Steps
 ==========
